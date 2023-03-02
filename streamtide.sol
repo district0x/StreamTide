@@ -48,6 +48,18 @@ contract MVPCLR is Ownable {
     Donation[] public donations;
     int256 index_of_last_processed_donation = -1;
     
+    address public multisigAddress;
+
+    constructor(address _multisigAddress) {
+    multisigAddress = _multisigAddress;
+    }
+
+    function setMultisigAddress(address _multisigAddress) external {
+    require(msg.sender == multisigAddress, "Not authorized to change multisig address");
+    multisigAddress = _multisigAddress;
+    }
+
+
     function closeRound() public onlyAdmin {
         roundDuration = 0;
     }
@@ -119,10 +131,12 @@ contract MVPCLR is Ownable {
     
     
     //fail safe. Should be multisig. Bring this up on the call
-    function withdrawFunds(uint256 amount) external onlyOwner {
+    function withdrawFunds(uint256 amount) external onlyMultisig {
     require(address(this).balance >= amount, "Insufficient funds in contract");
-    payable(owner()).transfer(amount);
+    payable(multisigAddress).transfer(amount);
     }
+
+
 
     // receive donation for the matching pool
     receive() external payable {
@@ -132,6 +146,11 @@ contract MVPCLR is Ownable {
 
     modifier onlyAdmin() {
     require(isAdmin[msg.sender] == true, "Not an admin");
+    _;
+    }
+
+    modifier onlyMultisig() {
+    require(msg.sender == multisigAddress, "Not authorized");
     _;
     }
 
