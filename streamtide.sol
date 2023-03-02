@@ -130,7 +130,7 @@ contract MVPCLR is Ownable {
     }
     
     
-    //fail safe. Should be multisig. Bring this up on the call
+    //only designated multisig address can call this function
     function withdrawFunds(uint256 amount) external onlyMultisig {
     require(address(this).balance >= amount, "Insufficient funds in contract");
     payable(multisigAddress).transfer(amount);
