@@ -46,7 +46,7 @@ contract MVPCLR is Ownable {
     mapping(address => bool) public isBlacklisted;
 
     Donation[] public donations;
-    int256 index_of_last_processed_donation = -1;
+  
     
     address public multisigAddress;
 
@@ -54,8 +54,7 @@ contract MVPCLR is Ownable {
     multisigAddress = _multisigAddress;
     }
 
-    function setMultisigAddress(address _multisigAddress) external {
-    require(msg.sender == multisigAddress, "Not authorized to change multisig address");
+    function setMultisigAddress(address _multisigAddress) external onlyMultisig {
     multisigAddress = _multisigAddress;
     }
 
@@ -111,22 +110,45 @@ contract MVPCLR is Ownable {
 
     }
 
-    function donate(address payable patronAddress) public payable {
-        require(!isBlacklisted[msg.sender], "Sender address is blacklisted");
+    function donate(address[] memory patronAddresses, uint256[] memory amounts) public payable {
+    require(patronAddresses.length == amounts.length, "CLR:donate - Mismatch between number of patrons and amounts");
+    uint256 totalAmount = 0;
+    for (uint256 i = 0; i < patronAddresses.length; i++) {
+        address patronAddress = patronAddresses[i];
+        uint256 amount = amounts[i];
+        totalAmount += amount;
+        require(!isBlacklisted[_msgSender()], "Sender address is blacklisted");
         require(isPatron[patronAddress], "CLR:donate - Not a valid recipient");
-        donations.push(Donation(msg.sender, msg.value));
-        emit Donate(tx.origin, msg.sender, msg.value, patronAddress, roundId);
-        // send the donation to the designated patron address
-        if (!patronAddress.send(msg.value)) {
-        emit FailedDistribute(patronAddress, msg.value);
-        } else {
-        emit Distribute(patronAddress, msg.value);
-        }
+        donations.push(Donation(patronAddress, amount));
+        emit Donate(tx.origin, _msgSender(), amount, patronAddress, roundId);
+        bool success = payable(patronAddress).send(amount);
+        require(success, "CLR:donate - Failed to send funds to recipient");
+    }
+
+    require(totalAmount <= msg.value, "CLR:donate - Total amount donated is greater than the value sent");
+    // transfer the donated funds to the contract
+    payable(address(this)).transfer(msg.value);
+    
     }
 
     function getDonations() public view onlyAdmin returns (Donation[] memory) {
     return donations;
     
+    }
+
+    function distribute(address payable[] memory patrons, uint[] memory amounts) public onlyAdmin {
+    require(patrons.length == amounts.length, "Length of patrons and amounts must be the same");
+
+    // Loop through the list of patrons and distribute the funds to each address
+    for (uint i = 0; i < patrons.length; i++) {
+        // Make sure the recipient address is a valid patron address
+        require(isPatron[patrons[i]], "CLR:distribute - Not a valid recipient");
+        if (!patrons[i].send(amounts[i])) {
+            emit FailedDistribute(patrons[i], amounts[i]);
+        } else {
+            emit Distribute(patrons[i], amounts[i]);
+               }
+         }
     }
     
     
