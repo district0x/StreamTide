@@ -1,0 +1,242 @@
+#popUpGrant,
+#popUpAddContent {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 999;
+	align-items: center;
+	justify-content: center;
+	display: none;
+	.bgPopUp {
+		position: absolute;
+		width: 100%;
+		height: 100%;
+		background: rgba($purple, 0.5);
+		top: 0;
+		left: 0;
+		z-index: 0;
+	}
+	.popUpContent {
+		.spinner-outer {
+			margin-left: 320px;
+			margin-top: 102px;
+		}
+
+		.type {
+			display: flex;
+			margin-bottom: 8px;
+
+			.radio-group {
+				display: flex;
+			}
+			.radio {
+				display: flex;
+				align-items: center;
+				padding-left: 25px;
+				width: 100%;
+			}
+			.radio-group-label {
+				width: 35px;
+			}
+
+			label {
+				position: relative;
+				top: -2px;
+			}
+
+			input[type="radio"] {
+				min-width: 15px;
+				//height: 15px;
+				//border-radius: 15px;
+				//background-color: black;
+				margin-right: 4px;
+
+				//width: 15px;
+				height: 15px;
+				border-radius: 15px;
+				//top: -2px;
+				//left: -1px;
+				position: relative;
+				background-color: $lightLilac;
+				content: '';
+				display: inline-block;
+				visibility: visible;
+				border: 2px solid $lilac;
+
+			}
+			input[type="radio"]:checked {
+				background-color: $lilac;
+			}
+		}
+	}
+	.popUpGrant {
+		.spinner-outer {
+			margin-left: 155px;
+			margin-top: 58px;
+		}
+		.input-group {
+			display: none;
+		}
+	}
+	.popUpContent, .popUpGrant {
+		width: calc(100% - 42px);
+		max-width: 490px;
+		margin: 0 auto;
+		position: relative;
+		.content {
+			width: 100%;
+			border-radius: 15px;
+			background-color: $lightLilac;
+			z-index: 10;
+			padding: 46px 20px 55px;
+			font-size: 18px;
+			line-height: 36px;
+			color: $purple;
+			position: relative;
+			max-height: calc(100vh - 60px);
+			overflow: auto;
+		}
+		h3 {
+			font-weight: $bold;
+			margin-bottom: 5px;
+		}
+		p {
+			margin-bottom: 28px;
+		}
+		.checkField {
+			margin-bottom: 20px;
+			span {
+				font-size: 14px;
+				line-height: 28px;
+			}
+		}
+		.btBasic {
+			//width: 213px;
+			width: 100%;
+			height: 53px;
+			line-height: 53px;
+			&:disabled {
+				pointer-events: none;
+				background-color: lightgray;
+			}
+		}
+		&.add {
+			max-width: 860px;
+			.btBasic {
+				width: 150px;
+			}
+		}
+		.btClose {
+			width: 42px;
+			height: 42px;
+			background-color: transparent;
+			background-image: url('../img/layout/icon-x-lilac.svg');
+			background-position: center;
+			background-repeat: no-repeat;
+			background-size: contain;
+			text-indent: -999em;
+			padding: 0;
+			transition: $trasitionbt;
+			position: absolute;
+			top: -21px;
+			left: -21px;
+			z-index: 20;
+			&:hover {
+				background-image: url('../img/layout/icon-x-dark-hover.svg');
+			}
+		}
+		.titleEdit {
+			font-size: 20px;
+			line-height: 25px;
+			margin-bottom: 20px;
+			display: block;
+			text-align: left;
+			font-weight: $bold;
+		}
+		.textField {
+			width: calc(100% - 6px);
+			border-radius: 7px;
+			overflow: hidden;
+			box-shadow: 0px 0px 0px 3px #a478f9;
+			height: 277px;
+			margin-bottom: 11px;
+			text-align: left;
+		}
+		.block-2 {
+			text-align: right;
+		}
+		input[type='file'] {
+			display: none;
+		}
+		.spinner-outer {
+			width: 104px;
+			height: 104px;
+			z-index: 5;
+			padding-top: 0;
+			position: fixed;
+		}
+
+		.uploadContent {
+			display: flex;
+			align-items: center;
+		}
+
+		.input-wrapper {
+			margin-bottom: 40px;
+			label {
+				width: 100%;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+			}
+			.inputField {
+				//width: calc(100% - 143px);
+				background-color: $white;
+				color: $purple;
+				overflow: hidden;
+				&:disabled {
+					background-color: lightgray;
+				}
+			}
+
+			button.loading {
+				pointer-events: none;
+				opacity: 0.6;
+			}
+
+			.input-group {
+				margin-right: 10px;
+			}
+
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		.popUpContent, .popUpGrant {
+			.content {
+				padding: 46px 48px 55px;
+			}
+			.checkField {
+				margin-bottom: 35px;
+				span {
+					font-size: 18px;
+					line-height: 36px;
+				}
+			}
+			&.add {
+				.content {
+					padding: 44px 42px;
+				}
+				form {
+					display: flex;
+					justify-content: space-between;
+				}
+				.block {
+					//width: calc(50% - 15px);
+					width: 100%;
+				}
+			}
+		}
+	}
+}

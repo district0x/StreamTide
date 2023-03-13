@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="43px" height="43px" viewBox="0 0 43 43" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Group</title>
+    <g id="Symbols" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Footer-SignUp-Desktop" transform="translate(-1718.000000, -67.000000)">
+            <g id="Group" transform="translate(1718.168700, 67.168700)">
+                <circle id="Oval" fill="#3B1D56" cx="21" cy="21" r="21"></circle>
+                <line x1="15.7894737" y1="15.7894737" x2="26.2105263" y2="26.2105263" id="Line-2" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
+                <line x1="26.2105263" y1="15.7894737" x2="15.7894737" y2="26.2105263" id="Line-2" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></line>
+            </g>
+        </g>
+    </g>
+</svg>

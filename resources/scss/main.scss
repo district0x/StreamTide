@@ -1,0 +1,76 @@
+@import '_base/settings';
+
+@import '../../node_modules/normalize.css/normalize';
+@import '../../node_modules/breakpoint-sass/stylesheets/breakpoint';
+@import '../../node_modules/bootstrap/scss/functions';
+@import '../../node_modules/bootstrap/scss/variables';
+@import '../../node_modules/bootstrap/scss/mixins';
+@import '../../node_modules/bootstrap/scss/bootstrap-grid';
+@import '../../node_modules/bootstrap/scss/utilities/text';
+
+//@import '_mixins/**/*';
+
+@import '_base/reset';
+@import 'vars';
+@import '_base/generic';
+@import 'components/spinner_base.scss';
+
+.day {
+  @import 'vars-day';
+  background: $bgSite;
+  color: $textColor;
+  @import '_base/utils';
+
+  //@import 'components/*.scss';
+  @import 'components/form.scss';
+  @import 'components/formFilter.scss';
+  @import 'components/page-load-status.scss';
+  @import 'components/popUpGrant.scss';
+  @import 'components/spinner_color.scss';
+  @import 'components/support.scss';
+  @import 'components/user.scss';
+
+  //@import 'layouts/*.scss';
+  @import 'layouts/admin.scss';
+  @import 'layouts/footerSite.scss';
+  @import 'layouts/grants.scss';
+  @import 'layouts/headerSite.scss';
+  @import 'layouts/home.scss';
+  @import 'layouts/leaderboards.scss';
+  @import 'layouts/pageSite.scss';
+  @import 'layouts/profile.scss';
+  @import 'layouts/profileEdit.scss';
+  @import 'layouts/send-support.scss';
+
+  //@import 'pages/**/*.scss';
+}
+
+.night {
+  @import 'vars-night';
+  background: $bgSite;
+  color: $textColor;
+  @import '_base/utils';
+
+  //@import 'components/*.scss';
+  @import 'components/form.scss';
+  @import 'components/formFilter.scss';
+  @import 'components/page-load-status.scss';
+  @import 'components/popUpGrant.scss';
+  @import 'components/spinner_color.scss';
+  @import 'components/support.scss';
+  @import 'components/user.scss';
+
+  //@import 'layouts/*.scss';
+  @import 'layouts/admin.scss';
+  @import 'layouts/footerSite.scss';
+  @import 'layouts/grants.scss';
+  @import 'layouts/headerSite.scss';
+  @import 'layouts/home.scss';
+  @import 'layouts/leaderboards.scss';
+  @import 'layouts/pageSite.scss';
+  @import 'layouts/profile.scss';
+  @import 'layouts/profileEdit.scss';
+  @import 'layouts/send-support.scss';
+
+  //@import 'pages/**/*.scss';
+}

@@ -1,0 +1,95 @@
+::selection {
+	background: $yellow;
+	color: $black;
+	text-shadow: none;
+}
+
+html {
+	font-size: 62.5%;
+	-webkit-text-size-adjust: 100%;
+	-webkit-tap-highlight-color: rgba($yellow, 0);
+}
+
+body {
+	font-family: $europa;
+	overscroll-behavior-y: none;
+	font-size: 16px;
+	font-weight: $regular;
+	width: 100%;
+	@include media-breakpoint-up(lg) {
+		font-size: 18px;
+	}
+}
+.hidden {
+	overflow: hidden;
+}
+.theme-day {
+	.item-night {
+		display: none;
+	}
+}
+.theme-night {
+	.item-day {
+		display: none;
+	}
+}
+p {
+	line-height: 26px;
+	@include media-breakpoint-up(lg) {
+		line-height: 36px;
+	}
+}
+
+a {
+	color: inherit;
+}
+
+.container {
+	max-width: 1240px;
+	@include media-breakpoint-up(sm) {
+		padding: 0 20px;
+	}
+}
+
+.btBasic {
+	display: inline-block;
+	padding: 0 20px;
+	height: 52px;
+	line-height: 52px;
+	font-size: 12px;
+	text-align: center;
+	letter-spacing: 1.25px;
+	font-weight: $bold;
+	border-radius: 6px;
+	color: $white;
+	transition: $trasitionbt;
+	&-dark {
+		background: $purple;
+	}
+	&-light {
+		background: $lilac;
+	}
+	@include media-breakpoint-up(lg) {
+		&:hover {
+			background: $yellow;
+			color: $purple;
+		}
+	}
+}
+.btEdit, .file-input-label {
+	border-radius: 50%;
+	width: 26.9px;
+	height: 26.9px;
+	text-indent: -9999em;
+	background-color: transparent;
+	background-image: url('../img/layout/icon-edit.svg');
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: contain;
+	@include media-breakpoint-up(lg) {
+		transition: $trasitionbt;
+		&:hover {
+			background-image: url('../img/layout/icon-edit-hover.svg');
+		}
+	}
+}

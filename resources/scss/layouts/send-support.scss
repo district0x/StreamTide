@@ -1,0 +1,201 @@
+#send-support {
+	padding-bottom: 52px;
+	.contentSendSupport {
+		margin-bottom: 22.57px;
+	}
+	.cardSendSupport {
+		height: 201px;
+		width: 100%;
+		border-radius: 7px;
+		background-color: $bgCard;
+		margin-bottom: 13px;
+		padding: 25px 28px 23px;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		position: relative;
+		max-height: 500px;
+		&.remove {
+			transition: all 0.75s ease-in-out;
+			opacity: 0;
+			transform: scale(0);
+			max-height: 0;
+			padding: 0;
+		}
+		&:last-child {
+			margin-bottom: 0;
+		}
+		.user {
+			height: 54.5px;
+			width: 54.5px;
+			margin: 0 25px 21px 0;
+		}
+		.content {
+			width: calc(100% - 79.5px);
+			margin-bottom: 21px;
+			h3 {
+				font-weight: $bold;
+				font-size: 16px;
+				line-height: 30px;
+			}
+		}
+		.field {
+			width: calc(50% - 9.5px);
+			.titleField {
+				font-size: 13px;
+				line-height: 18px;
+				margin-bottom: 12px;
+				display: block;
+			}
+			.inputField {
+				height: 44px;
+				line-height: 38px;
+				padding: 0 17px;
+				font-size: 13px;
+			}
+			.select-selected {
+				padding: 0 40px 0 17px;
+			}
+			.select-items {
+				height: 143px;
+			}
+		}
+		.field-amount {
+			margin-right: 19px;
+		}
+		.btClose {
+			position: absolute;
+			top: 12.48px;
+			right: 13.44px;
+			width: 26.96px;
+			height: 26.96px;
+			background-color: transparent;
+			background-image: url('../img/layout/icon-x-lilac.svg');
+			background-position: center;
+			background-repeat: no-repeat;
+			background-size: contain;
+			text-indent: -999em;
+			padding: 0;
+		}
+	}
+	.buttons {
+		.btBasic {
+			width: 100%;
+			font-size: 18px;
+			letter-spacing: 1.87px;
+		}
+		.btCheckout {
+			margin-bottom: 23.09px;
+		}
+	}
+	@include media-breakpoint-up(md) {
+		.cardSendSupport {
+			height: 166px;
+			margin-bottom: 20px;
+			padding: 25px 30px;
+			flex-wrap: nowrap;
+			.user {
+				margin-bottom: 0;
+			}
+			.content {
+				width: calc(100% - 475.5px);
+				margin-bottom: 0;
+			}
+			.field {
+				display: flex;
+				align-items: center;
+				width: auto;
+				margin: 0 0 0 auto;
+				.titleField {
+					margin: 0 25px 0 0;
+				}
+			}
+			.field-amount {
+				margin-right: 35px;
+				.inputField {
+					width: 200px;
+				}
+			}
+			.field-currency {
+				.inputField {
+					width: 136px;
+				}
+			}
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		padding-bottom: 142px;
+		.contentSendSupport {
+			margin-bottom: 42px;
+			position: relative;
+			.support {
+				position: absolute;
+				top: -50.4px;
+				right: -48.1px;
+				width: 103.88px;
+				z-index: 10;
+			}
+		}
+		.cardSendSupport {
+			z-index: 5;
+			padding-right: 48px;
+			position: initial;
+			.user {
+				width: 116px;
+				height: 116px;
+				margin-right: 29px;
+				.photo {
+					box-shadow: 0px 0px 0px 4px $lilac;
+				}
+			}
+			.content {
+				width: calc(100% - 651.5px);
+				h3 {
+					font-size: 20px;
+					line-height: 30px;
+					margin-bottom: 5px;
+				}
+				p {
+					font-size: 18px;
+					line-height: 25px;
+				}
+			}
+			.field {
+				.titleField {
+					font-size: 18px;
+					line-height: 25px;
+				}
+				.inputField {
+					height: 65px;
+					line-height: 59px;
+					font-size: 18px;
+				}
+			}
+			.field-currency {
+				margin-right: 48px;
+			}
+			.btClose {
+				position: relative;
+				top: auto;
+				right: auto;
+				width: 26.96px;
+				height: 26.96px;
+				&:hover {
+					background-image: url('../img/layout/icon-x-dark-hover.svg');
+				}
+			}
+		}
+		.buttons {
+			display: flex;
+			align-items: center;
+			.btBasic {
+				width: calc(50% - 19px);
+				height: 62px;
+				line-height: 62px;
+			}
+			.btCheckout {
+				margin: 0 38px 0 0;
+			}
+		}
+	}
+}

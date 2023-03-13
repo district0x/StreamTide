@@ -1,0 +1,22 @@
+.formFilter {
+	margin-bottom: 28.62px;
+	.searchForm {
+		margin-bottom: 9.35px;
+		.help-block {
+			display: none;
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		/* 38 114 */
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 35px;
+		.searchForm {
+			margin: 0;
+			width: calc(75.8% - 19px);
+		}
+		.selectForm {
+			width: calc(24.2% - 19px);
+		}
+	}
+}

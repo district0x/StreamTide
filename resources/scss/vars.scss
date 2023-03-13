@@ -1,0 +1,51 @@
+@font-face {
+	font-family: 'kitten_boldregular';
+	src: url('../fonts/kittenboldtrial-webfont.woff2') format('woff2'), url('../fonts/kittenboldtrial-webfont.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'kitten_fatregular';
+	src: url('../fonts/kittenfattrial-webfont.woff2') format('woff2'), url('../fonts/kittenfattrial-webfont.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'kitten_slantregular';
+	src: url('../fonts/kittenslanttrial-webfont.woff2') format('woff2'), url('../fonts/kittenslanttrial-webfont.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'kitten_swash_monolineregular';
+	src: url('../fonts/kittenswashmonolinetrial-webfont.woff2') format('woff2'), url('../fonts/kittenswashmonolinetrial-webfont.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+}
+@font-face {
+	font-family: 'kitten_swashregular';
+	src: url('../fonts/kittenswashtrial-webfont.woff2') format('woff2'), url('../fonts/kittenswashtrial-webfont.woff') format('woff');
+	font-weight: normal;
+	font-style: normal;
+}
+
+$kittenSwash: 'kitten_swashregular', sans-serif;
+$komu: 'komu-b', sans-serif;
+$europa: 'europa', sans-serif;
+
+$regular: 400;
+$bold: 700;
+$boldF: 600;
+
+$lilac: #a478f9;
+$white: #fff;
+$purple: #3b1d56;
+$purple2: #290e42;
+$purple3: #441d66;
+$yellow: #f8d588;
+$black: #000;
+$darkPurple: #1b0c1f;
+$lightLilac: #f4eeff;
+
+$trasition: all 0.5s ease-in-out;
+$trasitionbt: all 0.25s ease-in-out;

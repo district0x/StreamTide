@@ -1,0 +1,11 @@
+.support {
+	animation: rotateSupport 12s linear infinite;
+}
+@keyframes rotateSupport {
+	0% {
+		transform: rotate(0);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}

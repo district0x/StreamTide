@@ -1,0 +1,105 @@
+#footerSite {
+	background: $lilac;
+	transition: $trasition;
+	position: relative;
+	z-index: 10;
+	height: 194px;
+	transition: $trasition;
+	&.close {
+		opacity: 0;
+		height: 0;
+		overflow: hidden;
+		.btFooter,
+		.support {
+			opacity: 0;
+		}
+	}
+	.contentFooter {
+		padding: 38.19px 0 34.63px;
+		position: relative;
+	}
+	.btFooter {
+		position: absolute;
+		width: 42px;
+		height: 42px;
+		background-color: transparent;
+		background-image: $btFooter;
+		background-repeat: no-repeat;
+		background-position: left top;
+		text-indent: -999em;
+		top: -21px;
+		right: 0;
+	}
+	.formNewsletter {
+		width: 100%;
+		max-width: 512px;
+		max-width: 360px;
+		margin: 0 auto;
+		text-align: center;
+		input {
+			width: 100%;
+			max-width: 360px;
+			height: 52px;
+			border-radius: 6px;
+			color: $purple;
+			text-align: center;
+			font-size: 16px;
+			line-height: 52px;
+			padding: 0 18px;
+			margin-bottom: 17px;
+		}
+		::-webkit-input-placeholder {
+			color: $purple;
+		}
+		:-ms-input-placeholder {
+			color: $purple;
+		}
+		::placeholder {
+			color: $purple;
+		}
+		button {
+			width: 136px;
+			margin: 0 auto;
+		}
+	}
+	@include media-breakpoint-up(md) {
+		height: 156px;
+		.container {
+			max-width: 1800px;
+			position: relative;
+		}
+		.contentFooter {
+			padding: 50.5px 0 53.5px;
+			max-width: 1200px;
+			margin: 0 auto;
+			position: initial;
+		}
+		.formNewsletter {
+			max-width: 512px;
+			display: flex;
+			justify-content: space-between;
+			input {
+				text-align: left;
+				padding: 0 20px;
+				margin: 0;
+			}
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		.btFooter {
+			transition: $trasitionbt;
+			right: 39.86px;
+			&:hover {
+				background-image: url('../img/layout/icon-x-dark-hover.svg');
+			}
+		}
+		.formNewsletter {
+			margin: 0;
+		}
+		.support {
+			position: absolute;
+			top: -83px;
+			right: 119.06px;
+		}
+	}
+}

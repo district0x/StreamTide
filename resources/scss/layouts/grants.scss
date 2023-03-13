@@ -1,0 +1,115 @@
+#grants {
+	.headerGrants {
+		.container {
+			max-width: 718px;
+			transition: $trasitionbt;
+		}
+	}
+	.contentGrants {
+		padding: 0 6px;
+		text-align: center;
+	}
+	.cards {
+		display: block;
+		width: 100%;
+		max-width: 698px;
+		margin: 0 auto 20px;
+		position: relative;
+	}
+	.card {
+		width: calc(50% - 7px);
+		max-width: 160.5px;
+		margin: 0 7px 13px;
+		text-align: left;
+		display: block;
+		border-radius: 7px;
+		position: relative;
+		overflow: hidden;
+		background: $bgCard;
+		@include media-breakpoint-down(xs) {
+			max-width: 138px;
+		}
+		.thumb {
+			width: 100%;
+			height: 165.28px;
+			position: relative;
+			z-index: 0;
+			img {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				transform: translate(-50%, -50%);
+				z-index: 1;
+			}
+		}
+		.content {
+			padding: 15.45px 13.42px;
+			font-size: 13px;
+			position: relative;
+			z-index: 10;
+			min-height: 147px;
+			.user {
+				position: absolute;
+				top: -29.55px;
+				right: 11.28px;
+			}
+			h3 {
+				font-weight: $bold;
+				margin-bottom: 3px;
+				line-height: 19px;
+			}
+			p {
+				line-height: 19px;
+			}
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		.headerGrants {
+			.container {
+				max-width: 1240px;
+				transition: none;
+			}
+		}
+		.contentGrants {
+			padding: 0 1px;
+		}
+		.cards {
+			width: 100%;
+			max-width: 1240px;
+			display: flex;
+		}
+		.card {
+			width: calc(25% - 38px);
+			max-width: 271px;
+			margin: 0 19px 35px;
+			transition: $trasitionbt;
+			.thumb {
+				height: 257.1px;
+			}
+			.content {
+				padding: 23.9px 20.87px;
+				font-size: 16px;
+				//min-height: 166px;
+				height: 260px;
+				.user {
+					position: absolute;
+					top: -41.3px;
+					right: 33.11px;
+				}
+				h3 {
+					margin-bottom: 5px;
+					line-height: 26px;
+				}
+				p {
+					line-height: 26px;
+				}
+			}
+			&:hover {
+				transform: scale(1.1) !important;
+			}
+		}
+	}
+}

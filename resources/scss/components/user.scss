@@ -1,0 +1,61 @@
+.user {
+	position: relative;
+	width: 36px;
+	height: 36px;
+	.photo {
+		width: 100%;
+		height: 100%;
+		box-shadow: 0px 0px 0px 3px $lilac;
+		background-color: $white;
+		border-radius: 50%;
+		overflow: hidden;
+		position: relative;
+		z-index: 0;
+	}
+	img {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transform: translate(-50%, -50%);
+		z-index: 1;
+	}
+	&.star {
+		&::after {
+			content: '';
+			height: 18px;
+			width: 19px;
+			display: block;
+			background: url('../img/layout/icon-star.svg') no-repeat center;
+			background-size: contain;
+			position: absolute;
+			bottom: 0;
+			right: -9.5px;
+			z-index: 10;
+		}
+	}
+	&.lb {
+		width: 56px;
+		height: 56px;
+		&.star {
+			&::after {
+				height: 28px;
+				width: 29.56px;
+				right: -14.79px;
+			}
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		width: 56px;
+		height: 56px;
+		&.star {
+			&::after {
+				height: 28px;
+				width: 29.56px;
+				right: -14.79px;
+			}
+		}
+	}
+}

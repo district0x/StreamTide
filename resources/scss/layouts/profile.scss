@@ -1,0 +1,322 @@
+.pageProfile {
+	padding-top: 97.21px;
+	background-color: $bgProfile;
+	.headerProfile {
+		width: 100%;
+		min-height: 253px;
+		position: relative;
+		display: flex;
+		align-items: center;
+		margin-bottom: 35.2px;
+		.bgProfile {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			z-index: 0;
+			border-radius: 6px;
+			overflow: hidden;
+			img {
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+				transform: translate(-50%, -50%);
+				z-index: 0;
+			}
+			.dropzone::after {
+				content: '';
+				display: block;
+				position: absolute;
+				top: 0;
+				left: 0;
+				width: 100%;
+				height: 100%;
+				z-index: 5;
+				background-color: rgba($purple, 0.8);
+			}
+		}
+		.contentHeaderProfile {
+			padding: 26px 34px 32.5px 31px;
+			width: 100%;
+			min-height: 100%;
+			position: relative;
+			z-index: 10;
+		}
+		.photoProfile {
+			position: absolute;
+			top: -25.69px;
+			right: -22.26px;
+			z-index: 10;
+			.photo {
+				width: 68px;
+				height: 68px;
+				border-radius: 50%;
+				overflow: hidden;
+				box-shadow: 0px 0px 0px 1px $lilac;
+			}
+		}
+		.dataProfile {
+			color: $white;
+			h1 {
+				font-family: $kittenSwash;
+				font-size: 30px;
+				line-height: 37px;
+				font-weight: $regular;
+			}
+			p {
+				font-size: 13px;
+				line-height: 25px;
+				margin-bottom: 3.52px;
+			}
+			.links {
+				font-size: 13px;
+				line-height: 25px;
+				display: flex;
+				align-items: center;
+				margin-bottom: 53px;
+				span {
+					margin: 0 20px;
+				}
+			}
+			.socialLinks {
+				display: flex;
+				align-items: center;
+				a {
+					width: 40px;
+					height: 40px;
+					display: inline-block;
+					position: relative;
+					margin-right: 21px;
+					&:last-child {
+						margin-right: 0;
+					}
+					img {
+						position: absolute;
+						top: 0;
+						left: 0;
+						width: 100%;
+						height: auto;
+						transition: $trasitionbt;
+					}
+					.normal {
+						opacity: 1;
+					}
+					.hover {
+						opacity: 0;
+					}
+				}
+			}
+		}
+	}
+	.contentProfile {
+		margin-bottom: 20px;
+		.aboutProfile {
+			width: 100%;
+			max-width: 816px;
+			font-size: 16px;
+			margin: 0 auto 28.22px;
+			h2,
+			p {
+				line-height: 30px;
+			}
+			h2 {
+				font-weight: $bold;
+			}
+		}
+		.btsProfile {
+			width: 100%;
+			max-width: 412px;
+			margin: 0 auto 28.22px;
+			.btBasic {
+				width: 100%;
+				margin-bottom: 13.38px;
+				font-size: 18px;
+				letter-spacing: 1.87px;
+				&:last-child {
+					margin-bottom: 0;
+				}
+			}
+		}
+		.midias {
+			display: flex;
+			flex-wrap: wrap;
+			.cards {
+				display: flex;
+			}
+			.midia {
+				width: 100%;
+				line-height: 0;
+				border-radius: 7px;
+				overflow: hidden;
+				margin-bottom: 15.5px;
+				position: relative;
+				img,
+				video,
+				iframe {
+					width: 100%;
+					height: auto;
+					position: relative;
+					z-index: 10;
+				}
+				video,
+				iframe {
+					height: 100%;
+				}
+				.lock {
+					display: block;
+					position: absolute;
+					width: 100%;
+					height: 100%;
+					top: 0;
+					left: 0;
+					background-color: rgba($purple, 0.8);
+					z-index: 20;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					text-align: center;
+					padding: 0 20px;
+					span {
+						font-size: 18px;
+						line-height: 25px;
+						font-weight: $bold;
+						color: $white;
+					}
+					&::before {
+						content: '';
+						display: block;
+						position: absolute;
+						height: 12.29px;
+						width: 9.94px;
+						background: url('../img/layout/icon-lock.svg') no-repeat left top;
+						background-size: contain;
+						z-index: 30;
+						top: 21.64px;
+						right: 19.95px;
+						top: 14px;
+						right: 12.9px;
+					}
+				}
+			}
+		}
+	}
+	@include media-breakpoint-up(md) {
+		.headerProfile {
+			.contentHeaderProfile {
+				padding: 26px 51px;
+				display: flex;
+				align-items: center;
+			}
+			.photoProfile {
+				position: relative;
+				top: auto;
+				right: auto;
+				margin-right: 61px;
+				.photo {
+					width: 140px;
+					height: 140px;
+					box-shadow: 0px 0px 0px 3px $lilac;
+				}
+			}
+			.dataProfile {
+				.links {
+					margin-bottom: 16px;
+				}
+			}
+		}
+		.contentProfile {
+			.aboutProfile {
+				text-align: center;
+			}
+			.midias {
+				display: flex;
+				flex-wrap: wrap;
+				.midia {
+					width: calc(50% - 25px);
+					margin: 0 12.5px 24px;
+				}
+			}
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		padding-top: 214.29px;
+		background-color: $bgSite;
+		.headerProfile {
+			min-height: 415px;
+			margin-bottom: 25.1px;
+			.photoProfile {
+				.photo {
+					width: 229px;
+					height: 229px;
+				}
+			}
+			.dataProfile {
+				h1 {
+					font-size: 50px;
+					line-height: 45px;
+					margin-bottom: 7.58px;
+				}
+				p {
+					font-size: 25px;
+					line-height: 25px;
+					margin-bottom: 25px;
+				}
+				.links {
+					font-size: 18px;
+					margin-bottom: 37px;
+					span {
+						margin: 0 25px;
+					}
+				}
+				.socialLinks {
+					a {
+						margin-right: 31px;
+						&:hover {
+							.normal {
+								opacity: 0;
+							}
+							.hover {
+								opacity: 1;
+							}
+						}
+					}
+				}
+			}
+		}
+		.contentProfile {
+			background-color: $bgCard;
+			border-radius: 15px;
+			padding: 64px 40px;
+			position: relative;
+			.support {
+				width: 103.88px;
+				height: auto;
+				position: absolute;
+				top: -68.5px;
+				right: -45.51px;
+			}
+			.aboutProfile {
+				margin: 0 auto 45px;
+				h2 {
+					font-size: 20px;
+					line-height: 36px;
+					margin-bottom: 5px;
+				}
+				p {
+					font-size: 18px;
+					line-height: 36px;
+				}
+			}
+			.btsProfile {
+				margin-bottom: 64px;
+				.btBasic {
+					margin-bottom: 24px;
+				}
+			}
+		}
+	}
+}

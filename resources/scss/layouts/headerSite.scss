@@ -1,0 +1,373 @@
+#headerSite {
+	color: $white;
+	background: $purple;
+	width: 100%;
+	position: fixed;
+	top: 0;
+	left: 0;
+	z-index: 50;
+	&.open {
+		.menuMobile {
+			transform: translateX(0);
+		}
+		.btMenu {
+			background: transparent url('../img/layout/icon-nav-hamburger-close.svg') no-repeat center;
+			background-size: 68px auto;
+		}
+	}
+	.anuncio {
+		display: none;
+	}
+	.contentHeader {
+		width: 100%;
+		height: 60px;
+		background: $purple;
+		position: relative;
+		z-index: 10;
+	}
+	.container {
+		max-width: 1800px;
+		display: flex;
+		align-items: center;
+		height: 100%;
+	}
+	.logoSite {
+		width: 178px;
+		height: 43px;
+		background-color: transparent;
+		background-image: url('../img/layout/logo-mobile.svg');
+		background-repeat: no-repeat;
+		background-position: left top;
+		background-size: contain;
+		text-indent: -999em;
+		a {
+			display: block;
+			width: 100%;
+			height: 100%;
+		}
+		@include media-breakpoint-down(xs) {
+			width: 158px;
+			height: 39px;
+		}
+	}
+	.btsMenu {
+		margin: 0 0 0 auto;
+		display: inline-flex;
+		align-items: center;
+	}
+	.btToggle {
+		width: 51px;
+		height: 27px;
+		border-radius: 34px;
+		background: #563276;
+		margin-right: 17.88px;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0 8px 0 9px;
+		position: relative;
+		img {
+			height: 11.25px;
+			width: auto;
+			position: relative;
+			z-index: 10;
+		}
+		&::before {
+			content: '';
+			display: block;
+			height: 31.56px;
+			width: 31.82px;
+			height: 23.03px;
+			width: 23.22px;
+			border-radius: 34px;
+			background-color: $lilac;
+			position: absolute;
+			top: 50%;
+			transform: translateY(-50%);
+			z-index: 5;
+			transition: $trasitionbt;
+		}
+		&[data-theme='day'] {
+			&::before {
+				left: 25.28px;
+			}
+		}
+		&[data-theme='night'] {
+			&::before {
+				left: 3px;
+			}
+		}
+		@include media-breakpoint-down(xs) {
+			margin-right: 10px;
+		}
+	}
+	.btCar {
+		width: 27px;
+		height: 27px;
+		margin-right: 22.55px;
+		display: block;
+		text-indent: -999em;
+		background-image: url('../img/layout/icon-cart.svg');
+		background-repeat: no-repeat;
+		background-position: center;
+		background-size: 27px auto;
+		@include media-breakpoint-down(xs) {
+			margin-right: 10px;
+		}
+	}
+	.btMenu {
+		width: 26px;
+		height: 26px;
+		text-indent: -999em;
+		background: transparent url('../img/layout/icon-nav-hamburger.svg') no-repeat center;
+		padding: 0;
+		transition: $trasition;
+	}
+	.menuSite {
+		display: none;
+	}
+	.menuMobile {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100vh;
+		overflow-y: auto;
+		background: $purple;
+		z-index: 1;
+		padding: 60px 0 50px;
+		text-align: center;
+		transition: $trasition;
+		transform: translateX(-101%);
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		.contentMenu {
+			padding-top: 25px;
+			li {
+				margin-bottom: 60px;
+				margin-bottom: 48px;
+				@include media-breakpoint-down(xs) {
+					margin-bottom: 28px;
+				}
+				a {
+					font-size: 30px;
+					position: relative;
+					&::after {
+						content: '';
+						width: 100%;
+						min-width: 70px;
+						height: 6px;
+						background: url('../img/layout/underline-menu.svg') no-repeat center top;
+						background-size: auto 6px;
+						display: block;
+						position: absolute;
+						bottom: -3px;
+						left: 50%;
+						transform: translateX(-50%);
+						opacity: 0;
+						transition: $trasitionbt;
+					}
+					&.selected {
+						&::after {
+							opacity: 1;
+						}
+					}
+					&.disabled {
+						opacity: 0.3;
+					}
+				}
+			}
+		}
+	}
+	.btLogin {
+		width: 297.39px;
+		margin: 0 auto 39px;
+	}
+	.policyTerms {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		a {
+			display: inline-block;
+			font-size: 13px;
+			letter-spacing: 0;
+			line-height: 25px;
+			position: relative;
+			&:first-child {
+				margin-right: 20px;
+			}
+			&::after {
+				content: '';
+				width: 100%;
+				height: 1px;
+				background-color: $white;
+				display: block;
+				position: absolute;
+				bottom: 0;
+				left: 0;
+			}
+		}
+	}
+	@include media-breakpoint-up(sm) {
+		.logoSite {
+			margin-left: 0;
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		.anuncio {
+			height: 36.5px;
+			background: $lilac;
+			font-size: 18px;
+			line-height: 36.5px;
+			text-align: center;
+			display: block;
+		}
+		.contentHeader {
+			height: 103px;
+		}
+		.container {
+			justify-content: flex-end;
+		}
+		.logoSite {
+			width: 255px;
+			height: 53.5px;
+			margin: 0 auto 0 0;
+			background-image: url('../img/layout/logo-streamtide.svg');
+		}
+		.menuMobile {
+			display: none;
+		}
+		.menuSite {
+			display: inline-block;
+			width: calc(100% - 532px);
+			.contentMenu {
+				width: 100%;
+				display: inline-flex;
+				align-items: center;
+				justify-content: flex-end;
+				li {
+					margin-right: 35px;
+					&:last-child {
+						margin-right: 0;
+					}
+					a {
+						display: inline-block;
+						font-size: 16px;
+						line-height: 31px;
+						position: relative;
+						&::after {
+							content: '';
+							width: 100%;
+							min-width: 70px;
+							height: 6px;
+							background: url('../img/layout/underline-menu.svg') no-repeat center top;
+							background-size: auto 6px;
+							display: block;
+							position: absolute;
+							bottom: -3px;
+							left: 50%;
+							transform: translateX(-50%);
+							opacity: 0;
+							transition: $trasitionbt;
+						}
+						&:hover,
+						&.selected {
+							&::after {
+								opacity: 1;
+							}
+						}
+						&.disabled {
+							opacity: 0.3;
+							cursor: not-allowed;
+							&::after {
+								opacity: 0;
+							}
+						}
+					}
+				}
+			}
+		}
+		.btsMenu {
+			margin-left: 45px;
+		}
+		.btCar {
+			order: 1;
+			width: 37.31px;
+			height: 37.31px;
+			margin-right: 15px;
+			background-size: 37.31px auto;
+			transition: $trasitionbt;
+			&:hover {
+				background-image: url('../img/layout/icon-cart-hover.svg');
+				background-size: 37.31px auto;
+			}
+		}
+		.btToggle {
+			order: 2;
+			width: 69.89px;
+			height: 37px;
+			margin-right: 15px;
+			padding: 0 10.94px 0 12.33px;
+			img {
+				height: 15.42px;
+			}
+			&::before {
+				height: 31.56px;
+				width: 31.82px;
+			}
+			&[data-theme='day'] {
+				&::before {
+					left: 34.44px;
+				}
+			}
+			&[data-theme='night'] {
+				&::before {
+					left: 2.84px;
+				}
+			}
+		}
+		.btLogin {
+			order: 3;
+			width: 139.71px;
+			margin: 0;
+		}
+	}
+	@include media-breakpoint-up(llg) {
+		.logoSite {
+			width: 305px;
+			height: 64px;
+		}
+		.menuSite {
+			width: calc(100% - 591px);
+			.contentMenu {
+				li {
+					margin-right: 40px;
+					a {
+						font-size: 18px;
+						line-height: 35px;
+					}
+				}
+			}
+		}
+		.btsMenu {
+			margin-left: 60px;
+		}
+		.btCar {
+			order: 1;
+			margin-right: 20.94px;
+		}
+		.btToggle {
+			margin-right: 38.54px;
+		}
+	}
+	@include media-breakpoint-up(xl) {
+		.menuSite {
+			.contentMenu {
+				li {
+					margin-right: 70px;
+				}
+			}
+		}
+	}
+}

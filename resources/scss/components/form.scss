@@ -1,0 +1,350 @@
+.simpleForm {
+	::-webkit-input-placeholder {
+		color: $textColor;
+	}
+	:-ms-input-placeholder {
+		color: $textColor;
+	}
+	::placeholder {
+		color: $textColor;
+	}
+}
+.inputField {
+	width: 100%;
+	border: 3px solid $lilac;
+	border-radius: 7px;
+	padding: 0 18.83px;
+	height: 56px;
+	line-height: 50px;
+	color: $textColor;
+	font-size: 12px;
+	letter-spacing: 1.25px;
+	font-weight: $bold;
+	background: $bgSite;
+	display: block;
+	@include media-breakpoint-up(lg) {
+		padding: 0 22.83px;
+	}
+}
+.btSearchField {
+	height: 30.25px;
+	width: 30.25px;
+	background-color: transparent;
+	background-image: url('../img/layout/icon-search.svg');
+	background-repeat: no-repeat;
+	background-position: center;
+	background-size: contain;
+	text-indent: -999em;
+}
+
+
+.selectForm {
+//	align-items: center;
+//	display: flex;
+	.input-group {
+		height: 100%;
+		select {
+			height: 100%;
+		}
+	}
+}
+
+.searchForm {
+	position: relative;
+	.inputField {
+		padding-right: 56px;
+	}
+	.btSearchField {
+		position: absolute;
+		top: 50%;
+		right: 17px;
+		transform: translateY(-50%);
+	}
+	@include media-breakpoint-up(lg) {
+		.inputField {
+			padding-right: 60px;
+		}
+		.btSearchField {
+			right: 18px;
+			&:hover {
+				background-image: url('../img/layout/icon-search-hover.svg');
+			}
+		}
+	}
+}
+
+.input-group {
+	line-height: 100%;
+	width: 100%;
+	.help-block {
+		display: none;
+	}
+}
+
+.no-items-found {
+	text-align: center;
+	color: hsla(218.87325, 33.333332%, 41.764706%, 0.5);
+	padding-top: 230px;
+	padding-bottom: 230px;
+}
+
+/* The container must be positioned relative: */
+.custom-select,
+.menuAdmin {
+	position: relative;
+	select {
+		//display: none; /*hide original SELECT element: */
+		background: none;
+		min-width: 220px;
+	}
+	.select-selected,
+	.selectAdmin-selected {
+		padding: 0 56px 0 18.83px;
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		/* Style the arrow inside the select element: */
+		&:after {
+			position: absolute;
+			content: '';
+			top: 50%;
+			right: 13px;
+			height: 30px;
+			width: 30.25px;
+			background-image: url('../img/layout/icon-down-arrow.svg');
+			background-repeat: no-repeat;
+			background-position: center;
+			background-size: contain;
+			transform: translateY(-50%);
+		}
+
+		/* Point the arrow upwards when the select box is open (active): */
+		// &.select-arrow-active:after {}
+
+		@include media-breakpoint-up(lg) {
+			padding: 0 60px 0 22.83px;
+			&::after {
+				right: 15px;
+			}
+		}
+	}
+	&.simple {
+		.select-selected,
+		.selectAdmin-selected {
+			&:after {
+				background-image: $btArrowSimple;
+				width: 14px;
+				background-size: auto;
+			}
+		}
+	}
+}
+
+/* Style items (options): */
+.select-items,
+.selectAdmin-items {
+	position: absolute;
+	top: calc(100% + 11.59px);
+	left: -3px;
+	z-index: 99;
+	width: calc(100% + 6px);
+	height: 196px;
+	border: 3px solid $lilac;
+	border-radius: 7px;
+	overflow: auto;
+	background-color: $bgSite;
+	/* style the items (options), including the selected item: */
+	div,
+	a {
+		width: 100%;
+		height: 46px;
+		line-height: 46px;
+		color: $blackWhite;
+		font-size: 12px;
+		letter-spacing: 1.25px;
+		font-weight: $bold;
+		padding: 0 18.83px;
+		cursor: pointer;
+		background-color: $bgSite;
+		display: block;
+		&:hover,
+		&.same-as-selected {
+			background-color: $bgCard;
+		}
+	}
+	/* Hide the items when the select box is closed: */
+	&.select-hide {
+		display: none;
+	}
+
+	/* width */
+	&::-webkit-scrollbar {
+		width: 10px;
+	}
+
+	/* Track */
+	&::-webkit-scrollbar-track {
+		background: rgba($lilac, 0.2);
+		border-radius: 3.5px;
+	}
+
+	/* Handle */
+	&::-webkit-scrollbar-thumb {
+		background: $lilac;
+		border-radius: 3.5px;
+	}
+
+	/* Handle on hover */
+	&::-webkit-scrollbar-thumb:hover {
+		background: $textColor;
+	}
+}
+.selectAdmin-items {
+	height: auto;
+}
+.textField {
+	.tox-tinymce {
+		font-family: $europa;
+		border: none;
+		border-radius: 7px;
+	}
+}
+
+/* Customize the label (the container) */
+.checkField {
+	display: flex;
+	align-items: center;
+	position: relative;
+	cursor: pointer;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+	/* Hide the browser's default checkbox */
+	input {
+		position: absolute;
+		opacity: 0;
+		cursor: pointer;
+		height: 0;
+		width: 0;
+	}
+	/* Create a custom checkbox */
+	&.checkPublicPrivate {
+		.checkmark {
+			height: 17.53px;
+			width: 33.12px;
+			background-color: $black;
+			border-radius: 34px;
+			display: block;
+			margin-right: 7.87px;
+			/* Create the checkmark/indicator (hidden when not checked) */
+			/* Style the checkmark/indicator */
+			position: relative;
+			&::after {
+				content: '';
+				position: absolute;
+				display: block;
+				left: 16.56px;
+				top: 1.29px;
+				width: 15.08px;
+				height: 14.95px;
+				border-radius: 34px;
+				background-color: $lilac;
+				transition: $trasitionbt;
+			}
+		}
+		.private,
+		.public {
+			font-size: 12px;
+			line-height: 25px;
+			font-weight: $bold;
+		}
+		.private {
+			display: none;
+		}
+		/* Show the checkmark when checked */
+		.checkmark.checked:after {
+			background-color: $yellow;
+			left: 1.48px;
+		}
+
+		&.loading {
+			pointer-events: none;
+			.checkmark {
+				background-color: gray;
+				opacity: 0.6;
+			}
+		}
+		.checkmark.checked ~ .public {
+			display: none;
+		}
+		.checkmark.checked ~ .private {
+			display: block;
+		}
+
+		.input-group {
+			display: none;
+		}
+	}
+	&.simple {
+		/* Create a custom checkbox */
+		.checkmark {
+			height: 28.26px;
+			width: 28.26px;
+			border-radius: 7px;
+			border: 3px solid $lilac;
+			margin-right: 17.39px;
+			position: relative;
+			&:after {
+				content: '';
+				position: absolute;
+				display: none;
+				left: 8px;
+				top: 1px;
+				width: 8px;
+				height: 15px;
+				border: solid $lilac;
+				border-width: 0 3px 3px 0;
+				-webkit-transform: rotate(45deg);
+				-ms-transform: rotate(45deg);
+				transform: rotate(45deg);
+			}
+		}
+		/* On mouse-over, add a grey background color */
+		&:hover input ~ .checkmark {
+			background-color: rgba($yellow, 0.5);
+		}
+
+		/* Show the checkmark when checked */
+		input:checked ~ .checkmark:after {
+			display: block;
+		}
+
+		.checkmark.checked:after {
+			display: block;
+		}
+
+		/* Style the checkmark/indicator */
+	}
+
+	@include media-breakpoint-up(lg) {
+		&.checkPublicPrivate {
+			.checkmark {
+				height: 27px;
+				width: 51px;
+				margin-right: 12.12px;
+				&::after {
+					left: 25.5px;
+					top: 1.98px;
+					width: 23.22px;
+					height: 23.03px;
+				}
+			}
+			input:checked ~ .checkmark:after {
+				left: 2.28px;
+			}
+		}
+	}
+}

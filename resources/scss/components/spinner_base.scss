@@ -1,0 +1,31 @@
+.spinner-container {
+  text-align: center;
+  height: 500px;
+}
+
+.spinner-outer {
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 4em;
+  width: 104px;
+  height: 104px;
+  z-index: 5;
+  padding-top: 12em;
+  position: relative;
+}
+
+.spinner-inner {
+  width: 113px;
+  height: 131px;
+  top: -109px;
+  position: relative;
+  animation: rotateSpinner 1.4s linear infinite;
+  z-index: -1;
+  left: -14px;
+}
+
+@keyframes rotateSpinner {
+  to {
+    transform: rotate(360deg);
+  }
+}

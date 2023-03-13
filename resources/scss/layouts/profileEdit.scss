@@ -1,0 +1,558 @@
+.pageEditProfile {
+	padding-bottom: 0;
+	form {
+		padding-bottom: 39px;
+	}
+	.headerProfile {
+		margin-bottom: 45.5px;
+		input[type="file"] {
+			display: none;
+		}
+		.bgProfile {
+			.btEdit, .file-input-label {
+				width: 50px;
+				height: 50px;
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				z-index: 50;
+			}
+			.dropzone {
+				min-height: 415px;
+			}
+		}
+		.photoProfile {
+			.btEdit, .file-input-label {
+				position: absolute;
+				top: -4.68px;
+				left: -1.02px;
+				z-index: 50;
+			}
+			.dropzone {
+				height: 100%;
+				img {
+					height: 100%;
+					object-fit: cover;
+				}
+			}
+		}
+	}
+	hr {
+		border-top: 1px solid $lilac;
+		margin-top: 0;
+		margin-bottom: 36.41px;
+	}
+	.contentEditProfile {
+		padding-bottom: 36px;
+		.titleEdit {
+			font-size: 16px;
+			line-height: 25px;
+			color: $blackWhite;
+			margin-bottom: 19.39px;
+		}
+		.generalInfo {
+			margin-bottom: 23px;
+			label.inputField {
+				display: flex;
+				align-items: center;
+				margin-bottom: 12px;
+				letter-spacing: normal;
+				span {
+					font-size: 16px;
+					color: $blackWhite;
+					margin-right: 15px;
+				}
+				input {
+					width: 100%;
+					height: 100%;
+					line-height: 100%;
+					background: none;
+					padding: 0;
+					font-size: 16px;
+					font-weight: $regular;
+				}
+			}
+		}
+		.biography {
+			margin-bottom: 49.19px;
+			.textField {
+				width: calc(100% - 6px);
+				border-radius: 7px;
+				overflow: hidden;
+				box-shadow: 0px 0px 0px 3px #a478f9;
+			}
+		}
+		.socialLinks {
+			margin-bottom: 47.77px;
+			.social {
+				margin-bottom: 18.85px;
+				&:last-child {
+					margin-bottom: 0;
+				}
+				.header {
+					background-color: $lilac;
+					height: 52.77px;
+					width: 100%;
+					display: flex;
+					align-items: center;
+					justify-content: flex-end;
+					padding: 0 10.74px 0 16.68px;
+					border-top-left-radius: 7px;
+					border-top-right-radius: 7px;
+				}
+				.icon {
+					margin: 0 auto 0 0;
+					width: 22px;
+					height: 22px;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+				}
+				button {
+					height: 32px;
+					width: 97.94px;
+					border-radius: 6px;
+					background-color: $white;
+					font-size: 12px;
+					font-weight: $bold;
+					letter-spacing: 1.25px;
+					line-height: 32px;
+					color: $purple;
+					&.btVerify {
+						margin-right: 13px;
+					}
+				}
+				.editField {
+					width: 100%;
+					background: $bgSite;
+					border: 3px solid transparent;
+					height: 55.77px;
+					line-height: 55.77px;
+					padding: 0 15.75px;
+					border-bottom-left-radius: 7px;
+					border-bottom-right-radius: 7px;
+					border: 3px solid $lilac;
+					border-top: none;
+					font-weight: $regular;
+					display: flex;
+					span {
+						display: none;
+					}
+				}
+				input {
+					width: 100%;
+					background: none;
+					height: 100%;
+					line-height: 100%;
+					padding: 0;
+				}
+			}
+		}
+		.apply {
+			text-align: center;
+			max-width: 678px;
+			margin: 0 auto;
+			p {
+				font-size: 16px;
+				line-height: 32px;
+				margin-bottom: 36.29px;
+			}
+			.btApply {
+				min-width: 208px;
+			}
+			.spinner-container {
+				height: 85px;
+			}
+
+			.spinner-outer {
+				padding-top: 0;
+			}
+
+			.spinner-path {
+				fill: $bgProfile;
+			}
+
+			.requested {
+				font-size: x-large;
+			}
+
+			.approved {
+				font-size: x-large;
+				color: green;
+			}
+
+			.rejected {
+				font-size: x-large;
+				color: red;
+			}
+		}
+		.perks {
+			//display: none;
+			display: block;
+			text-align: center;
+			max-width: 678px;
+			margin: 0 auto;
+			.titleEdit {
+				margin-bottom: 8px;
+			}
+			p {
+				font-size: 16px;
+				line-height: 32px;
+				margin-bottom: 23px;
+			}
+		}
+	}
+	.submitField {
+		background: $bgSubmit;
+		padding: 37.57px 20px 60px;
+		text-align: center;
+		max-width: 1240px;
+		margin: 0 auto;
+		hr {
+			display: none;
+		}
+		.btSubmit {
+			width: 100%;
+			margin: 0 auto;
+			height: 65px;
+			line-height: 65px;
+			font-size: 18px;
+			letter-spacing: 1.87px;
+		}
+	}
+	.sectionYourContent {
+		//display: none;
+		display: block;
+		background: $bgSite;
+		padding: 0px 0 52px;
+		.yourContent {
+			border-radius: 7px;
+			overflow: hidden;
+			//max-width: calc(50% - 25px);
+			&.remove {
+				transition: all 0.75s ease-in-out;
+				opacity: 0;
+				transform: scale(0);
+				//max-width: 0;
+				//display: none;
+			}
+			//&.removing {
+			//	transition: all 0.75s ease-in-out;
+			//	opacity: 0;
+			//	transform: scale(0);
+			//}
+		}
+		.header {
+			background: $headerContent;
+			color: $white;
+			display: flex;
+			align-items: center;
+			padding: 0 11px;
+			height: 39.61px;
+		}
+		.buttons {
+			margin: 0 0 0 auto;
+			display: flex;
+			align-items: center;
+			button {
+				width: 21px;
+				height: 21px;
+				background-color: transparent;
+				background-position: center;
+				background-repeat: no-repeat;
+				background-size: contain;
+				text-indent: -999em;
+				padding: 0;
+			}
+			.btPin {
+				background-image: url('../img/layout/icon-pin-content.svg');
+				&.selected {
+					background-image: url('../img/layout/icon-pin-content-hover.svg');
+				}
+			}
+			.btRemove {
+				background-image: url('../img/layout/icon-x-lilac.svg');
+			}
+			hr {
+				border: none;
+				border-left: 1px solid $lilac;
+				width: 0;
+				height: 21px;
+				margin: 0 13px;
+			}
+		}
+		.yourContents {
+			.yourContent {
+				width: 100%;
+				margin-bottom: 15.5px;
+				float: left;
+				.content {
+					width: 100%;
+					//line-height: 0;
+					height: 353px;
+				}
+				img,
+				video,
+				iframe {
+					width: 100%;
+					height: auto;
+					position: relative;
+					z-index: 10;
+				}
+				video,
+				iframe {
+					height: 100%;
+				}
+			}
+		}
+		.btAdd {
+			width: 100%;
+			margin: 0 auto;
+			height: 65px;
+			line-height: 65px;
+			font-size: 18px;
+			letter-spacing: 1.87px;
+		}
+	}
+	&.approved {
+		.apply {
+			display: none;
+		}
+		.perks {
+			display: block;
+		}
+		.containerEdit {
+			border-bottom-right-radius: 0;
+			border-bottom-left-radius: 0;
+		}
+		.submitField {
+			background: $bgProfile;
+			padding: 0 20px 39px;
+			max-width: 1200px;
+			border-bottom-right-radius: 8px;
+			border-bottom-left-radius: 8px;
+			hr {
+				display: block;
+			}
+		}
+		.sectionYourContent {
+			display: block;
+		}
+		.contentEditProfile {
+			.socialLinks {
+				margin-bottom: 40px;
+			}
+		}
+	}
+	@include media-breakpoint-up(md) {
+		.headerProfile {
+			margin-bottom: 64px;
+			.photoProfile {
+				position: absolute;
+				top: 50%;
+				right: auto;
+				left: 51px;
+				transform: translateY(-50%);
+				.btEdit, .file-input-label {
+					width: 22.51px;
+					height: 22.51px;
+					top: 4.5px;
+					left: auto;
+					right: 14.01px;
+				}
+			}
+		}
+		hr {
+			margin-bottom: 58px;
+		}
+		.sectionYourContent {
+			.yourContents {
+				display: flex;
+				flex-wrap: wrap;
+				.yourContent {
+					width: calc(50% - 25px);
+					margin: 0 12.5px 24px;
+				}
+			}
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		.containerEdit {
+			background-color: $bgCard;
+			border-radius: 8px;
+			padding: 60px 60px 70px;
+			position: relative;
+			.support {
+				position: absolute;
+				top: -49.49px;
+				right: -44.63px;
+				width: 103.88px;
+			}
+		}
+		.headerProfile {
+			.bgProfile {
+				.btEdit {
+					width: 70px;
+					height: 70px;
+				}
+			}
+			.photoProfile {
+				.btEdit, .file-input-label {
+					width: 36.83px;
+					height: 36.83px;
+					top: 7.37px;
+					right: 14.01px;
+				}
+			}
+		}
+		.contentEditProfile {
+			padding: 0;
+			.titleEdit {
+				font-size: 20px;
+			}
+			.generalInfo {
+				margin-bottom: 18px;
+				display: flex;
+				flex-wrap: wrap;
+				justify-content: space-between;
+				.titleEdit {
+					width: 100%;
+				}
+				.block {
+					width: calc(50% - 13.5px);
+				}
+				label.inputField {
+					margin-bottom: 30px;
+					span {
+						font-size: 18px;
+						margin-right: 18px;
+					}
+					input {
+						font-size: 18px;
+					}
+				}
+			}
+
+			.biography {
+				margin-bottom: 57px;
+				.textField {
+					height: 350px;
+				}
+			}
+			.socialLinks {
+				margin-bottom: 66px;
+				.social {
+					margin-bottom: 23px;
+					.header {
+						padding: 0 14.74px 0 13.64px;
+					}
+					.icon {
+						width: 27.56px;
+						height: 27.56px;
+					}
+					.editField {
+						display: flex;
+						span {
+							display: block;
+							color: $blackWhite;
+							font-size: 18px;
+							margin-right: 18px;
+							font-weight: $bold;
+						}
+					}
+					button {
+						transition: $trasitionbt;
+						&:hover {
+							background-color: $yellow;
+						}
+					}
+				}
+			}
+			.apply {
+				p {
+					font-size: 18px;
+					line-height: 36px;
+					margin-bottom: 34px;
+				}
+				.btApply {
+					min-width: 189px;
+				}
+			}
+			.perks {
+				text-align: left;
+				max-width: none;
+				margin: 0;
+				margin-top: 3em;
+
+				.titleEdit {
+					margin-bottom: 12px;
+				}
+				p {
+					font-size: 18px;
+					line-height: 36px;
+				}
+			}
+		}
+		.submitField {
+			background: $bgSite;
+			padding: 29px 20px 0px;
+		}
+		.sectionYourContent {
+			padding: 48px 0 160px;
+			.containerContents {
+				background-color: $bgCard;
+				border-radius: 8px;
+				padding: 65px 33px 59px;
+				margin-bottom: 23px;
+			}
+			.header {
+				padding: 0 14px;
+				height: 61px;
+			}
+			.buttons {
+				button {
+					width: 33.16px;
+					height: 33.16px;
+				}
+				.btPin {
+					margin-right: 10.12px;
+					&:hover {
+						background-image: url('../img/layout/icon-pin-content-hover.svg');
+					}
+				}
+				.btRemove {
+					transition: $trasitionbt;
+					&:hover {
+						background-image: url('../img/layout/icon-x-dark-hover.svg');
+					}
+				}
+				hr {
+					display: none;
+				}
+			}
+		}
+		&.approved {
+			.containerEdit {
+				border-bottom-right-radius: 8px;
+				border-bottom-left-radius: 8px;
+			}
+			.submitField {
+				background: $bgSite;
+				padding: 29px 20px 0;
+				max-width: 1240px;
+				hr {
+					display: none;
+				}
+			}
+			.contentEditProfile {
+				.socialLinks {
+					margin-bottom: 54.44px;
+				}
+			}
+			.lineProfileEdit {
+				display: none;
+			}
+		}
+	}
+}

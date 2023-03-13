@@ -1,0 +1,38 @@
+.pageSite {
+	padding: 20.83px 0 34.98px;
+	@include media-breakpoint-up(lg) {
+		padding: 84.33px 0 70.67px;
+	}
+}
+.pageSite {
+	width: 100%;
+	padding-top: 60px;
+	padding: 80.83px 0 34.98px;
+	min-height: calc(100vh - 194px);
+	overflow: hidden;
+	&.closeFooter {
+		transition: $trasition;
+		min-height: 100vh;
+	}
+	.titlePage {
+		font-family: $kittenSwash;
+		color: $lilac;
+		font-size: 30px;
+		line-height: 30px;
+		text-align: center;
+		font-weight: $regular;
+		margin-bottom: 17.84px;
+	}
+	@include media-breakpoint-up(md) {
+		min-height: calc(100vh - 156px);
+	}
+	@include media-breakpoint-up(lg) {
+		padding: 224.33px 0 70.67px;
+		.titlePage {
+			font-size: 50px;
+			line-height: 50px;
+			text-align: left;
+			margin-bottom: 46.65px;
+		}
+	}
+}

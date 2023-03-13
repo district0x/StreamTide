@@ -1,0 +1,30 @@
+// Typography
+$font-sans-serif: Arial, Helvetica, sans-serif;
+$font-serif: Georgia, 'Times New Roman', Times, serif;
+
+// Bootstrap
+//
+// Grid breakpoints
+$grid-breakpoints: (
+	xs: 0,
+	ssm: 375px,
+	sm: 414px,
+	md: 768px,
+	lg: 1024px,
+	llg: 1280px,
+	xl: 1366px,
+	xxl: 1440px,
+	ex: 1680px,
+	max: 1800px
+);
+
+// Grid containers
+$container-max-widths: (
+	sm: 540px,
+	md: 720px,
+	lg: 960px,
+	xl: 1140px
+);
+
+// Spacing
+$spacer: 3rem;

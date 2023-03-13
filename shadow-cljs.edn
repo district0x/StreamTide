@@ -1,0 +1,42 @@
+{:dev-http {4598 "resources/public/"}
+
+ :deps {:aliases [:dev]}
+
+ :nrepl {:middleware [cider.piggieback/wrap-cljs-repl
+                      refactor-nrepl.middleware/wrap-refactor]
+         :port 54872}
+
+ :http {:port 3449
+        :host "0.0.0.0"}
+
+ :builds {:dev-ui
+          {:target :browser
+           :modules {:main {:init-fn streamtide.ui.core/init}}
+           :main streamtide.ui.core
+           :infer-externs true
+           :output-dir "resources/public/js/"
+           :source-map true
+           :source-map-timestamp true
+           :devtools {:ignore-warnings true
+                      :preloads [devtools.preload
+                                 day8.re-frame-10x.preload]}
+           :closure-defines {re-frame.trace.trace-enabled?        true
+                             day8.re-frame.tracing.trace-enabled? true
+                             goog.DEBUG true}}
+
+          :dev-server
+          {:target :node-script
+           :main streamtide.server.core/-main
+           :js-options {:keep-as-import #{"d3"}}
+           :output-dir "server/"
+           :output-to "server/streamtide_server.js"
+           :closure-defines {goog.DEBUG true}}
+
+          :server-tests
+          {:target :node-test
+           :output-dir "server/tests"
+           :output-to "server/tests/server-tests.js"
+           :ns-regexp "tests."
+           :optimizations :none
+           :autorun false
+           :closure-defines {goog.DEBUG true}}}}

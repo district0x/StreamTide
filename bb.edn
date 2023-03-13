@@ -1,0 +1,32 @@
+{:paths []
+ :deps {org.babashka/cli {:mvn/version "0.4.39"}}
+ :tasks {compile-css {:doc "Compile SCSS -> CSS"
+                      :task (do
+                              (println "Compiling scss to css")
+                              (shell {:dir "resources/scss"} "sass --no-source-map -s compressed main.scss:../public/css/main.css"))}
+         watch-css {:doc "Watch & recompile SCSS to CSS on file changes"
+                    :task (do
+                            (println "Watching SCSS under resources/scss")
+                            (shell {:dir "resources/scss"} "sass --watch --no-source-map -s compressed main.scss:../public/css/main.css"))}
+         watch-ui {:doc "Watch and compile ui code changes CLJS -> JS in src/ui/**"
+                   :requires ([babashka.cli :as cli])
+                   :task (let [aliases (or *command-line-args* [])
+                               command-args (format "-A:dev:shadow-cljs%s watch dev-ui" (clojure.string.join "" aliases))]
+                           (println "Starting watch-ui. args:" command-args)
+                           (clojure command-args))}
+         watch-server {:doc "Watch and compile server code changes CLJS -> JS in src/server/**"
+                       :requires ([babashka.cli :as cli])
+                       :task (let [aliases (or *command-line-args* [])
+                                   command-args (format "-A:dev:shadow-cljs%s watch dev-server" (clojure.string.join "" aliases))]
+                               (println "Starting watch dev-server args:" command-args)
+                               (clojure command-args))}
+         watch-ui-server {:doc "Watch and compile both ui and server code changes CLJS -> JS in src/(ui|server)/**"
+                       :requires ([babashka.cli :as cli])
+                       :task (let [aliases (or *command-line-args* [])
+                                   command-args (format "-A:dev:shadow-cljs%s watch dev-ui dev-server" (clojure.string.join "" aliases))]
+                               (println "Starting watch dev-ui and dev-server args:" command-args)
+                               (clojure command-args))}
+         run-server {:doc "Start Node.js API server process"
+                     :task (do
+                             (println "Starting Streamtide API server")
+                             (shell "node server/streamtide_server.js"))}}}
