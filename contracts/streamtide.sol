@@ -2,14 +2,16 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
 
 struct Donation {
     address sender;
     uint256 amount;
 }
 
-contract MVPCLR is Ownable {
+contract MVPCLR is OwnableUpgradeable {
     
     event AdminAdded(address _admin);
     event AdminRemoved(address _admin);
@@ -50,9 +52,10 @@ contract MVPCLR is Ownable {
     
     address public multisigAddress;
 
-    constructor(address _multisigAddress) {
+    function construct(address _multisigAddress) external initializer {
+    __Ownable_init(); // Add this line to initialize the OwnableUpgradeable contract
     multisigAddress = _multisigAddress;
-    }
+}
 
     function setMultisigAddress(address _multisigAddress) external onlyMultisig {
     multisigAddress = _multisigAddress;
