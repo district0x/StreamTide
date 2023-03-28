@@ -13,6 +13,7 @@
              :url "http://localhost:6300/graphql"
              :disable-default-middlewares? true
              }
+   :router {:html5? true}
    ;:domain "localhost"
    })
 

@@ -2,11 +2,14 @@
   "Layer implementing the server business logic.
   This is an intermediate layer between the GraphQL endpoint (or any other API which may come in the future)
   and the database functionality to enforce authorization and to enrich or validate input data."
-  (:require [cljs.nodejs :as nodejs]
+  (:require [cljs.core.async :refer [go <!]]
+            [cljs.nodejs :as nodejs]
             [clojure.string :as string]
+            [district.shared.async-helpers :refer [safe-go]]
             [district.shared.error-handling :refer [try-catch-throw]]
             [fs]
             [streamtide.server.db :as stdb]
+            [streamtide.server.verifiers.twitter-verifier :as twitter]
             [streamtide.shared.utils :as shared-utils]))
 
 (def path (nodejs/require "path"))
@@ -73,6 +76,33 @@
   "Gets all the donations info"
   (stdb/get-donations args))
 
+(defn verify-oauth! [current-user {:keys [:state] :as args}]
+  "Verify if a oauth_verifier is valid"
+  (require-auth current-user)
+  (require-not-blacklisted current-user)
+
+  (safe-go
+    (let [network (shared-utils/uuid->network state)
+          {:keys [:valid? :url]} (case network
+                                   :twitter (<! (twitter/verify-oauth-verifier args))
+
+                                   (js/Error. (str "Network not supported: " network)))]
+      (when valid? (stdb/upsert-user-socials! [{:user/address current-user
+                                               :social/network (name network)
+                                               :social/url url
+                                               :social/verified true}]))
+      ;; TODO remove verified social account from other users that have it verified
+      (print "IS VALID" valid?)
+      (print "URL" url)
+      valid?)))
+
+(defn generate-twitter-oauth-url [current-user args]
+  "Requests a twitter oauth URL"
+  (require-auth current-user)
+  (require-not-blacklisted current-user)
+
+  (twitter/generate-twitter-oauth-url args))
+
 (defn- upload-photo [url-data user-addr photo-type config]
   (let [matcher (re-matches #"data:image/(\w+);base64,(.+)" url-data)
         filetype (get matcher 1)
@@ -99,7 +129,8 @@
     (stdb/upsert-user-info! (merge args {:user/address current-user}))
     (when socials
       (let [[to-delete to-update] ((juxt filter remove) #(clojure.string/blank? (:social/url %)) socials)]
-        (when (seq to-update) (stdb/upsert-user-socials! (map #(merge % {:user/address current-user}) to-update)))
+        (when (seq to-update) (stdb/upsert-user-socials! (map #(merge % {:user/address current-user
+                                                                         :social/verified false}) to-update)))
         (when (seq to-delete) (stdb/remove-user-socials! current-user (map :social/network to-delete)))))))
 
 (defn validate-sign-in [current-user]

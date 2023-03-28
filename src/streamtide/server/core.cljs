@@ -58,6 +58,8 @@
                                       :graphiql       false}
                             :avatar-images {:fs-path "resources/public/img/avatar/"
                                             :url-path "/img/avatar/"}
+                            :verifiers {:twitter {:consumer-key "PLACEHOLDER"
+                                                  :consumer-secret "PLACEHOLDER"}}
                             ;:web3 {}
                             :syncer {}
                             ;:smart-contracts {:contracts-var contracts-var}

@@ -36,10 +36,14 @@
     :user/url
     :user/perks
     :user/photo
-    :user/bg-photo
-    [:user/socials [:social/network
-                    :social/url]]
-    [:user/grant [:grant/status]]]])
+    :user/bg-photo]])
+
+(defn build-user-socials-query [{:keys [:user/address]}]
+  [:user
+   {:user/address address}
+   [[:user/socials [:social/network
+                    :social/url
+                    :social/verified]]]])
 
 (defn build-grant-status-query [{:keys [:user/address]}]
   [:grant
@@ -69,23 +73,33 @@
                      (apply dissoc opts [:form-values]))])
 
 (defn social-link-edit [{:keys [:id :form-data :form-values :icon-src]}]
-  [:div.social
-   [:div.header
-    [:div.icon
-     [:img.icon {:src icon-src}]]
-    ;; TODO verify?
-    [:button.btVerify "VERIFY"]
-    [:button.btRemove
-     {:on-click (fn []
-                  (swap! form-data assoc-by-path id ""))}
-     "REMOVE"]]
-   [:label.editField
-    [:span "URL"]
-    [initializable-text-input
-     {:form-data form-data
-      :form-values form-values
-      :id id
-      :type :url}]]])
+  (let [value-id (conj id :url)
+        verified? (get-by-path form-values (conj id :verified))
+        network (last id)]
+    [:div.social
+     [:div.header
+      [:div.icon
+       [:img.icon {:src icon-src}]]
+      (if verified?
+        [:div.verified
+         {:title "verified"}]
+        [:button.btVerify
+         {:on-click #(dispatch [::ms-events/verify-social
+                                {:social/network network
+                                 :on-success (fn []
+                                               (swap! form-data update-in (butlast id) dissoc network))}])}
+         "VERIFY"])
+      [:button.btRemove
+       {:on-click (fn []
+                    (swap! form-data assoc-by-path value-id ""))}
+       "REMOVE"]]
+     [:label.editField
+      [:span "URL"]
+      [initializable-text-input
+       {:form-data form-data
+        :form-values form-values
+        :id value-id
+        :type :url}]]]))
 
 
 (defn- remove-ns [entries]
@@ -96,15 +110,16 @@
 (defn- socials-gql->kw [socials]
   (reduce (fn [socials social]
             (let [network (:social/network social)
-                  url (:social/url social)]
-              (assoc socials (keyword network) url)))
+                  url (:social/url social)
+                  verified (:social/verified social)]
+              (assoc socials (keyword network) {:url url :verified verified})))
           {}
           socials))
 
 (defn- socials-kw->gql [socials]
   (reduce-kv (fn [socials k v]
                (conj socials (gql-utils/clj->gql {:social/network (name k)
-                              :social/url v})))
+                                                  :social/url (:url v)})))
           []
           socials))
 
@@ -241,7 +256,7 @@
           [:div.content
            [:h3 "Apply for a Grant"]
            [:p "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."]
-           [:form
+           [:div.form
             (when loading? [spinner/spin])
             [:label.checkField.simple
              [checkbox-input {:id :agreed
@@ -267,7 +282,7 @@
          [:div.popUpContent.add
           [:button.btClose {:on-click #(close-popup %)} "Close" ]
           [:div.content
-           [:form
+           [:div.form
             [:div.block.block-1
              (when @loading?
                [spinner/spin])
@@ -297,6 +312,39 @@
                 "ADD LINK"]]]
              ]]]]]))))
 
+(defn social-links []
+  (let [active-account (subscribe [::accounts-subs/active-account])]
+    (fn [{:keys [:form-data]}]
+      (let [user-socials-query (when @active-account (subscribe [::gql/query {:queries [(build-user-socials-query {:user/address @active-account})]}
+                                                                 {:refetch-on [::ms-events/verify-social-success]}]))
+            loading? (or (nil? user-socials-query) (:graphql/loading? (last @user-socials-query)))
+            initial-values (when user-socials-query (-> @user-socials-query
+                                                   :user
+                                                   (update :user/socials socials-gql->kw)
+                                                   remove-ns
+                                                   (select-keys [:socials])))
+            form-values (merge-with #(if (map? %2) (merge %1 %2) %2) initial-values @form-data)
+            input-params {:read-only loading?
+                          :form-values form-values
+                          :form-data form-data}]
+        [:div.socialLinks
+         [:h2.titleEdit "Social Links"]
+         [social-link-edit (merge input-params
+                                  {:id [:socials :facebook]
+                                   :icon-src "/img/layout/ico_facebook.svg"})]
+         [social-link-edit (merge input-params
+                                  {:id [:socials :twitter]
+                                   :icon-src "/img/layout/ico_twitter.svg"})]
+         [social-link-edit (merge input-params
+                                  {:id [:socials :linkedin]
+                                   :icon-src "/img/layout/ico_linkedin.svg"})]
+         [social-link-edit (merge input-params
+                                  {:id [:socials :instagram]
+                                   :icon-src "/img/layout/ico_instagram.svg"})]
+         [social-link-edit (merge input-params
+                                  {:id [:socials :pinterest]
+                                   :icon-src "/img/layout/ico_pinterest.svg"})]]))))
+
 (defmethod page :route.my-settings/index []
   (let [active-account (subscribe [::accounts-subs/active-account])
         grant-popup-open? (r/atom false)
@@ -316,11 +364,9 @@
             loading? (or (nil? user-settings) (:graphql/loading? (last @user-settings)))
             initial-values (when user-settings (-> @user-settings
                                                    :user
-                                                   (update :user/socials socials-gql->kw)
                                                    remove-ns
-                                                   (select-keys [:name :description :tagline :handle :url :photo :bg-photo :perks :socials])
-                                                   select-photos
-                                                   ))
+                                                   (select-keys [:name :description :tagline :handle :url :photo :bg-photo :perks])
+                                                   select-photos))
             form-values (merge-with #(if (map? %2) (merge %1 %2) %2) initial-values @form-data)
             input-params {:read-only loading?
                           :form-values form-values
@@ -328,7 +374,7 @@
         [app-layout
          [:main.pageSite.pageProfile.pageEditProfile
           {:id "profile"}
-          [:form
+          [:div.form
            [:div.headerGrants
             [:div.container
              [:h1.titlePage "Edit Profile"]]]
@@ -383,23 +429,7 @@
                          :value (:description form-values)
                          :onEditorChange (fn [value]
                                            (swap! form-data assoc :description value))}]]]
-              [:div.socialLinks
-               [:h2.titleEdit "Social Links"]
-               [social-link-edit (merge input-params
-                                        {:id [:socials :facebook]
-                                         :icon-src "/img/layout/ico_facebook.svg"})]
-               [social-link-edit (merge input-params
-                                        {:id [:socials :twitter]
-                                         :icon-src "/img/layout/ico_twitter.svg"})]
-               [social-link-edit (merge input-params
-                                        {:id [:socials :linkedin]
-                                         :icon-src "/img/layout/ico_linkedin.svg"})]
-               [social-link-edit (merge input-params
-                                        {:id [:socials :instagram]
-                                         :icon-src "/img/layout/ico_instagram.svg"})]
-               [social-link-edit (merge input-params
-                                        {:id [:socials :pinterest]
-                                         :icon-src "/img/layout/ico_pinterest.svg"})]]
+              [social-links input-params]
               [:hr.lineProfileEdit]
               [grant-info grant-status show-grant-popup-fn]
               (when (= grant-status :grant.status/approved)

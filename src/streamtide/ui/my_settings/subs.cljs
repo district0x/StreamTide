@@ -26,3 +26,8 @@
   ::removed-content?
   (fn [db [_ content-id]]
     (get-in db [:removed-content content-id])))
+
+(re-frame/reg-sub
+  ::verifying-social?
+  (fn [db [_ network]]
+    (get-in db [:verifying-social? network])))

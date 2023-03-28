@@ -63,6 +63,7 @@ type Query {
         first: Int
         after: String
     ): AnnouncementList
+
 }
 
 type Mutation {
@@ -110,6 +111,15 @@ type Mutation {
     removeAnnouncement(
         announcement_id: ID!
     ): Boolean
+
+    verifyOauth(
+        code: String!
+        state: String!
+    ): Boolean
+
+    generateTwitterOauthUrl(
+        callback: String!
+    ): String!
 }
 
 input UserInput {
@@ -147,6 +157,7 @@ type User {
 type SocialLink {
     social_network: SocialNetwork!
     social_url: String!
+    social_verified: Boolean
 }
 
 input SocialLinkInput {

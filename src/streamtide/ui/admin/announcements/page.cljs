@@ -60,7 +60,7 @@
         [admin-layout
          [:div.headerAnnouncement
           [:span.titleCel.col-user "Add Announcement"]
-          [:form.formAnnouncement
+          [:div.form.formAnnouncement
            {:action ""}
            [:div.textField
             [editor {:id "textareaAnnouncement"

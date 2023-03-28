@@ -8,6 +8,7 @@
              ["/leaderboard" :route.leaderboard/index]
              ["/my-settings" :route.my-settings/index]
              ["/my-settings-grants" :route.my-settings-grants/index]
+             ["/oauth-callback-verifier" :route.oauth-callback/verifier]
              ["/profile/:address" :route.profile/index]
              ["/profile" :route.profile/index]
              ["/send-support" :route.send-support/index]])

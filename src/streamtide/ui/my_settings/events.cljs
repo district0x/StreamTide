@@ -3,7 +3,8 @@
     [district.graphql-utils :as gql-utils]
     [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
-    [re-frame.core :as re-frame]))
+    [re-frame.core :as re-frame]
+    [streamtide.ui.components.verifiers :as verifiers]))
 
 (re-frame/reg-event-fx
   ::save-settings
@@ -226,3 +227,33 @@
                  "Failed to request grant"
                  ;; TODO proper error handling
                  {:error (map :message error)} ::request-grant]}))
+
+(re-frame/reg-event-fx
+  ::verify-social
+  ; Starts the process to verify a social link
+  (fn [{:keys [db]} [_ {:keys [:social/network] :as data}]]
+    {:db (assoc-in db [:verifying-social network] true)
+     :verifiers/verify-social {:social/network network
+                               :on-success [::verify-social-success data]
+                               :on-error [::verify-social-error data]}}))
+
+(re-frame/reg-event-fx
+  ::verify-social-success
+  (fn [{:keys [db]} [_ {:keys [:social/network :on-success] :as args} result]]
+    ;; TODO Show message to user
+    (js/console.log "SOCIAL VERIFIED")
+    (when on-success
+      (on-success))
+    {:db (update db :verifying-social dissoc network)}))
+
+(re-frame/reg-event-fx
+  ::verify-social-error
+  (fn [{:keys [db]} [_ {:keys [:social/network :on-error] :as form-data} error]]
+    (when on-error
+      (on-error))
+    {:db (update db :verifying-social dissoc network)
+     :dispatch [::logging/error
+                "Failed to verify social"
+                ;; TODO proper error handling
+                {:error error
+                 :form-data form-data} ::verify-social]}))

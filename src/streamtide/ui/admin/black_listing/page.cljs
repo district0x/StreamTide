@@ -97,7 +97,7 @@
             [:span.titleCel.col-user "Name"]]
            [:div.cel.cel-eth
             [:span.titleCel.col-eth "ETH Address"]]]
-          [:form.formSearchList
+          [:div.form.formSearchList
            {:action ""}
            [:label.cel.cel-data
             [text-input {:id :search-name

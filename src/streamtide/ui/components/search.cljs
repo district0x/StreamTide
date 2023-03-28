@@ -9,7 +9,7 @@
   (let [search-input-form-data (r/atom {search-id (get @form-data search-id)})]
     (fn [{:keys [:form-data :search-id :select-options :search-result-count
                  :on-search-change :on-select-change]}]
-      [:form.formFilter.simpleForm
+      [:div.form.formFilter.simpleForm
        [:div.searchForm
         ;; TODO check if works on mobile. Check if we rather use :input or text-input from district-ui-component-form
         [text-input {:on-key-down (fn [e]

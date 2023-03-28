@@ -91,7 +91,7 @@
           {:on-click #(reset! hide? true)}
           "Close"]
          [support-seal {:main? true}]
-         [:form.formNewsletter {:action nil}
+         [:div.form.formNewsletter {:action nil}
           [:input {:id "#email" :type "email" :name "email" :placeholder "Your Email" :required true}]
           [:button.btBasic.btBasic-dark {:type "submit"} "GET UPDATES"]]]]])))
 

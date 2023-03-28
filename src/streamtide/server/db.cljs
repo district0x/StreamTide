@@ -39,6 +39,7 @@
   [[:user/address address not-nil]
    [:social/network :varchar not-nil]
    [:social/url :varchar not-nil]
+   [:social/verified :tinyint]
    [(sql/call :primary-key :user/address :social/network)]
    [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
 

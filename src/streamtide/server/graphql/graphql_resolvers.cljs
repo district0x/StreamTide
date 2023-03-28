@@ -2,7 +2,9 @@
   "Defines the resolvers aimed to handle the GraphQL requests.
   This namespace does not perform any authorization or any complex logic, but it is mainly an entry point which
   delegates the GraphQL calls to the business logic layer."
-  (:require [district.graphql-utils :as graphql-utils]
+  (:require [cljs.core.async :refer [<!]]
+            [district.graphql-utils :as graphql-utils]
+            [district.shared.async-helpers :refer [safe-go]]
             [district.shared.error-handling :refer [try-catch-throw]]
             [streamtide.server.business-logic :as logic]
             [streamtide.server.graphql.authorization :as authorization]
@@ -191,17 +193,31 @@
   (try-catch-throw
     (logic/set-content-visibility! (user-id current-user) (select-keys args [:content/id :content/public]))
     true))
+(defn wrap-as-promise
+  [chanl]
+  (js/Promise. (fn [resolve _]
+                    (safe-go (resolve (<! chanl))))))
+
+(defn verify-oauth-mutation [_ {:keys [:code :state] :as args} {:keys [:current-user]}]
+  (log/debug "verify-oauth args" args)
+  (try-catch-throw
+    (wrap-as-promise (logic/verify-oauth! (user-id current-user) args))))
+
+(defn generate-twitter-oauth-url-mutation [_ {:keys [:callback] :as args} {:keys [:current-user]}]
+  (log/debug "request-twitter-oauth args" args)
+  (try-catch-throw
+    (logic/generate-twitter-oauth-url (user-id current-user) args)))
 
 ;; Map GraphQL types to the functions handling them
 (def resolvers-map
   {:Query {:user user-query-resolver
            :grant grant-query-resolver
-           :search_grants search-grants-query-resolver
-           :search_contents search-contents-query-resolver
-           :search_donations search-donations-query-resolver
+           :search-grants search-grants-query-resolver
+           :search-contents search-contents-query-resolver
+           :search-donations search-donations-query-resolver
            :roles roles-query-resolver
            ;:search_blacklisted search-blacklisted-query-resolver
-           :search_users search-users-query-resolver
+           :search-users search-users-query-resolver
            :announcements announcements-query-resolver}
    :Mutation {:update-user-info update-user-info-mutation
               :request-grant request-grant-mutation
@@ -212,7 +228,9 @@
               :add-content add-content-mutation
               :remove-content remove-content-mutation
               :set-content-visibility set-content-visibility-mutation
-              :sign-in sign-in-mutation}
+              :sign-in sign-in-mutation
+              :verify-oauth verify-oauth-mutation
+              :generate-twitter-oauth-url generate-twitter-oauth-url-mutation}
    :User {:user/socials user->socials-resolver
           :user/grant user->grant-resolver
           :user/blacklisted user->blacklisted-resolver}

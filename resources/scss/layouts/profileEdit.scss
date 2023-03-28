@@ -1,6 +1,6 @@
 .pageEditProfile {
 	padding-bottom: 0;
-	form {
+	div.form {
 		padding-bottom: 39px;
 	}
 	.headerProfile {
@@ -146,6 +146,15 @@
 					height: 100%;
 					line-height: 100%;
 					padding: 0;
+				}
+				.verified {
+					background-image: url('../img/layout/check-lilac.svg');
+					background-repeat: no-repeat;
+					background-position: center;
+					background-size: contain;
+					margin-right: 10px;
+					width: 32px;
+					height: 32px;
 				}
 			}
 		}
