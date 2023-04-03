@@ -14,6 +14,7 @@
              :disable-default-middlewares? true
              }
    :router {:html5? true}
+   :verifiers {:discord {:client-id "1035157814194221108"}}
    ;:domain "localhost"
    })
 

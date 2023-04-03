@@ -251,6 +251,7 @@ enum SocialNetwork {
     instagram
     linkedin
     pinterest
+    discord
 }
 
 enum GrantStatus {

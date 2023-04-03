@@ -1,8 +1,6 @@
 (ns streamtide.server.verifiers.twitter-verifier
   (:require
-    [cljs.core.async :refer [go]]
     [cljs.nodejs :as nodejs]
-    ;[cljs.core.async.interop :refer-macros [<p!]]
     [district.server.config :refer [config]]
     [district.shared.async-helpers :refer [<? safe-go]]
     [streamtide.shared.utils :as shared-utils]))

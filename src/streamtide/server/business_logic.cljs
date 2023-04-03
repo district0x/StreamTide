@@ -10,6 +10,7 @@
             [fs]
             [streamtide.server.db :as stdb]
             [streamtide.server.verifiers.twitter-verifier :as twitter]
+            [streamtide.server.verifiers.verifiers :as verifiers]
             [streamtide.shared.utils :as shared-utils]))
 
 (def path (nodejs/require "path"))
@@ -83,10 +84,7 @@
 
   (safe-go
     (let [network (shared-utils/uuid->network state)
-          {:keys [:valid? :url]} (case network
-                                   :twitter (<! (twitter/verify-oauth-verifier args))
-
-                                   (js/Error. (str "Network not supported: " network)))]
+          {:keys [:valid? :url]} (<! (verifiers/verify network args))]
       (when valid? (stdb/upsert-user-socials! [{:user/address current-user
                                                :social/network (name network)
                                                :social/url url

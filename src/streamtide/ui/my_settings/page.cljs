@@ -343,7 +343,10 @@
                                    :icon-src "/img/layout/ico_instagram.svg"})]
          [social-link-edit (merge input-params
                                   {:id [:socials :pinterest]
-                                   :icon-src "/img/layout/ico_pinterest.svg"})]]))))
+                                   :icon-src "/img/layout/ico_pinterest.svg"})]
+         [social-link-edit (merge input-params
+                                  {:id [:socials :discord]
+                                   :icon-src "/img/layout/ico_discord.svg"})]]))))
 
 (defmethod page :route.my-settings/index []
   (let [active-account (subscribe [::accounts-subs/active-account])

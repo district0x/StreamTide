@@ -3,7 +3,9 @@
   (:require
     [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
-    [re-frame.core :refer [subscribe dispatch] :as re-frame]))
+    [re-frame.core :refer [subscribe dispatch] :as re-frame]
+    [streamtide.shared.utils :as shared-utils]
+    [streamtide.ui.config :refer [config-map]]))
 
 
 ; To verify twitter we need to follow the following process:
@@ -16,6 +18,7 @@
 
 ; TODO make this configurable
 (def twitter-callback-url "http://localhost:4598/oauth-callback-verifier")
+(def discord-callback-url "http://localhost:4598/oauth-callback-verifier")
 
 (defmulti verify (fn [data]
                    (:social/network data)))
@@ -24,8 +27,14 @@
   [data]
   (dispatch [::request-twitter-oauth-url (merge data {:callback twitter-callback-url})]))
 
-;(defmethod verify :discord
-;  (dispatch [::trigger-oauth-authentication {:url "" :network :discord}]))
+(defmethod verify :discord
+  [data]
+  (dispatch [::trigger-oauth-authentication
+             (merge data {:url (str "https://discord.com/api/oauth2/authorize?response_type=code&scope=identify"
+                                    "&client_id=" (get-in config-map [:verifiers :discord :client-id])
+                                    "&state=" (shared-utils/network->uuid :discord)
+                                    "&redirect_uri=" discord-callback-url)
+                          :social/network :discord})]))
 
 
 (re-frame/reg-fx
