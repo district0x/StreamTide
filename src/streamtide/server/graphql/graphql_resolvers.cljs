@@ -198,10 +198,10 @@
   (js/Promise. (fn [resolve _]
                     (safe-go (resolve (<! chanl))))))
 
-(defn verify-oauth-mutation [_ {:keys [:code :state] :as args} {:keys [:current-user]}]
-  (log/debug "verify-oauth args" args)
+(defn verify-social-mutation [_ {:keys [:code :state] :as args} {:keys [:current-user]}]
+  (log/debug "verify-social args" args)
   (try-catch-throw
-    (wrap-as-promise (logic/verify-oauth! (user-id current-user) args))))
+    (wrap-as-promise (logic/verify-social! (user-id current-user) args))))
 
 (defn generate-twitter-oauth-url-mutation [_ {:keys [:callback] :as args} {:keys [:current-user]}]
   (log/debug "request-twitter-oauth args" args)
@@ -229,7 +229,7 @@
               :remove-content remove-content-mutation
               :set-content-visibility set-content-visibility-mutation
               :sign-in sign-in-mutation
-              :verify-oauth verify-oauth-mutation
+              :verify-social verify-social-mutation
               :generate-twitter-oauth-url generate-twitter-oauth-url-mutation}
    :User {:user/socials user->socials-resolver
           :user/grant user->grant-resolver

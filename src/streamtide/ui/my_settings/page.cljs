@@ -72,7 +72,7 @@
   [text-input (merge {:value (get-by-path form-values id)}
                      (apply dissoc opts [:form-values]))])
 
-(defn social-link-edit [{:keys [:id :form-data :form-values :icon-src]}]
+(defn social-link-edit [{:keys [:id :form-data :form-values :icon-src :read-only]}]
   (let [value-id (conj id :url)
         verified? (get-by-path form-values (conj id :verified))
         network (last id)]
@@ -87,19 +87,26 @@
          {:on-click #(dispatch [::ms-events/verify-social
                                 {:social/network network
                                  :on-success (fn []
-                                               (swap! form-data update-in (butlast id) dissoc network))}])}
+                                               (swap! form-data (fn [data]
+                                                                  (let [path (butlast id)]
+                                                                    (if (get-in data path)
+                                                                      (update-in data path dissoc network)
+                                                                      data)))))}])}
          "VERIFY"])
-      [:button.btRemove
-       {:on-click (fn []
-                    (swap! form-data assoc-by-path value-id ""))}
-       "REMOVE"]]
+      (when-not read-only
+        [:button.btRemove
+         {:on-click (fn []
+                      (swap! form-data assoc-by-path value-id ""))}
+         "REMOVE"])]
      [:label.editField
       [:span "URL"]
       [initializable-text-input
-       {:form-data form-data
-        :form-values form-values
-        :id value-id
-        :type :url}]]]))
+       (merge {:form-data form-data
+               :form-values form-values
+               :id value-id
+               :type :url}
+              (when read-only
+                {:disabled true}))]]]))
 
 
 (defn- remove-ns [entries]
@@ -346,7 +353,11 @@
                                    :icon-src "/img/layout/ico_pinterest.svg"})]
          [social-link-edit (merge input-params
                                   {:id [:socials :discord]
-                                   :icon-src "/img/layout/ico_discord.svg"})]]))))
+                                   :icon-src "/img/layout/ico_discord.svg"})]
+         [social-link-edit (merge input-params
+                                  {:id [:socials :eth]
+                                   :icon-src "/img/layout/ico_eth.svg"
+                                   :read-only true})]]))))
 
 (defmethod page :route.my-settings/index []
   (let [active-account (subscribe [::accounts-subs/active-account])

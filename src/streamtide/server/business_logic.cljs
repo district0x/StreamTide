@@ -77,14 +77,16 @@
   "Gets all the donations info"
   (stdb/get-donations args))
 
-(defn verify-oauth! [current-user {:keys [:state] :as args}]
-  "Verify if a oauth_verifier is valid"
+(defn verify-social! [current-user {:keys [:state] :as args}]
+  "Verify a social network, for example checking the authentication code coming from user authentication is valid.
+  This returns a channel"
   (require-auth current-user)
   (require-not-blacklisted current-user)
 
   (safe-go
     (let [network (shared-utils/uuid->network state)
-          {:keys [:valid? :url]} (<! (verifiers/verify network args))]
+          {:keys [:valid? :url]} (<! (verifiers/verify network (merge args
+                                                                      {:user/address current-user})))]
       (when valid? (stdb/upsert-user-socials! [{:user/address current-user
                                                :social/network (name network)
                                                :social/url url

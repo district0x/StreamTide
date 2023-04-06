@@ -7,34 +7,41 @@
     [streamtide.shared.utils :as shared-utils]
     [streamtide.ui.config :refer [config-map]]))
 
-
-; To verify twitter we need to follow the following process:
-; 1) request an oauth URL to our server, indicating the callback url (i.e., the URL to redirect after successful log-in)
-; 2) open a new browser window to open the twitter log-in page (the one generated in step 1)
-; 3) (the user logs in and authorize our App)
-; 4) the user is redirected to the callback URL specified in step 1, but also including an oauth_verifier token
-; 6) sends a BroadcastMessage to the original window to pass the oauth_verifier and closes this one.
-; 5) send the oauth_verifier to our server, so we can verify it is valid
-
-; TODO make this configurable
-(def twitter-callback-url "http://localhost:4598/oauth-callback-verifier")
-(def discord-callback-url "http://localhost:4598/oauth-callback-verifier")
-
 (defmulti verify (fn [data]
                    (:social/network data)))
 
+(def oauth-callback-url (str (-> js/window .-location .-origin) "/oauth-callback-verifier"))
+
 (defmethod verify :twitter
   [data]
-  (dispatch [::request-twitter-oauth-url (merge data {:callback twitter-callback-url})]))
+  ; To verify twitter we need to follow the following process:
+  ; 1) request an oauth URL to our server, indicating the callback url (i.e., the URL to redirect after successful log-in)
+  ; 2) open a new browser window to open the twitter log-in page (the one generated in step 1)
+  ; 3) (the user logs in and authorize our App)
+  ; 4) the user is redirected to the callback URL specified in step 1, but also including an oauth_verifier token
+  ; 6) sends a BroadcastMessage to the original window to pass the oauth_verifier and closes this one.
+  ; 5) send the oauth_verifier to our server, so we can verify it is valid
+  (dispatch [::request-twitter-oauth-url (merge data {:callback oauth-callback-url})]))
 
 (defmethod verify :discord
   [data]
+  ; To verify discord the process is a bit more simple than twitter as we use oauth, but we don't need to generate the first url:
+  ; 1) open a new browser window to open the discord log-in page
+  ; 2) (the user logs in and authorize our App)
+  ; 3) the user is redirected to the redirect_uri specified in step 1, but also including an oauth_verifier token
+  ; 4) sends a BroadcastMessage to the original window to pass the oauth_verifier and closes this one.
+  ; 5) send the oauth_verifier to our server, so we can verify it is valid
   (dispatch [::trigger-oauth-authentication
              (merge data {:url (str "https://discord.com/api/oauth2/authorize?response_type=code&scope=identify"
                                     "&client_id=" (get-in config-map [:verifiers :discord :client-id])
                                     "&state=" (shared-utils/network->uuid :discord)
-                                    "&redirect_uri=" discord-callback-url)
+                                    "&redirect_uri=" oauth-callback-url)
                           :social/network :discord})]))
+
+(defmethod verify :eth
+  [data]
+  ; to check eth balances we don't need user interaction. We can call directly the server to check the balance using web3 libs.
+  (dispatch [::verify-code data {:state "eth"}]))
 
 
 (re-frame/reg-fx
@@ -78,6 +85,7 @@
 
 (re-frame/reg-event-fx
   ::trigger-oauth-authentication
+  ; Open a new window to perform external authentication, and a Broadcast channel to receive the response of the authentication
   (fn [{:keys [db]} [_ {:keys [:social/network :url] :as data}]]
     {:open-broadcast-channel data
      :open-window {:url url}}))
@@ -99,41 +107,42 @@
                                   (.close channel)  ; as soon as it receives a message, we can close the channel
                                   (let [msg-data (-> msg .-data (js->clj :keywordize-keys true))]
                                     (if (:code msg-data)
-                                      (dispatch [::verify-oauth-verifier data msg-data])
+                                      (dispatch [::verify-code data msg-data])
                                       (when (:on-error data) (dispatch (conj (:on-error data) (:error msg-data)))))))))))
 
 (re-frame/reg-event-fx
-  ::verify-oauth-verifier
-  ; Send a GraphQL request to the server to check if the oauth-verifier is valid
+  ::verify-code
+  ; Send a GraphQL request to the server to check if the code resulting from authentication to a given network is valid.
+  ; Note this is a mutation because in case the code is valid, it marks the network as valid
   (fn [{:keys [db]} [_ data {:keys [:code :state] :as result}]]
     (let [query
-          {:queries [[:verify-oauth
+          {:queries [[:verify-social
                       {:code :$code
                        :state :$state}]]
            :variables [{:variable/name :$code
-                        :variable/type :String!}
+                        :variable/type :String}
                        {:variable/name :$state
                         :variable/type :String!}]}]
       {:dispatch [::gql-events/mutation
                   {:query query
                    :variables {:code code
                                :state state}
-                   :on-success [::verify-oauth-verifier-success (merge data result)]
-                   :on-error [::verify-oauth-verifier-error (merge data result)]}]})))
+                   :on-success [::verify-code-success (merge data result)]
+                   :on-error [::verify-code-error (merge data result)]}]})))
 
 (re-frame/reg-event-fx
-  ::verify-oauth-verifier-success
+  ::verify-code-success
   (fn [{:keys [db]} [_ {:keys [:on-success :on-error]} result]]
-    (if (:verify-oauth result)
+    (if (:verify-social result)
       {:dispatch on-success}
       {:dispatch (conj on-error {:error "Invalid oauth verifier"})})))
 
 (re-frame/reg-event-fx
-  ::verify-oauth-verifier-error
+  ::verify-code-error
   (fn [{:keys [db]} [_ {:keys [:on-error] :as data} error]]
     {:dispatch-n [(when on-error on-error)
                   [::logging/error
                 "Failed to verify oauth verifier"
                 ;; TODO proper error handling
                 {:error (map :message error)
-                 :data data} ::verify-oauth-verifier]]}))
+                 :data data} ::verify-code]]}))

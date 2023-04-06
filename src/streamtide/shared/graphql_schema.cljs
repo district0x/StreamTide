@@ -112,8 +112,8 @@ type Mutation {
         announcement_id: ID!
     ): Boolean
 
-    verifyOauth(
-        code: String!
+    verifySocial(
+        code: String
         state: String!
     ): Boolean
 
@@ -252,6 +252,7 @@ enum SocialNetwork {
     linkedin
     pinterest
     discord
+    eth
 }
 
 enum GrantStatus {

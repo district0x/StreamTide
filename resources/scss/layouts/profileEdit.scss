@@ -119,8 +119,8 @@
 					letter-spacing: 1.25px;
 					line-height: 32px;
 					color: $purple;
-					&.btVerify {
-						margin-right: 13px;
+					&.btRemove {
+						margin-left: 13px;
 					}
 				}
 				.editField {
@@ -152,7 +152,6 @@
 					background-repeat: no-repeat;
 					background-position: center;
 					background-size: contain;
-					margin-right: 10px;
 					width: 32px;
 					height: 32px;
 				}
