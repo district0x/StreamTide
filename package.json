@@ -37,10 +37,16 @@
     "xregexp": "5.1.1"
   },
   "devDependencies": {
+    "@openzeppelin/contracts": "^4.8.2",
+    "@openzeppelin/contracts-upgradeable": "^4.8.2",
+    "@truffle/hdwallet-provider": "2.1.9",
     "bootstrap": "4.2.1",
     "breakpoint-sass": "2.7.1",
+    "dotenv": "16.0.3",
+    "jsedn": "0.4.1",
     "normalize.css": "8.0.1",
-    "shadow-cljs": "2.19.8"
+    "shadow-cljs": "2.19.8",
+    "truffle": "5.8.1"
   },
   "engines": {
     "node": "^18.0.0"

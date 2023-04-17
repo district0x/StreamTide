@@ -94,6 +94,14 @@
   [[:announcement/id :integer primary-key :autoincrement]
    [:announcement/text :varchar not-nil]])
 
+(def events-columns
+  [[:event/contract-key :varchar not-nil]
+   [:event/event-name :varchar not-nil]
+   [:event/last-log-index :integer not-nil]
+   [:event/last-block-number :integer not-nil]
+   [:event/count :integer not-nil]
+   [(sql/call :primary-key :event/contract-key :event/event-name)]])
+
 
 (def user-column-names (filter keyword? (map first user-columns)))
 (def social-link-column-names (filter keyword? (map first social-link-columns)))
@@ -104,6 +112,7 @@
 (def user-content-permission-names (filter keyword? (map first user-content-permission-columns)))
 (def blacklist-names (filter keyword? (map first blacklist-columns)))
 (def announcement-names (filter keyword? (map first announcement-columns)))
+(def events-column-names (filter keyword? (map first events-columns)))
 
 
 ;; Database functionality
@@ -339,6 +348,19 @@
                     [:= :user/address address]]}))
 
 
+(defn all-events []
+  (db/all {:select [:*]
+           :from [:events]}))
+
+(def get-last-event (create-get-fn :events [:event/contract-key :event/event-name]))
+
+(defn upsert-event! [args]
+  (db/run! {:insert-into :events
+            :values [(select-keys args events-column-names)]
+            :upsert {:on-conflict [:event/event-name :event/contract-key]
+                     :do-update-set [:event/last-log-index :event/last-block-number :event/count]}}))
+
+
 
 (defn clean-db []
   (let [tables []
@@ -377,7 +399,10 @@
                (psqlh/with-columns blacklist-columns)))
 
   (db-run! (-> (psqlh/create-table :announcement :if-not-exists)
-               (psqlh/with-columns announcement-columns))))
+               (psqlh/with-columns announcement-columns)))
+
+  (db/run! (-> (psqlh/create-table :events :if-not-exists)
+               (psqlh/with-columns events-columns))))
 
 
 (defn start [args]

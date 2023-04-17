@@ -24,6 +24,7 @@
 
 (def body-parser (nodejs/require "body-parser"))
 
+(defonce resync-count (atom 0))
 
 (def contracts-var
   (condp = (get-environment)
@@ -36,6 +37,9 @@
                     #'district.server.db/db
                     #'district.server.graphql/graphql
                     #'district.server.logging/logging
+                    #'district.server.smart-contracts/smart-contracts
+                    #'district.server.web3-events/web3-events
+                    #'district.server.web3/web3
                     #'streamtide.server.db/streamtide-db
                     #'streamtide.server.syncer/syncer})
       (mount/with-args
@@ -60,9 +64,17 @@
                                             :url-path "/img/avatar/"}
                             :verifiers {:twitter {:consumer-key "PLACEHOLDER"
                                                   :consumer-secret "PLACEHOLDER"}}
-                            ;:web3 {}
-                            :syncer {}
-                            ;:smart-contracts {:contracts-var contracts-var}
+                            :web3 {:url "ws://127.0.0.1:8546"
+                                   :on-offline (fn []
+                                                 (log/warn "Ethereum node went offline, stopping syncing modules" {:resyncs @resync-count} ::web3-watcher)
+                                                 (mount/stop #'district.server.web3-events/web3-events
+                                                             #'streamtide.server.syncer/syncer))
+                                   :on-online (fn []
+                                                (log/warn "Ethereum node went online again, starting syncing modules" {:resyncs (swap! resync-count inc)} ::web3-watcher)
+                                                (mount/start #'district.server.web3-events/web3-events
+                                                             #'streamtide.server.syncer/syncer))}
+                            :syncer {:reload-interval 7200000}
+                            :smart-contracts {:contracts-var contracts-var}
                             :web3-events {:events constants/web3-events
                                           :on-error #(js/process.exit 1)}}}})
       (mount/start)

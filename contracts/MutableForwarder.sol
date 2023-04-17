@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "../proxy/DelegateProxy.sol";
-import "../auth/DSAuth.sol";
+import "./DelegateProxy.sol";
+import "./DSAuth.sol";
 
 /**
  * @title Forwarder proxy contract with editable target
