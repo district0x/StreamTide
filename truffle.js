@@ -13,7 +13,7 @@ const smartContractsPaths = {
 let parameters = {
     "dev" : {
         multiSig: "0x4c3F13898913F15F12F902d6480178484063A6Fb",
-        admins: ["0x11b23AE13EBACc03Fa0af256fdED729439A45ab5"]
+        admins: ["0xaFcF1a2bc71AcF041c93012A2E552e31026dFEAB"]
     },
     "qa" : {
         multiSig: "TBD",

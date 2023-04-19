@@ -54,10 +54,15 @@
 ;;;;;;;;;;;;;;;;;;;;
 
 (defn admin-added-event [_ {:keys [:args]}]
-  )
+  (let [{:keys [:_admin]} args]
+    (safe-go
+      (db/upsert-user-info! {:user/address _admin})
+      (db/add-role _admin :role/admin))))
 
 (defn admin-removed-event [_ {:keys [:args]}]
-  )
+  (let [{:keys [:_admin]} args]
+    (safe-go
+      (db/remove-role _admin :role/admin))))
 
 (defn blacklisted-added-event [_ {:keys [:args]}]
   )
@@ -111,7 +116,7 @@
                 {:keys [:event/last-block-number :event/last-log-index :event/count]
                  :or {last-block-number -1
                       last-log-index -1
-                      count 0}} (db/get-last-event {:event/contract-key contract-key :event/event-name event-name} [:event/last-log-index :event/last-block-number :event/count])
+                      count 0}} (db/get-last-event contract-key event-name)
                 evt {:event/contract-key contract-key
                      :event/event-name event-name
                      :event/count count

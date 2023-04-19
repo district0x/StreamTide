@@ -26,7 +26,7 @@
 
 (def user-columns
   [[:user/address address primary-key]
-   [:user/name :varchar not-nil]
+   [:user/name :varchar default-nil]
    [:user/description :varchar default-nil]
    [:user/photo :varchar default-nil]
    [:user/bg-photo :varchar default-nil]
@@ -74,7 +74,8 @@
   [[:role/id :integer primary-key :autoincrement]
    [:user/address address not-nil]
    [:role/role :string not-nil]
-   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
+   [(sql/call :unique :user/address :role/role)]])
 
 (def user-content-permission-columns
   [[:user/source-user address not-nil]
@@ -264,6 +265,15 @@
            :from [:user-roles]
            :where [:= user-address :user-roles.user/address]}))
 
+(defn add-role [user-address role]
+  (db-run! {:insert-into :user-roles
+            :values [{:user/address user-address
+                      :role/role (name role)}]}))
+
+(defn remove-role [user-address role]
+  (db-run! {:delete-from :user-roles
+            :where [:and [:= :user/address user-address] [:= :role/role (name role)]]}))
+
 (defn upsert-user-info! [args]
   (let [user-info (select-keys args user-column-names)]
     (db-run! {:insert-into :user
@@ -349,13 +359,18 @@
 
 
 (defn all-events []
-  (db/all {:select [:*]
+  (db-all {:select [:*]
            :from [:events]}))
 
-(def get-last-event (create-get-fn :events [:event/contract-key :event/event-name]))
+(defn get-last-event [contract-key event-name]
+  (db-get {:select [:event/last-log-index :event/last-block-number :event/count]
+           :from [:events]
+           :where [:and
+                   [:= :event/contract-key contract-key]
+                   [:= :event/event-name event-name]]}))
 
 (defn upsert-event! [args]
-  (db/run! {:insert-into :events
+  (db-run! {:insert-into :events
             :values [(select-keys args events-column-names)]
             :upsert {:on-conflict [:event/event-name :event/contract-key]
                      :do-update-set [:event/last-log-index :event/last-block-number :event/count]}}))
@@ -401,7 +416,7 @@
   (db-run! (-> (psqlh/create-table :announcement :if-not-exists)
                (psqlh/with-columns announcement-columns)))
 
-  (db/run! (-> (psqlh/create-table :events :if-not-exists)
+  (db-run! (-> (psqlh/create-table :events :if-not-exists)
                (psqlh/with-columns events-columns))))
 
 

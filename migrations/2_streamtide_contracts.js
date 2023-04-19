@@ -52,7 +52,7 @@ module.exports = async(deployer, network, accounts) => {
             edn.kw(":migrations"), new edn.Map([edn.kw(":name"), "Migrations",
                 edn.kw(":address"), migrations.address]),
 
-            edn.kw(":streamtide"), new edn.Map([edn.kw(":name"), "Streamtide",
+            edn.kw(":streamtide"), new edn.Map([edn.kw(":name"), "MVPCLR",
                 edn.kw(":address"), status.getValue(sk.streamtideAddr)]),
 
             edn.kw(":streamtide-fwd"), new edn.Map([edn.kw(":name"), "MutableForwarder",

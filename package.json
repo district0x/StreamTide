@@ -36,6 +36,10 @@
     "web3": "1.7.3",
     "xregexp": "5.1.1"
   },
+  "resolutions": {
+    "graphql": "^16.6.0",
+    "**/graphql": "^16.6.0"
+  },
   "devDependencies": {
     "@openzeppelin/contracts": "^4.8.2",
     "@openzeppelin/contracts-upgradeable": "^4.8.2",

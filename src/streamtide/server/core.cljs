@@ -8,6 +8,7 @@
             [district.server.graphql.utils :as graph-utils]
             [district.server.logging :as district.server.logging]
             [district.server.middleware.logging :refer [logging-middlewares]]
+            [district.server.smart-contracts :as district.server.smart-contracts]
             [district.shared.async-helpers :as async-helpers]
             [mount.core :as mount]
             [streamtide.server.constants :as constants]
