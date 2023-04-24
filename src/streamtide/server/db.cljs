@@ -67,8 +67,20 @@
    [:donation/date :timestamp not-nil]
    [:donation/amount :unsigned :integer not-nil]  ;; TODO use string to avoid precision errors? order-by is important
    [:donation/coin address not-nil]
-   [:donation/matching :unsigned :integer not-nil]
-   [(sql/call :foreign-key :donation/receiver) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+   [:round/id :unsigned :integer]
+   [(sql/call :foreign-key :donation/sender) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
+   [(sql/call :foreign-key :donation/receiver) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
+   [(sql/call :foreign-key :round/id) (sql/call :references :round :round/id)]])
+
+(def matching-columns
+  [[:matching/id :integer primary-key :autoincrement]
+   [:matching/receiver address not-nil]
+   [:matching/date :timestamp not-nil]
+   [:matching/amount :unsigned :integer not-nil]  ;; TODO use string to avoid precision errors? order-by is important
+   [:matching/coin address not-nil]
+   [:round/id :unsigned :integer]
+   [(sql/call :foreign-key :matching/receiver) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
+   [(sql/call :foreign-key :round/id) (sql/call :references :round :round/id)]])
 
 (def user-roles-columns
   [[:role/id :integer primary-key :autoincrement]
@@ -95,6 +107,13 @@
   [[:announcement/id :integer primary-key :autoincrement]
    [:announcement/text :varchar not-nil]])
 
+(def round-columns
+  [[:round/id :integer primary-key]
+   [:round/start :timestamp not-nil]
+   [:round/duration :unsigned :integer not-nil]
+   [:round/matching-pool :unsigned :integer]
+   [:round/distributed :tinyint]])
+
 (def events-columns
   [[:event/contract-key :varchar not-nil]
    [:event/event-name :varchar not-nil]
@@ -109,10 +128,12 @@
 (def grant-column-names (filter keyword? (map first grant-columns)))
 (def content-column-names (filter keyword? (map first content-columns)))
 (def donation-column-names (filter keyword? (map first donation-columns)))
+(def matching-column-names (filter keyword? (map first matching-columns)))
 (def user-roles-column-names (filter keyword? (map first user-roles-columns)))
-(def user-content-permission-names (filter keyword? (map first user-content-permission-columns)))
-(def blacklist-names (filter keyword? (map first blacklist-columns)))
-(def announcement-names (filter keyword? (map first announcement-columns)))
+(def user-content-permission-column-names (filter keyword? (map first user-content-permission-columns)))
+(def blacklist-column-names (filter keyword? (map first blacklist-columns)))
+(def announcement-column-names (filter keyword? (map first announcement-columns)))
+(def round-column-names (filter keyword? (map first round-columns)))
 (def events-column-names (filter keyword? (map first events-columns)))
 
 
@@ -217,7 +238,7 @@
                                                   (or (keyword order-dir) :asc)]]))]
       (paged-query query page-size page-start-idx)))
 
-(defn get-donations [{:keys [:sender :receiver :search-term :order-by :order-dir :first :after] :as args}]
+(defn get-donations [{:keys [:sender :receiver :round-id :search-term :order-by :order-dir :first :after] :as args}]
   (let [page-start-idx (when after (js/parseInt after))
         page-size first
         query (cond->
@@ -228,17 +249,74 @@
                 ;                            [:receiver.user/photo :donation.receiver/photo]
                 ;                            ...
                 ;                            ]
-                {:select [:d.* :u.* [(sql/call :+ :d.donation/amount :d.donation/matching) :total-amount]]
+                {:select [:d.* :u.*]
                  :from [[:donation :d]]
                  :join [[:user :u] [:= :d.donation/receiver :u.user/address]]}
                 search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
                 sender (sqlh/merge-where [:= :d.donation/sender sender])
                 receiver (sqlh/merge-where [:= :d.donation/receiver receiver])
+                round-id (sqlh/merge-where [:= :d.round/id round-id])
                 order-by (sqlh/merge-order-by [[(get {:donations.order-by/date :d.donation/date
                                                       :donations.order-by/username [:u.user/name [:collate :nocase]]
-                                                      :donations.order-by/granted-amount :d.donation/amount
-                                                      :donations.order-by/matching-amount :d.donation/matching
-                                                      :donations.order-by/total-amount :total-amount}
+                                                      :donations.order-by/amount :d.donation/amount}
+                                                     order-by)
+                                                (or (keyword order-dir) :asc)]]))]
+    (paged-query query page-size page-start-idx)))
+
+(defn get-matchings [{:keys [:receiver :round-id :search-term :order-by :order-dir :first :after] :as args}]
+  (let [page-start-idx (when after (js/parseInt after))
+        page-size first
+        query (cond->
+                {:select [:m.* :u.*]
+                 :from [[:matching :m]]
+                 :join [[:user :u] [:= :m.matching/receiver :u.user/address]]}
+                search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
+                receiver (sqlh/merge-where [:= :m.matching/receiver receiver])
+                round-id (sqlh/merge-where [:= :m.round/id round-id])
+                order-by (sqlh/merge-order-by [[(get {:matchings.order-by/date :m.matching/date
+                                                      :matchings.order-by/username [:u.user/name [:collate :nocase]]
+                                                      :matchings.order-by/amount :m.matching/amount}
+                                                     order-by)
+                                                (or (keyword order-dir) :asc)]]))]
+    (paged-query query page-size page-start-idx)))
+
+(defn get-leaders [{:keys [:round-id :search-term :order-by :order-dir :first :after] :as args}]
+  (let [page-start-idx (when after (js/parseInt after))
+        page-size first
+        query (cond->
+                {:select [:u.*
+                          [(sql/call :coalesce :donations 0) :leader/donation-amount]
+                          [(sql/call :coalesce :matchings 0) :leader/matching-amount]
+                          [(sql/call :+ (sql/call :coalesce :donations 0) (sql/call :coalesce :matchings 0)) :leader/total-amount]]
+                 :from [[:user :u]]
+                 :left-join [[{:select [:donation/receiver [(sql/call :sum :donation/amount) :donations]]
+                               :from [:donation] :group-by [:donation/receiver]} :d]
+                             [:= :d.donation/receiver :u.user/address]
+
+                             [{:select [:matching/receiver [(sql/call :sum :matching/amount) :matchings]]
+                               :from [:matching] :group-by [:matching/receiver]} :m]
+                             [:= :m.matching/receiver :u.user/address]]
+                 :where [:> :leader/total-amount 0]}
+                search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
+                round-id (sqlh/merge-where [:= :m.round/id round-id])
+                order-by (sqlh/merge-order-by [[(get {:leaders.order-by/username [:u.user/name [:collate :nocase]]
+                                                      :leaders.order-by/donation-amount :leader/donation-amount
+                                                      :leaders.order-by/matching-amount :leader/matching-amount
+                                                      :leaders.order-by/total-amount :leader/total-amount}
+                                                     order-by)
+                                                (or (keyword order-dir) :asc)]]))]
+    (paged-query query page-size page-start-idx)))
+
+(defn get-rounds [{:keys [:id :order-by :order-dir :first :after] :as args}]
+  (let [page-start-idx (when after (js/parseInt after))
+        page-size first
+        query (cond->
+                {:select [:r.*]
+                 :from [[:round :r]]}
+                id (sqlh/merge-where [:= :r.round/id id])
+                order-by (sqlh/merge-order-by [[(get {:round.order-by/date :r.round/start
+                                                      :round.order-by/matching-pool :r.round/matching-pool
+                                                      :round.order-by/id :r.round/id}
                                                      order-by)
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))
@@ -308,6 +386,28 @@
     (db-run! {:update :grant
               :set grant-info
               :where [:= :user/address address]})))
+
+(defn add-donation! [args]
+  (log/debug "add-donation" args)
+  (db-run! {:insert-into :donation
+            :values [(select-keys args donation-column-names)]}))
+
+(defn add-matching! [args]
+  (log/debug "add-matching" args)
+  (db-run! {:insert-into :matching
+            :values [(select-keys args matching-column-names)]}))
+
+(defn add-round! [args]
+  (log/debug "add-round" args)
+  (db-run! {:insert-into :round
+            :values [(select-keys args round-column-names)]}))
+
+(defn update-round! [{:keys [:round/id] :as args}]
+  (log/debug "update-round" args)
+  (let [round-info (select-keys args (remove :round/id round-column-names))]
+    (db-run! {:update :round
+              :set round-info
+              :where [:= :round/id id]})))
 
 (defn blacklisted? [{:keys [:user/address] :as args}]
   (boolean (seq (db-get {:select [:*]
@@ -404,6 +504,9 @@
   (db-run! (-> (psqlh/create-table :donation :if-not-exists)
                (psqlh/with-columns donation-columns)))
 
+  (db-run! (-> (psqlh/create-table :matching :if-not-exists)
+               (psqlh/with-columns matching-columns)))
+
   (db-run! (-> (psqlh/create-table :user-roles :if-not-exists)
                (psqlh/with-columns user-roles-columns)))
 
@@ -415,6 +518,9 @@
 
   (db-run! (-> (psqlh/create-table :announcement :if-not-exists)
                (psqlh/with-columns announcement-columns)))
+
+  (db-run! (-> (psqlh/create-table :round :if-not-exists)
+               (psqlh/with-columns round-columns)))
 
   (db-run! (-> (psqlh/create-table :events :if-not-exists)
                (psqlh/with-columns events-columns))))

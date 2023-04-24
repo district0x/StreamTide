@@ -69,6 +69,14 @@
   (log/debug "donation->receiver-resolver args" user-donation)
   user-donation)
 
+(defn matching->receiver-resolver [{:keys [:matching/receiver] :as user-donation}]
+  (log/debug "matching->receiver-resolver args" user-donation)
+  user-donation)
+
+(defn leader->receiver-resolver [{:keys [:leader/receiver] :as user-donation}]
+  (log/debug "leader->receiver-resolver args" user-donation)
+  user-donation)
+
 (defn grant-query-resolver [_ {:keys [:user/address] :as args} {:keys [:current-user]}]
   (log/debug "grant args" args)
   (try-catch-throw
@@ -92,10 +100,24 @@
                                                        (:order-by args)
                                                        (update :order-by graphql-utils/gql-name->kw)))))
 
-(defn search-donations-query-resolver [_ {:keys [:sender :receiver :search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
+(defn search-donations-query-resolver [_ {:keys [:sender :receiver :round-id :search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
   (log/debug "donations args" args)
   (try-catch-throw
     (logic/get-donations (user-id current-user) (cond-> args
+                                                        (:order-by args)
+                                                        (update :order-by graphql-utils/gql-name->kw)))))
+
+(defn search-matchings-query-resolver [_ {:keys [:receiver :round-id :search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
+  (log/debug "matchings args" args)
+  (try-catch-throw
+    (logic/get-matchings (user-id current-user) (cond-> args
+                                                        (:order-by args)
+                                                        (update :order-by graphql-utils/gql-name->kw)))))
+
+(defn search-leaders-query-resolver [_ {:keys [:round-id :search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
+  (log/debug "leaders args" args)
+  (try-catch-throw
+    (logic/get-leaders (user-id current-user) (cond-> args
                                                         (:order-by args)
                                                         (update :order-by graphql-utils/gql-name->kw)))))
 
@@ -215,6 +237,8 @@
            :search-grants search-grants-query-resolver
            :search-contents search-contents-query-resolver
            :search-donations search-donations-query-resolver
+           :search-matchings search-matchings-query-resolver
+           :search-leaders search-leaders-query-resolver
            :roles roles-query-resolver
            ;:search_blacklisted search-blacklisted-query-resolver
            :search-users search-users-query-resolver
@@ -238,4 +262,8 @@
            :grant/status grant->status-resolver}
    :Content {:content/user content->user-resolver
              :content/type content->type-resolver}
-   :Donation {:donation/receiver donation->receiver-resolver}})
+   :Donation {:donation/receiver donation->receiver-resolver}
+   :Matching {:matching/receiver matching->receiver-resolver}
+   :Leader {:leader/receiver leader->receiver-resolver}
+
+   })

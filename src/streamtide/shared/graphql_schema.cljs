@@ -43,12 +43,40 @@ type Query {
     searchDonations(
         sender: ID
         receiver: ID
+        round: ID
         searchTerm: String
         orderBy: DonationsOrderBy
         orderDir: OrderDir
         first: Int
         after: String
     ): DonationList
+
+    searchMatchings(
+        receiver: ID
+        round: ID
+        searchTerm: String
+        orderBy: MatchingsOrderBy
+        orderDir: OrderDir
+        first: Int
+        after: String
+    ): MatchingList
+
+    searchRounds(
+        round: ID
+        orderBy: RoundOrderBy
+        orderDir: OrderDir
+        first: Int
+        after: String
+    ): RoundList
+
+    searchLeaders(
+        round: ID
+        searchTerm: String
+        orderBy: LeadersOrderBy
+        orderDir: OrderDir
+        first: Int
+        after: String
+    ): LeaderList
 
 #    searchBlacklisted(
 #        orderBy: BlacklistedOrderBy
@@ -228,11 +256,54 @@ type Donation {
     donation_date: Date
     donation_amount: Int
     donation_coin: ID
-    donation_matching: Int
+    donation_round: Round
 }
 
 type DonationList {
     items: [Donation]
+    totalCount: Int
+    endCursor: String
+    hasNextPage: Boolean
+}
+
+type Matching {
+    matching_id: ID!
+    matching_receiver: User!
+    matching_date: Date
+    matching_amount: Int
+    matching_coin: ID
+    matching_round: Round
+}
+
+type MatchingList {
+    items: [Matching]
+    totalCount: Int
+    endCursor: String
+    hasNextPage: Boolean
+}
+
+type Leader {
+    leader_receiver: User!
+    leader_donationAmount: Int
+    leader_matchingAmount: Int
+    leader_totalAmount: Int
+}
+
+type LeaderList {
+    items: [Leader]
+    totalCount: Int
+    endCursor: String
+    hasNextPage: Boolean
+}
+
+type Round {
+    round_id: ID!
+    round_start: Date
+    round_duration: Int
+}
+
+type RoundList {
+    items: [Round]
     totalCount: Int
     endCursor: String
     hasNextPage: Boolean
@@ -285,10 +356,27 @@ enum ContentsOrderBy {
 
 enum DonationsOrderBy {
     donations_orderBy_username
-    donations_orderBy_grantedAmount
-    donations_orderBy_matchingAmount
-    donations_orderBy_totalAmount
+    donations_orderBy_amount
     donations_orderBy_date
+}
+
+enum MatchingsOrderBy {
+    matchings_orderBy_username
+    matchings_orderBy_amount
+    matchings_orderBy_date
+}
+
+enum LeadersOrderBy {
+    leaders_orderBy_username
+    leaders_orderBy_donationAmount
+    leaders_orderBy_matchingAmount
+    leaders_orderBy_totalAmount
+}
+
+enum RoundOrderBy {
+    round_orderBy_id
+    round_orderBy_matchingPool
+    round_orderBy_date
 }
 
 enum Role {

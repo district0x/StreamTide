@@ -77,6 +77,14 @@
   "Gets all the donations info"
   (stdb/get-donations args))
 
+(defn get-matchings [_current-user args]
+  "Gets all the donations info"
+  (stdb/get-matchings args))
+
+(defn get-leaders [_current-user args]
+  "Gets all the donations info"
+  (stdb/get-leaders args))
+
 (defn verify-social! [current-user {:keys [:state] :as args}]
   "Verify a social network, for example checking the authentication code coming from user authentication is valid.
   This returns a channel"
