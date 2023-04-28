@@ -65,27 +65,70 @@
       (db/remove-role _admin :role/admin))))
 
 (defn blacklisted-added-event [_ {:keys [:args]}]
-  )
+  (let [{:keys [:_blacklisted]} args]
+    (safe-go
+      (db/add-to-blacklist! _blacklisted))))
 
 (defn blacklisted-removed-event [_ {:keys [:args]}]
-  )
+  (let [{:keys [:_blacklisted]} args]
+    (safe-go
+      (db/remove-from-blacklist! _blacklisted))))
 
 (defn patron-added-event [_ {:keys [:args]}]
-  )
+  (let [{:keys [:addr]} args]
+    (safe-go
+      (db/upsert-user-info! {:user/address addr})
+      (db/insert-grant! {:user/address addr :grant/status (name :grant.status/approved)}))))
 
 (defn round-started-event [_ {:keys [:args]}]
-  )
+  (let [{:keys [:round-start :round-id :round-duration]} args]
+    (safe-go
+      (db/add-round! {:round/id round-id
+                      :round/start round-start
+                      :round/duration round-duration
+                      :round/matching-pool 0
+                      :round/distributed false}))))
 
-(defn matching-pool-donation-event [_ {:keys [:args]}]
-  )
+(defn current-round []
+  (first (:items (db/get-rounds {:first 1 :order-by :round.order-by/id :order-dir :desc}))))
 
-(defn distribute-event [_ {:keys [:args]}]
-  )
+(defn active-round? [round timestamp]
+  (>= (+ (:round/start round) (:round/duration round)) timestamp))
 
 (defn donate-event [_ {:keys [:args]}]
-  )
+  (let [{:keys [:sender :value :patron-address :round-id :timestamp]} args]
+    (safe-go
+      (let [round (current-round)
+            round-id (when (active-round? round timestamp) (:round/id round))]
+        (db/upsert-user-info! {:user/address sender})
+        (db/add-donation! {:donation/sender sender
+                           :donation/receiver patron-address
+                           :donation/date timestamp
+                           :donation/amount value
+                           :donation/coin (name :eth)
+                           :round/id round-id})))))
+
+(defn matching-pool-donation-event [_ {:keys [:args]}]
+  (let [{:keys [:sender :value]} args]
+    (safe-go
+      (let [round (current-round)
+            round-id (:round/id round)
+            ;; TODO probably we'll need bigints to add
+            matching-pool (+ (:round/matching-pool round) (int value))]
+        (db/update-round! {:round/id round-id :round/matching-pool matching-pool})))))
+
+(defn distribute-event [_ {:keys [:args]}]
+  (let [{:keys [:to :amount :timestamp]} args]
+    (safe-go
+      (let [round-id (:round/id (current-round))]
+        (db/add-matching! {:matching/receiver to
+                           :matching/amount amount
+                           :matching/date timestamp
+                           :matching/coin (name :eth)
+                           :round/id round-id})))))
 
 (defn failed-distribute-event [_ {:keys [:args]}]
+  ;nothing to do, I guess... ¯\_(ツ)_/¯
   )
 
 
