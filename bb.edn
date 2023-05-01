@@ -29,4 +29,20 @@
          run-server {:doc "Start Node.js API server process"
                      :task (do
                              (println "Starting Streamtide API server")
-                             (shell "node server/streamtide_server.js"))}}}
+                             (shell "node server/streamtide_server.js"))}
+         watch-server-tests {:doc "watch server tests"
+                           :task (do
+                                   (println "Watch and compile server code changes tests")
+                                   (clojure "-A:dev:shadow-cljs watch server-tests"))}
+         run-server-tests {:doc "run server tests"
+                           :task (do
+                                   (println "Running server tests")
+                                   (shell "node server/tests/server-tests.js"))}
+         compile-run-server-tests {:doc "Compile & run server tests"
+                                   :task (do
+                                           (println "Compiling server tests")
+                                           (clojure "-A:dev:shadow-cljs compile server-tests")
+                                           (println "Running server tests")
+                                           (shell "node server/tests/server-tests.js"))}
+
+         }}

@@ -36,7 +36,7 @@
           {:target :node-test
            :output-dir "server/tests"
            :output-to "server/tests/server-tests.js"
-           :ns-regexp "tests."
+           :ns-regexp "tests.*"
            :optimizations :none
            :autorun false
            :closure-defines {goog.DEBUG true}}}}
