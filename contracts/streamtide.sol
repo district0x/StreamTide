@@ -130,7 +130,7 @@ contract MVPCLR is OwnableUpgradeable {
 
     require(totalAmount <= msg.value, "CLR:donate - Total amount donated is greater than the value sent");
     // transfer the donated funds to the contract
-    payable(address(this)).transfer(msg.value);
+    // payable(address(this)).transfer(msg.value);
     
     }
 
