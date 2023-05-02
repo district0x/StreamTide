@@ -327,10 +327,10 @@ enum SocialNetwork {
 }
 
 enum GrantStatus {
-   grant_status_unrequested
-   grant_status_requested
-   grant_status_approved
-   grant_status_rejected
+    grant_status_unrequested
+    grant_status_requested
+    grant_status_approved
+    grant_status_rejected
 }
 
 enum GrantsOrderBy {
