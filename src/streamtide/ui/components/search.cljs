@@ -4,7 +4,7 @@
     [district.ui.component.form.input :refer [text-input select-input]]
     [reagent.core :as r]))
 
-(defn search-tools [{:keys [:form-data :search-id]}]
+(defn search-tools [{:keys [:form-data :search-id]} & others]
   "display a search form"
   (let [search-input-form-data (r/atom {search-id (get @form-data search-id)})]
     (fn [{:keys [:form-data :search-id :select-options :search-result-count
@@ -40,4 +40,5 @@
                        :group-class :options
                        :value js/undefined
                        :options select-options
-                       :on-change on-select-change}]]])))
+                       :on-change on-select-change}]]
+       others])))

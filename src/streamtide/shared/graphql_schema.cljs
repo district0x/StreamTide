@@ -62,7 +62,7 @@ type Query {
     ): MatchingList
 
     searchRounds(
-        round: ID
+        id: ID
         orderBy: RoundOrderBy
         orderDir: OrderDir
         first: Int
@@ -374,9 +374,9 @@ enum LeadersOrderBy {
 }
 
 enum RoundOrderBy {
-    round_orderBy_id
-    round_orderBy_matchingPool
-    round_orderBy_date
+    rounds_orderBy_id
+    rounds_orderBy_matchingPool
+    rounds_orderBy_date
 }
 
 enum Role {

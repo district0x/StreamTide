@@ -100,24 +100,31 @@
                                                        (:order-by args)
                                                        (update :order-by graphql-utils/gql-name->kw)))))
 
-(defn search-donations-query-resolver [_ {:keys [:sender :receiver :round-id :search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
+(defn search-donations-query-resolver [_ {:keys [:sender :receiver :round :search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
   (log/debug "donations args" args)
   (try-catch-throw
     (logic/get-donations (user-id current-user) (cond-> args
                                                         (:order-by args)
                                                         (update :order-by graphql-utils/gql-name->kw)))))
 
-(defn search-matchings-query-resolver [_ {:keys [:receiver :round-id :search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
+(defn search-matchings-query-resolver [_ {:keys [:receiver :round :search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
   (log/debug "matchings args" args)
   (try-catch-throw
     (logic/get-matchings (user-id current-user) (cond-> args
                                                         (:order-by args)
                                                         (update :order-by graphql-utils/gql-name->kw)))))
 
-(defn search-leaders-query-resolver [_ {:keys [:round-id :search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
+(defn search-leaders-query-resolver [_ {:keys [:round :search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
   (log/debug "leaders args" args)
   (try-catch-throw
     (logic/get-leaders (user-id current-user) (cond-> args
+                                                        (:order-by args)
+                                                        (update :order-by graphql-utils/gql-name->kw)))))
+
+(defn search-rounds-query-resolver [_ {:keys [:id :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
+  (log/debug "rounds args" args)
+  (try-catch-throw
+    (logic/get-rounds (user-id current-user) (cond-> args
                                                         (:order-by args)
                                                         (update :order-by graphql-utils/gql-name->kw)))))
 
@@ -239,6 +246,7 @@
            :search-donations search-donations-query-resolver
            :search-matchings search-matchings-query-resolver
            :search-leaders search-leaders-query-resolver
+           :search-rounds search-rounds-query-resolver
            :roles roles-query-resolver
            ;:search_blacklisted search-blacklisted-query-resolver
            :search-users search-users-query-resolver

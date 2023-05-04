@@ -238,7 +238,7 @@
                                                   (or (keyword order-dir) :asc)]]))]
       (paged-query query page-size page-start-idx)))
 
-(defn get-donations [{:keys [:sender :receiver :round-id :search-term :order-by :order-dir :first :after] :as args}]
+(defn get-donations [{:keys [:sender :receiver :round :search-term :order-by :order-dir :first :after] :as args}]
   (let [page-start-idx (when after (js/parseInt after))
         page-size first
         query (cond->
@@ -255,7 +255,7 @@
                 search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
                 sender (sqlh/merge-where [:= :d.donation/sender sender])
                 receiver (sqlh/merge-where [:= :d.donation/receiver receiver])
-                round-id (sqlh/merge-where [:= :d.round/id round-id])
+                round (sqlh/merge-where [:= :d.round/id round])
                 order-by (sqlh/merge-order-by [[(get {:donations.order-by/date :d.donation/date
                                                       :donations.order-by/username [:u.user/name [:collate :nocase]]
                                                       :donations.order-by/amount :d.donation/amount}
@@ -263,7 +263,7 @@
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))
 
-(defn get-matchings [{:keys [:receiver :round-id :search-term :order-by :order-dir :first :after] :as args}]
+(defn get-matchings [{:keys [:receiver :round :search-term :order-by :order-dir :first :after] :as args}]
   (let [page-start-idx (when after (js/parseInt after))
         page-size first
         query (cond->
@@ -272,7 +272,7 @@
                  :join [[:user :u] [:= :m.matching/receiver :u.user/address]]}
                 search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
                 receiver (sqlh/merge-where [:= :m.matching/receiver receiver])
-                round-id (sqlh/merge-where [:= :m.round/id round-id])
+                round (sqlh/merge-where [:= :m.round/id round])
                 order-by (sqlh/merge-order-by [[(get {:matchings.order-by/date :m.matching/date
                                                       :matchings.order-by/username [:u.user/name [:collate :nocase]]
                                                       :matchings.order-by/amount :m.matching/amount}
@@ -280,25 +280,27 @@
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))
 
-(defn get-leaders [{:keys [:round-id :search-term :order-by :order-dir :first :after] :as args}]
+(defn get-leaders [{:keys [:round :search-term :order-by :order-dir :first :after] :as args}]
   (let [page-start-idx (when after (js/parseInt after))
         page-size first
+        sub-query-donations (cond-> {:select [:donation/receiver [(sql/call :sum :donation/amount) :donations]]
+                                     :from [:donation] :group-by [:donation/receiver]}
+                                    round (sqlh/merge-where [:= :donation.round/id round]))
+        sub-query-matchings (cond-> {:select [:matching/receiver [(sql/call :sum :matching/amount) :matchings]]
+                                     :from [:matching] :group-by [:matching/receiver]}
+                                    round (sqlh/merge-where [:= :matching.round/id round]))
         query (cond->
                 {:select [:u.*
                           [(sql/call :coalesce :donations 0) :leader/donation-amount]
                           [(sql/call :coalesce :matchings 0) :leader/matching-amount]
                           [(sql/call :+ (sql/call :coalesce :donations 0) (sql/call :coalesce :matchings 0)) :leader/total-amount]]
                  :from [[:user :u]]
-                 :left-join [[{:select [:donation/receiver [(sql/call :sum :donation/amount) :donations]]
-                               :from [:donation] :group-by [:donation/receiver]} :d]
+                 :left-join [[sub-query-donations :d]
                              [:= :d.donation/receiver :u.user/address]
-
-                             [{:select [:matching/receiver [(sql/call :sum :matching/amount) :matchings]]
-                               :from [:matching] :group-by [:matching/receiver]} :m]
+                             [sub-query-matchings :m]
                              [:= :m.matching/receiver :u.user/address]]
                  :where [:> :leader/total-amount 0]}
                 search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
-                round-id (sqlh/merge-where [:= :m.round/id round-id])
                 order-by (sqlh/merge-order-by [[(get {:leaders.order-by/username [:u.user/name [:collate :nocase]]
                                                       :leaders.order-by/donation-amount :leader/donation-amount
                                                       :leaders.order-by/matching-amount :leader/matching-amount
@@ -314,9 +316,9 @@
                 {:select [:r.*]
                  :from [[:round :r]]}
                 id (sqlh/merge-where [:= :r.round/id id])
-                order-by (sqlh/merge-order-by [[(get {:round.order-by/date :r.round/start
-                                                      :round.order-by/matching-pool :r.round/matching-pool
-                                                      :round.order-by/id :r.round/id}
+                order-by (sqlh/merge-order-by [[(get {:rounds.order-by/date :r.round/start
+                                                      :rounds.order-by/matching-pool :r.round/matching-pool
+                                                      :rounds.order-by/id :r.round/id}
                                                      order-by)
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))

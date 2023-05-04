@@ -11,12 +11,16 @@
 		display: flex;
 		justify-content: space-between;
 		margin-bottom: 35px;
+		flex-wrap: wrap;
 		.searchForm {
 			margin: 0;
 			width: calc(75.8% - 19px);
 		}
 		.selectForm {
 			width: calc(24.2% - 19px);
+		}
+		.round {
+			margin-top: 10px;
 		}
 	}
 }
