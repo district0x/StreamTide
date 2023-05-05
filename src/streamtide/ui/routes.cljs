@@ -4,6 +4,8 @@
              ["/admin/announcements" :route.admin/announcements]
              ["/admin/black-listing" :route.admin/black-listing]
              ["/admin/grant-approval-feed" :route.admin/grant-approval-feed]
+             ["/admin/round/:round" :route.admin/round]
+             ["/admin/rounds" :route.admin/rounds]
              ["/grants" :route.grants/index]
              ["/leaderboard" :route.leaderboard/index]
              ["/my-settings" :route.my-settings/index]

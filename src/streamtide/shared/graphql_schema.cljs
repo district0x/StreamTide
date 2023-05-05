@@ -61,14 +61,6 @@ type Query {
         after: String
     ): MatchingList
 
-    searchRounds(
-        id: ID
-        orderBy: RoundOrderBy
-        orderDir: OrderDir
-        first: Int
-        after: String
-    ): RoundList
-
     searchLeaders(
         round: ID
         searchTerm: String
@@ -77,6 +69,17 @@ type Query {
         first: Int
         after: String
     ): LeaderList
+
+    round(
+        round_id: ID
+    ): Round
+
+    searchRounds(
+        orderBy: RoundOrderBy
+        orderDir: OrderDir
+        first: Int
+        after: String
+    ): RoundList
 
 #    searchBlacklisted(
 #        orderBy: BlacklistedOrderBy
@@ -251,7 +254,7 @@ type ContentList {
 
 type Donation {
     donation_id: ID!
-    donation_sender: ID!
+    donation_sender: User!
     donation_receiver: User!
     donation_date: Date
     donation_amount: Int
@@ -300,6 +303,8 @@ type Round {
     round_id: ID!
     round_start: Date
     round_duration: Int
+    round_matchingPool: Int
+    round_distributed: Boolean
 }
 
 type RoundList {

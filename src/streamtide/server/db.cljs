@@ -242,13 +242,6 @@
   (let [page-start-idx (when after (js/parseInt after))
         page-size first
         query (cond->
-                ;                  {:select [:d.*
-                ;                            [:sender.user/address :donation.sender/address]
-                ;                            [:sender.user/photo :donation.sender/photo]
-                ;                            [:receiver.user/address :donation.receiver/address]
-                ;                            [:receiver.user/photo :donation.receiver/photo]
-                ;                            ...
-                ;                            ]
                 {:select [:d.* :u.*]
                  :from [[:donation :d]]
                  :join [[:user :u] [:= :d.donation/receiver :u.user/address]]}
@@ -309,13 +302,17 @@
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))
 
-(defn get-rounds [{:keys [:id :order-by :order-dir :first :after] :as args}]
+(defn get-round [round-id]
+  (db-get {:select [:*]
+           :from [:round]
+           :where [:= round-id :round.round/id]}))
+
+(defn get-rounds [{:keys [:order-by :order-dir :first :after] :as args}]
   (let [page-start-idx (when after (js/parseInt after))
         page-size first
         query (cond->
                 {:select [:r.*]
                  :from [[:round :r]]}
-                id (sqlh/merge-where [:= :r.round/id id])
                 order-by (sqlh/merge-order-by [[(get {:rounds.order-by/date :r.round/start
                                                       :rounds.order-by/matching-pool :r.round/matching-pool
                                                       :rounds.order-by/id :r.round/id}

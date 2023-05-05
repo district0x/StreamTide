@@ -61,7 +61,6 @@
          [:div.headerAnnouncement
           [:span.titleCel.col-user "Add Announcement"]
           [:div.form.formAnnouncement
-           {:action ""}
            [:div.textField
             [editor {:id "textareaAnnouncement"
                      :disabled @adding?

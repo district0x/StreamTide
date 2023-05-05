@@ -98,7 +98,6 @@
            [:div.cel.cel-eth
             [:span.titleCel.col-eth "ETH Address"]]]
           [:div.form.formSearchList
-           {:action ""}
            [:label.cel.cel-data
             [text-input {:id :search-name
                          :class "inputField"

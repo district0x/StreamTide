@@ -57,6 +57,10 @@
   "Gets the grant info of a given user"
   (stdb/get-grant user-address))
 
+(defn get-round [_current-user round-id]
+  "Gets the info of a given round"
+  (stdb/get-round round-id))
+
 (defn get-grants [_current-user args]
   "Gets all the grants"
   (stdb/get-grants args))

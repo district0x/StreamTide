@@ -9,6 +9,8 @@
 
 (def admin-nav-menu-items [{:text "Grant Approval Feeds"
                             :route :route.admin/grant-approval-feed}
+                           {:text "Rounds"
+                            :route :route.admin/rounds}
                            {:text "Black Listing"
                             :route :route.admin/black-listing}
                            {:text "Announcements"

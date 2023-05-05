@@ -20,6 +20,8 @@
             [streamtide.ui.admin.announcements.page]
             [streamtide.ui.admin.black-listing.page]
             [streamtide.ui.admin.grant-approval-feed.page]
+            [streamtide.ui.admin.round.page]
+            [streamtide.ui.admin.rounds.page]
             [streamtide.ui.config :as config]
             [streamtide.ui.config :refer [config-map]]
             [streamtide.ui.effects]

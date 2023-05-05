@@ -143,7 +143,4 @@
                   "DONATE / SUPPORT"])
                (when (not (blank? (:user/perks user-info)))
                  [:a.btBasic.btBasic-light {:href (:user/perks user-info) :target "_blank"} "PERKS"])]
-              [contents user-account]
-              ]
-             ;[:div.page-load-status]
-             ]]])))))
+              [contents user-account]]]]])))))

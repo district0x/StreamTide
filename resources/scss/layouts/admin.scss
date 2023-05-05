@@ -89,6 +89,36 @@
 			pointer-events: none;
 		}
 	}
+	.contentRounds {
+		margin-bottom: 20px;
+	}
+	.contentRounds {
+		width: 100%;
+		margin-bottom: 14px;
+		border-radius: 6px;
+		position: relative;
+		overflow: hidden;
+		background: $bgCard;
+		padding: 19.86px 15px 18.58px;
+		max-height: 500px;
+		.data {
+			width: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: 22.69px;
+			h3 {
+				width: calc(100% - 56px);
+				font-size: 16px;
+				line-height: 22px;
+				font-weight: $bold;
+			}
+		}
+		hr {
+			border-top: 1px solid $lilac;
+			margin: 0 0 18.84px;
+		}
+	}
 	.headerBlackListing {
 		width: 100%;
 		margin-bottom: 22.48px;
@@ -380,6 +410,98 @@
 				max-width: 261px;
 				.btBasic {
 					width: calc(50% - 5px);
+				}
+			}
+		}
+		.headerRound{
+			margin-bottom: 40px;
+			.titleCel {
+				display: block;
+				font-weight: $bold;
+				font-size: 20px;
+				line-height: 25px;
+				margin-bottom: 19px;
+			}
+			.inputField {
+				span {
+					font-size: 18px;
+					margin-right: 18px;
+					letter-spacing: normal;
+				}
+				.help-block {
+					display: none;
+				}
+				width: calc(82% - 10px);
+			}
+			label.inputField {
+				display: flex;
+				align-items: center;
+				margin-bottom: 12px;
+				letter-spacing: normal;
+				input {
+					font-size: 18px;
+					font-weight: 400;
+					width: 100%;
+					height: 100%;
+					line-height: 100%;
+					background: none;
+					padding: 0;
+				}
+			}
+			.formRounds {
+				display: flex;
+				justify-content: space-between;
+			}
+			.btBasic {
+				width: calc(18% - 10px);
+				height: 56px;
+			}
+		}
+		.contentRounds {
+			margin-bottom: 64px;
+		}
+		.headerRounds {
+			margin-bottom: 11.15px;
+			display: flex;
+			justify-content: space-between;
+			padding-right: 16.87px;
+			margin-left: 30px;
+			margin-right: 15px;
+			.titleCel {
+				font-size: 18px;
+				font-weight: $bold;
+				letter-spacing: 0;
+				line-height: 25px;
+			}
+			.cel {
+				width: calc(33.33% - 8.66px);
+				max-width: calc(100% - 527px);
+				text-align: left;
+			}
+		}
+		.contentRound {
+			margin-bottom: 12px;
+			border-radius: 6px;
+			padding: 15px 16.87px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			.cel {
+				width: calc(33.33% - 8.66px);
+			}
+			.data {
+				margin-bottom: 0;
+				justify-content: flex-start;
+				max-width: calc(100% - 527px);
+				.user {
+					order: 1;
+					margin-right: 10px;
+				}
+				h3 {
+					order: 2;
+					width: auto;
+					font-size: 20px;
+					line-height: 26px;
 				}
 			}
 		}

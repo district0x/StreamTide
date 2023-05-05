@@ -64,11 +64,10 @@
        [:span total-amount]]]]))
 
 (defn leaderboard-entries [form-data leaders-search]
-  (let [_ (print @leaders-search)
-        all-leaders (->> @leaders-search
+  (let [all-leaders (->> @leaders-search
                            (mapcat (fn [r] (-> r :search-leaders :items))))
         loading? (:graphql/loading? (last @leaders-search))
-        has-more? (-> (last @leaders-search) :search-ledaerss :has-next-page)]
+        has-more? (-> (last @leaders-search) :search-leaders :has-next-page)]
     (if (and (empty? all-leaders)
              (not loading?))
       [no-items-found]

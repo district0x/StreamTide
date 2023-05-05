@@ -61,9 +61,9 @@
 (defn content->type-resolver [{:keys [:content/type]}]
   (db-name->gql-enum :content-type type))
 
-;(defn donation->sender-resolver [{:keys [:donation/sender] :as user-donation}]
-;  (log/debug "donation->sender-resolver args" user-donation)
-;  sender)
+(defn donation->sender-resolver [{:keys [:donation/sender] :as user-donation} _ {:keys [:current-user]}]
+  (log/debug "donation->sender-resolver args" user-donation)
+  (logic/get-user (user-id current-user) sender))
 
 (defn donation->receiver-resolver [{:keys [:donation/receiver] :as user-donation}]
   (log/debug "donation->receiver-resolver args" user-donation)
@@ -81,6 +81,11 @@
   (log/debug "grant args" args)
   (try-catch-throw
     (logic/get-grant (user-id current-user) address)))
+
+(defn round-query-resolver [_ {:keys [:round/id] :as args} {:keys [:current-user]}]
+  (log/debug "round args" args)
+  (try-catch-throw
+    (logic/get-round (user-id current-user) id)))
 
 (defn search-grants-query-resolver [_ {:keys [:statuses :search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
   (log/debug "search grants args" args)
@@ -121,7 +126,7 @@
                                                         (:order-by args)
                                                         (update :order-by graphql-utils/gql-name->kw)))))
 
-(defn search-rounds-query-resolver [_ {:keys [:id :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
+(defn search-rounds-query-resolver [_ {:keys [:order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
   (log/debug "rounds args" args)
   (try-catch-throw
     (logic/get-rounds (user-id current-user) (cond-> args
@@ -241,6 +246,7 @@
 (def resolvers-map
   {:Query {:user user-query-resolver
            :grant grant-query-resolver
+           :round round-query-resolver
            :search-grants search-grants-query-resolver
            :search-contents search-contents-query-resolver
            :search-donations search-donations-query-resolver
@@ -270,7 +276,8 @@
            :grant/status grant->status-resolver}
    :Content {:content/user content->user-resolver
              :content/type content->type-resolver}
-   :Donation {:donation/receiver donation->receiver-resolver}
+   :Donation {:donation/receiver donation->receiver-resolver
+              :donation/sender donation->sender-resolver}
    :Matching {:matching/receiver matching->receiver-resolver}
    :Leader {:leader/receiver leader->receiver-resolver}
 
