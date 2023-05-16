@@ -11,7 +11,7 @@
 			margin-bottom: 15px;
 		}
 	}
-	.donation {
+	.donation, .receiver{
 		width: 100%;
 		margin-bottom: 14px;
 		display: flex;
@@ -53,6 +53,118 @@
 				}
 			}
 		}
+		.socialLinks {
+			display: flex;
+			align-items: center;
+			margin-bottom: 20px;
+			width: 100%;
+			a {
+				width: 40px;
+				height: 40px;
+				display: inline-block;
+				position: relative;
+				margin-right: 13px;
+				&:last-child {
+					margin-right: 0;
+				}
+				img {
+					position: absolute;
+					top: 0;
+					left: 0;
+					width: 100%;
+					height: auto;
+					transition: $trasitionbt;
+				}
+				.normal {
+					opacity: 1;
+				}
+				.hover {
+					opacity: 0;
+				}
+			}
+		}
+		.socialLinks {
+			margin-bottom: 0;
+			max-width: 240px;
+			justify-content: center;
+			a {
+				margin-right: 10px;
+				&:hover {
+					.normal {
+						opacity: 0;
+					}
+					.hover {
+						opacity: 1;
+					}
+				}
+			}
+		}
+
+		.factor {
+			display: inline-block;
+			border: 0;
+
+			/* Hide radio */
+			input {
+				display: none;
+			}
+
+			/* Order correctly by floating highest to the right */
+			label {
+				float: right;
+			}
+			/* The star of the show */
+			label:before {
+				display: inline-block;
+				font-size: 3.1rem;
+				padding: .3rem .2rem;
+				margin: 0;
+				cursor: pointer;
+				content: "★"; /* full star */
+			}
+			/* Zero stars rating */
+			label:last-child:before {
+				content: "✩"; /* empty star outline */
+			}
+			/* Click + hover color */
+			input:checked ~ label, /* color current and previous stars on checked */
+			label:hover, label:hover ~ label { color: #73B100;  } /* color previous stars on hover */
+
+			/* Hover highlights */
+			input:checked + label:hover, input:checked ~ label:hover, /* highlight current and previous stars */
+			input:checked ~ label:hover ~ label, /* highlight previous selected stars for new rating */
+			label:hover ~ input:checked ~ label /* highlight previous selected stars */ { color: #A6E72D;  }
+		}
+
+		.checkmark {
+			height: 17.53px;
+			width: 33.12px;
+			background-color: $black;
+			border-radius: 34px;
+			display: block;
+			margin-right: 7.87px;
+			/* Create the checkmark/indicator (hidden when not checked) */
+			/* Style the checkmark/indicator */
+			position: relative;
+			margin-left: auto;
+			cursor: pointer;
+			&::after {
+				content: '';
+				position: absolute;
+				display: block;
+				left: 1.48px;
+				top: 1.29px;
+				width: 15.08px;
+				height: 14.95px;
+				border-radius: 34px;
+				transition: $trasitionbt;
+				background-color: gray;
+			}
+		}
+		.checkmark.checked:after {
+			background-color: $lilac;
+			left: 16.56px;
+		}
 	}
 	@include media-breakpoint-up(md) {
 		.headerDonations {
@@ -89,7 +201,7 @@
 				}
 			}
 		}
-		.donation {
+		.donation, .receiver {
 			margin-bottom: 11.62px;
 			display: flex;
 			flex-wrap: nowrap;
@@ -127,6 +239,15 @@
 				}
 			}
 		}
+			//.donation {
+			//	background: linear-gradient(right, #f4eeff, #f4eeff 80%, transparent 80%, transparent 100%);
+			//	background: -webkit-linear-gradient(right, #f4eeff, #f4eeff 80%, transparent 80%, transparent 100%);
+			//}
+		.donationsInner {
+			width: 80%;
+			margin-left: auto;
+			margin-bottom: 40px;
+		}
 	}
 	@include media-breakpoint-up(lg) {
 		.headerDonations {
@@ -141,7 +262,7 @@
 			}
 			.cel-data {
 				width: 100%;
-				max-width: calc(100% - 591.94px);
+				max-width: calc(100% - 900px);
 				display: flex;
 				justify-content: space-between;
 				.col-user {
@@ -154,8 +275,8 @@
 				}
 			}
 			.cel-score {
-				width: 60%;
-				max-width: 578.11px;
+				width: 900px;
+				max-width: 900px;
 				padding-right: 13.83px;
 				display: flex;
 				span {
@@ -176,7 +297,7 @@
 			}
 			.data {
 				width: 100%;
-				max-width: calc(100% - 657.77px);
+				max-width: calc(100% - 900px);
 				display: flex;
 				align-items: center;
 				justify-content: space-between;
@@ -195,8 +316,8 @@
 				}
 			}
 			.score {
-				width: calc(60% - 39.83px);
-				max-width: 578.11px;
+				width: 900px;
+				max-width: 900px;
 				display: flex;
 				align-items: center;
 				justify-content: space-between;

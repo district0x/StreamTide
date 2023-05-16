@@ -10,14 +10,14 @@
     [reagent.core :as r]
     [streamtide.shared.utils :as shared-utils]
     [streamtide.ui.components.app-layout :refer [app-layout]]
+    [streamtide.ui.admin.round.events :as r-events]
+    [streamtide.ui.admin.round.subs :as r-subs]
     [streamtide.ui.components.general :refer [nav-anchor no-items-found]]
-    [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
-    [streamtide.ui.components.search :refer [search-tools]]
     [streamtide.ui.components.spinner :as spinner]
-    [streamtide.ui.components.user :refer [user-photo]]
+    [streamtide.ui.components.user :refer [user-photo social-links]]
     [streamtide.ui.utils :as ui-utils]))
 
-(def page-size 6)
+(def page-size 1000)
 
 (defn build-round-info-query [{:keys [:round/id]}]
   [:round
@@ -38,7 +38,6 @@
     [:search-donations
      (cond-> {:first page-size
               :round round}
-             (not-empty search-term) (assoc :search-term search-term)
              after                   (assoc :after after)
              order-by                (assoc :order-by (keyword "donations.order-by" order-by))
              order-dir               (assoc :order-dir (keyword order-dir)))
@@ -51,76 +50,222 @@
                :donation/coin
                [:donation/receiver [:user/address
                                     :user/name
-                                    :user/photo]]
+                                    :user/photo
+                                    [:user/socials [:social/network
+                                                    :social/url
+                                                    :social/verified]]]]
                [:donation/sender [:user/address
-                                  :user/name]]]]]]))
+                                  :user/name
+                                  [:user/socials [:social/network
+                                                  :social/url
+                                                  :social/verified]]]]]]]]))
 
 (defn round-open? [round]
   (let [{:keys [:round/start :round/duration]} round
         start (.getTime (gql-utils/gql-date->date start))]
   (< (+ start (* 1000 duration)) (shared-utils/now))))
 
-(defn donation-entry [{:keys [:donation/receiver :donation/sender :donation/amount :donation/date]}]
-  (let [nav-receiver (partial nav-anchor {:route :route.profile/index :params {:address (:user/address receiver)}})
-        nav-sender (partial nav-anchor {:route :route.profile/index :params {:address (:user/address sender)}})]
-    [:div.donation
-     [nav-receiver [user-photo {:class "lb" :src (:user/photo receiver)}]]
-     [:div.data
-      [nav-receiver [:h3 (:user/name receiver)]]]
-     [:ul.score
-      [:li
-      ; TODO cut addresses
-       [:span [nav-sender [:span (or (:user/name sender) (:user/address sender))]]]]
-      [:li
-       [:span (ui-utils/format-graphql-time date)]]
-      [:li
-       ;; TODO format amount (wei->eth)
-       [:span amount]]]]))
+(defn default-enabled? [donation]
+  ; TODO
+  true)
 
-(defn donations-entries [form-data donations-search]
+(defn default-factor [receiver]
+  ; TODO
+  1)
+
+(defn donation-entry [{:keys [:donation/id :donation/sender :donation/amount :donation/date] :as donation}]
+  (let [enabled? (subscribe [::r-subs/donation id])]
+    (fn []
+      (let [nav-sender (partial nav-anchor {:route :route.profile/index :params {:address (:user/address sender)}})
+            enabled? (if (nil? @enabled?) (default-enabled? donation) @enabled?)
+            ]
+        [:div.donation
+         [:div.data
+          ; TODO cut addresses
+          [:span [nav-sender [:span (or (:user/name sender) (:user/address sender))]]
+           [social-links {:socials (:user/socials sender) :class "cel"}]
+           ]]
+         [:ul.score
+          [:li
+           [:span (ui-utils/format-graphql-time date)]]
+          [:li
+           ;; TODO format amount (wei->eth)
+           [:span amount]]
+          [:li [:span.checkmark
+                {:on-click #(dispatch [::r-events/enable-donation {:id id :enabled? (not enabled?)}])
+                 :class (when enabled? "checked")}]]]]))))
+
+(defn multipliers [receiver values]
+  (let [id (:user/address receiver)
+        factor (subscribe [::r-subs/multiplier id])]
+    (fn []
+      (let [factor (if (nil? @factor) (default-factor receiver) @factor)]
+        [:div.factor
+         (doall
+           (for [value (sort #(compare %2 %1) values)]
+             (let [key (str id "-" value)]
+               ^{:key key}
+               [:<>
+                [:input {:type :radio
+                         :id key
+                         :name key
+                         :value value
+                         :on-change #(dispatch [::r-events/set-multiplier {:id id :factor value}])
+                         :checked (= value factor)
+                         }]
+                [:label {:for key :title (str "factor " value)}]])))]))))
+
+(defn receiver-entry [{:keys [:user/address :user/name :user/photo :user/socials] :as receiver} donations matchings]
+  (let [nav-receiver (partial nav-anchor {:route :route.profile/index :params {:address (:user/address receiver)}})]
+    [:<>
+     [:div.receiver
+      [nav-receiver [user-photo {:class "lb" :src photo}]]
+      [:div.data
+       [:span
+        [nav-receiver [:h3 name]]
+        [social-links {:socials socials :class "cel"}]]]
+      [:ul.score
+       [:li [:span (get matchings address)]]
+       [:li
+        [multipliers receiver [1 0.66 0.33 0]]]]]
+     [:div.donationsInner
+       [:div.headerDonations.d-none.d-md-flex
+        [:div.cel-data
+         [:span.titleCel.col-user "Sender"]]
+        [:div.cel-score
+         [:span.titleCel.col-date "Date"]
+         [:span.titleCel.col-amount "Amount"]
+         [:span.titleCel.col-amount "Included"]]]
+       (doall
+         (for [{:keys [:donation/id] :as donation} donations]
+           ^{:key id} [donation-entry donation]
+           ))]]))
+
+
+(defn donation-enabled? [donation donations]
+  (let [enabled? (get donations (:donation/id donation))]
+    (if (nil? enabled?)
+      (default-enabled? donation)
+      enabled?)))
+
+(defn matching-factor [receiver multipliers]
+  (let [factor (get multipliers (:user/address receiver))]
+    (if (nil? factor)
+      (default-factor receiver)
+      factor)))
+
+; computes the matching belonging to each receiver based on the received donations.
+; Some donations may be disabled, hence not counting for the computation. Additionally, each receiver has an individual
+; matching-factor, which cap the percentage of the pool the receiver can obtain.
+(defn compute-matchings [matching-pool donations-by-receiver multipliers donations-enabled]
+  (let [; aggregates the donations using quadratic funding formula but ignoring disabled donations.
+        ; (Σ (√(donation_i))²
+        ; builds a dict: receiver-id -> donation-amount
+        amounts (reduce-kv (fn [m receiver donations]
+                             (assoc m
+                               (:user/address receiver)
+                               (-> (reduce (fn [acc donation]
+                                             (if (donation-enabled? donation donations-enabled)
+                                               (+ acc (js/Math.sqrt (:donation/amount donation)))
+                                               acc))
+                                           0 donations)
+                                   (js/Math.pow 2))))
+                           {} donations-by-receiver)
+        ; fetch the multiplier factor given to each receiver. Builds a dict: receiver-id -> multiplier
+        receivers-multipliers (into {} (map (fn [receiver]
+                                              [(:user/address receiver)
+                                               (matching-factor receiver multipliers)]) (keys donations-by-receiver)))
+        ; for convenience, builds a list of unique defined multipliers, e.g, [0.33 0.66 1]
+        multipliers-vals (sort (distinct (vals receivers-multipliers)))
+        ; gets the sum of the receivers aggregated amounts, group by multipliers.
+        ; builds a dict: multiplier -> sum
+        summed-by-multiplier (into {} (map (fn [multiplier]
+                                             {multiplier
+                                              (reduce-kv (fn [acc receiver amount]
+                                                           (if (>= (get receivers-multipliers receiver) multiplier)
+                                                             (+ amount acc)
+                                                             acc)) 0 amounts)})
+                                           multipliers-vals))
+        ; distributed the matching pool based on the granted amounts and multipliers.
+        ; for each receiver, it gets all its applicable multipliers values (i.e., multiplier <= receiver-multiplier).
+        ; and for each of them we compute the proportional amount she receives based on its donations
+        ; builds a dict: receiver-id -> matching-amount
+        receivers-matchings (reduce-kv (fn [m receiver amount]
+                                         (assoc m receiver
+                                                  (loop [multipliers (filter (fn [multiplier]
+                                                                               (<= multiplier (get receivers-multipliers receiver)))
+                                                                             multipliers-vals)
+                                                         prev_mult 0
+                                                         acc 0]
+                                                    (let [multiplier (first multipliers)]
+                                                      (if multiplier
+                                                        (let [divisor (/ matching-pool (get summed-by-multiplier multiplier))]
+                                                          (recur (next multipliers) multiplier
+                                                                 (+ acc (* amount (- multiplier prev_mult) divisor))))
+                                                        acc)))))
+                                       {} amounts)
+        ]
+    receivers-matchings))
+
+; this commented out version of compute matchings applies the receiver's matching factor when getting the donations amount.
+; In essence is like the receiver has received only a percentage of the total donations.
+;(defn compute-matchings [matching-pool donations-by-receiver multipliers donations-enabled]
+;  (let [amounts (reduce-kv (fn [m receiver donations]
+;                             (assoc m
+;                               (:user/address receiver)
+;                               (-> (reduce (fn [acc donation]
+;                                             (if (donation-enabled? donation donations-enabled)
+;                                               (+ acc (js/Math.sqrt (:donation/amount donation)))
+;                                               acc))
+;                                           0 donations)
+;                                   (* (matching-factor receiver multipliers))
+;                                   (js/Math.pow 2))))
+;                           {} donations-by-receiver)
+;        summed (reduce + (vals amounts))
+;        divisor (/ matching-pool summed)]
+;    (reduce-kv (fn [m receiver amount]
+;                 (assoc m receiver (* divisor amount)))
+;               {} amounts)))
+
+(defn donations-entries [matching-pool donations-search]
   (let [all-donations (->> @donations-search
                            (mapcat (fn [r] (-> r :search-donations :items))))
-        loading? (:graphql/loading? (last @donations-search))
-        has-more? (-> (last @donations-search) :search-donations :has-next-page)]
-    (if (and (empty? all-donations)
-             (not loading?))
-      [no-items-found]
-      [infinite-scroll {:class "donations"
-                        :fire-tutorial-next-on-items? true
-                        :loading? loading?
-                        :has-more? has-more?
-                        :element-height 88
-                        :loading-spinner-delegate (fn []
-                                                    [:div.spinner-container [spinner/spin]])
-                        :load-fn #(let [{:keys [:end-cursor]} (:search-leaders (last @donations-search))]
-                                    (dispatch [::graphql-events/query
-                                               {:query {:queries [(build-donations-query @form-data end-cursor)]}
-                                                :id @form-data}]))}
-       (when-not (:graphql/loading? (first @donations-search))
+        donations-by-receiver (group-by :donation/receiver all-donations)
+        matchings (compute-matchings matching-pool donations-by-receiver
+                                     @(subscribe [::r-subs/all-multipliers])
+                                     @(subscribe [::r-subs/all-donations]))]
+      (if (empty? all-donations)
+        [no-items-found]
+        [:div.donations
          (doall
-           (for [donation all-donations]
-             ^{:key (-> donation :donation/id)} [donation-entry donation])))])))
+           (for [[receiver donations] donations-by-receiver]
+             ^{:key (:user/address receiver)} [receiver-entry receiver donations matchings]))])))
 
-(defn donations [round-id]
+(defn donations [round-id matching-pool]
   (let [form-data (r/atom {:round round-id
-                           :search-term ""
                            :order-key (:key (first donations-order))})]
     (fn []
       (let [donations-search (subscribe [::gql/query {:queries [(build-donations-query @form-data nil)]}
-                                       {:id @form-data}])]
+                                       {:id @form-data}])
+            loading? (:graphql/loading? (last @donations-search))
+            has-more? (-> (last @donations-search) :search-donations :has-next-page)
+            end-cursor (-> (last @donations-search) :search-donations :end-cursor)
+            ; makes sure all items are loaded
+            _ (when (and (not loading?) has-more?) (dispatch [::graphql-events/query
+                                                            {:query {:queries [(build-donations-query @form-data end-cursor)]}
+                                                             :id @form-data}]))]
         [:div.contentDonation
          [:h2 "Donations"]
-         [search-tools {:form-data form-data
-                        :search-id :search-term
-                        :select-options donations-order}]
          [:div.headerDonations.d-none.d-md-flex
           [:div.cel-data
            [:span.titleCel.col-user "Receiver"]]
           [:div.cel-score
-           [:span.titleCel.col-user "Sender"]
-           [:span.titleCel.col-date "Date"]
-           [:span.titleCel.col-amount "Amount"]]]
-         [donations-entries form-data donations-search]]))))
+           [:span.titleCel.col-amount "Matching Amount"]
+           [:span.titleCel.col-amount "Multiplier"]]]
+
+         (if (or loading? has-more?)
+           [spinner/spin]
+           [donations-entries matching-pool donations-search])]))))
 
 
 (defmethod page :route.admin/round []
@@ -148,4 +293,4 @@
               [:div.start (str "Start Time: " (ui-utils/format-graphql-time start))]
               [:div.end (str "End Time: " (ui-utils/format-graphql-time (+ start duration)))]
               [:div.matching (str "Matching pool: " matching-pool " ETH")]
-              [donations round-id]])]]]))))
+              [donations round-id (:round/matching-pool round)]])]]]))))

@@ -64,7 +64,9 @@
     (-> db
         (assoc :day-night-switch (:day-night-switch store))
         (assoc :active-session (:active-session store))
-        (assoc :cart (:cart store)))))
+        (assoc :cart (:cart store))
+        (assoc :multipliers (:multipliers store))
+        (assoc :donations (:donations store)))))
 
 (re-frame/reg-event-fx
   ::init
