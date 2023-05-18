@@ -2,10 +2,12 @@
   "Page to manage a specific round "
   (:require
     [district.graphql-utils :as gql-utils]
+    [district.ui.component.form.input :refer [pending-button]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
     [district.ui.graphql.subs :as gql]
     [district.ui.router.subs :as router-subs]
+    [district.ui.web3-tx-id.subs :as tx-id-subs]
     [re-frame.core :refer [subscribe dispatch]]
     [reagent.core :as r]
     [streamtide.shared.utils :as shared-utils]
@@ -18,6 +20,8 @@
     [streamtide.ui.utils :as ui-utils]))
 
 (def page-size 1000)
+
+(def multiplier-factors [1 0.66 0.33 0])
 
 (defn build-round-info-query [{:keys [:round/id]}]
   [:round
@@ -33,7 +37,7 @@
                       {:key "date/asc" :value "Oldest"}
                       {:key "username/asc" :value "Artist Name"}])
 
-(defn build-donations-query [{:keys [:round :search-term :order-key]} after]
+(defn build-donations-query [{:keys [:round :order-key]} after]
   (let [[order-by order-dir] ((juxt namespace name) (keyword order-key))]
     [:search-donations
      (cond-> {:first page-size
@@ -127,7 +131,7 @@
       [:ul.score
        [:li [:span (get matchings address)]]
        [:li
-        [multipliers receiver [1 0.66 0.33 0]]]]]
+        [multipliers receiver multiplier-factors]]]]
      [:div.donationsInner
        [:div.headerDonations.d-none.d-md-flex
         [:div.cel-data
@@ -202,9 +206,8 @@
                                                         (let [divisor (/ matching-pool (get summed-by-multiplier multiplier))]
                                                           (recur (next multipliers) multiplier
                                                                  (+ acc (* amount (- multiplier prev_mult) divisor))))
-                                                        acc)))))
-                                       {} amounts)
-        ]
+                                                        (js/Math.floor acc))))))
+                                       {} amounts)]
     receivers-matchings))
 
 ; this commented out version of compute matchings applies the receiver's matching factor when getting the donations amount.
@@ -227,8 +230,12 @@
 ;                 (assoc m receiver (* divisor amount)))
 ;               {} amounts)))
 
-(defn donations-entries [matching-pool donations-search]
-  (let [all-donations (->> @donations-search
+(defn donations-entries [round-id matching-pool donations-search]
+  (let [tx-id (str "distribute_" round-id)
+        distribute-tx-pending (subscribe [::tx-id-subs/tx-pending? {:streamtide/distribute tx-id}])
+        distribute-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/distribute tx-id}])
+
+        all-donations (->> @donations-search
                            (mapcat (fn [r] (-> r :search-donations :items))))
         donations-by-receiver (group-by :donation/receiver all-donations)
         matchings (compute-matchings matching-pool donations-by-receiver
@@ -236,10 +243,21 @@
                                      @(subscribe [::r-subs/all-donations]))]
       (if (empty? all-donations)
         [no-items-found]
-        [:div.donations
-         (doall
-           (for [[receiver donations] donations-by-receiver]
-             ^{:key (:user/address receiver)} [receiver-entry receiver donations matchings]))])))
+        [:<>
+          [:div.donations
+           (doall
+             (for [[receiver donations] donations-by-receiver]
+               ^{:key (:user/address receiver)} [receiver-entry receiver donations matchings]))]
+          [pending-button {:pending? @distribute-tx-pending
+                           :pending-text "Distributing"
+                           :disabled (or @distribute-tx-pending @distribute-tx-success?)
+                           :class (str "btBasic btBasic-light btDistribute" (when-not @distribute-tx-success? " distributed"))
+                           :on-click (fn [e]
+                                       (.stopPropagation e)
+                                       (dispatch [::r-events/distribute {:send-tx/id tx-id
+                                                                         :round round-id
+                                                                         :matchings matchings}]))}
+           (if @distribute-tx-success? "Distributed" "Distribute")]])))
 
 (defn donations [round-id matching-pool]
   (let [form-data (r/atom {:round round-id
@@ -265,7 +283,7 @@
 
          (if (or loading? has-more?)
            [spinner/spin]
-           [donations-entries matching-pool donations-search])]))))
+           [donations-entries round-id matching-pool donations-search])]))))
 
 
 (defmethod page :route.admin/round []

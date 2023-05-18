@@ -10,6 +10,16 @@
 		.form {
 			margin-bottom: 15px;
 		}
+		.btDistribute {
+			width: 100%;
+			margin-top: 40px;
+			margin-bottom: 15px;
+
+			&:disabled {
+				pointer-events: none;
+				background-color: lightgray;
+			}
+		}
 	}
 	.donation, .receiver{
 		width: 100%;

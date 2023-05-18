@@ -10,6 +10,7 @@
             [district.ui.graphql]
             [district.ui.reagent-render]
             [district.ui.router]
+            [district.ui.smart-contracts]
             [district.ui.web3-accounts.events :as web3-accounts-events]
             [district.ui.web3-accounts.queries :as web3-accounts-queries]
             [district.ui.web3-accounts]

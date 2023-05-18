@@ -20,14 +20,17 @@
   district0x/district-ui-component-form {:mvn/version "0.2.15"}
   district0x/district-ui-graphql {:mvn/version "1.0.15"}
   district0x/district-ui-logging {:mvn/version "1.1.0"}
+  district0x/district-ui-notification {:mvn/version "1.0.1"}
   district0x/district-ui-window-size {:mvn/version "1.0.1"}
   is.d0x/cljs-web3-next {:mvn/version "23.3.1"}
   is.d0x/district-server-db {:mvn/version "23.3.13"}
   is.d0x/district-server-web3-events {:mvn/version "23.1.26"}
   is.d0x/district-ui-reagent-render {:mvn/version "23.1.26"}
   is.d0x/district-ui-router {:mvn/version "23.2.9"}
+  is.d0x/district-ui-smart-contracts {:mvn/version "23.1.26"}
   is.d0x/district-ui-web3 {:mvn/version "23.3.1"}
   is.d0x/district-ui-web3-accounts {:mvn/version "23.1.26"}
+  is.d0x/district-ui-web3-tx-id {:mvn/version "23.1.26"}
   mount/mount {:mvn/version "0.1.16"}
   org.clojure/clojure {:mvn/version "1.11.1"}
   org.clojure/clojurescript {:mvn/version "1.11.4"}

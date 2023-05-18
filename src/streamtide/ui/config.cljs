@@ -1,7 +1,10 @@
 (ns streamtide.ui.config
   "UI Config"
   (:require [mount.core :refer [defstate]]
-            [streamtide.shared.graphql-schema :refer [graphql-schema]])
+            [streamtide.shared.graphql-schema :refer [graphql-schema]]
+            [streamtide.shared.smart-contracts-dev :as smart-contracts-dev]
+            [streamtide.shared.smart-contracts-prod :as smart-contracts-prod]
+            [streamtide.shared.smart-contracts-qa :as smart-contracts-qa])
   (:require-macros [streamtide.shared.utils :refer [get-environment]]))
 
 
@@ -14,6 +17,7 @@
              :disable-default-middlewares? true
              }
    :router {:html5? true}
+   :smart-contracts {:contracts smart-contracts-dev/smart-contracts}
    :verifiers {:discord {:client-id "1035157814194221108"}}
    ;:domain "localhost"
    })
@@ -23,6 +27,7 @@
              :console? true}
    :graphql {:schema graphql-schema
              :url "https://api.streamtide.qa.district0x.io/graphql"}
+   :smart-contracts {:contracts smart-contracts-qa/smart-contracts}
    :domain "TBD"})
 
 (def production-config
@@ -30,6 +35,7 @@
              :console? false}
    :graphql {:schema graphql-schema
              :url "https://api.streamtide.io/graphql"}
+   :smart-contracts {:contracts smart-contracts-prod/smart-contracts}
    :domain "TBD"})
 
 (def config-map
