@@ -158,7 +158,7 @@
   (require-auth current-user)
   (require-not-blacklisted current-user)
 
-  (stdb/insert-grant! {:user/address current-user :grant/status (name :grant.status/requested)}))
+  (stdb/upsert-grant! {:user/address current-user :grant/status (name :grant.status/requested)}))
 
 (defn review-grant! [current-user {:keys [:user/address :grant/status] :as args}]
   "Approves or reject a grant request"
@@ -167,7 +167,7 @@
 
   ; TODO check grant status is not nil and valid value
   ;(when (contains? grant-statuses decision))
-  (stdb/update-grant! (merge (select-keys args [:user/address :grant/status]) {:grant/decision-date (shared-utils/now)})))
+  (stdb/upsert-grant! (merge (select-keys args [:user/address :grant/status]) {:grant/decision-date (shared-utils/now-secs)})))
 
 (defn blacklist! [current-user {:keys [:user/address :blacklist] :as args}]
   "blacklists/whitelist a user"

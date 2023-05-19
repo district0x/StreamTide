@@ -369,22 +369,16 @@
   (db-run! {:delete-from :social-link
             :where [:and [:= :user/address user-address] [:in :social/network social-networks]]}))
 
-(defn insert-grant! [{:keys [:user/address :grant/status] :as args}]
-  "Insert a new grant for a user. Does nothing if the user already requested a grant"
+(defn upsert-grant! [{:keys [:user/address :grant/status :grant/decision-date] :as args}]
+  "Insert a new grant for a user or update it if the user already requested a grant"
   (log/debug "insert-grant" args)
   (db-run! {:insert-into :grant
             :values [{:user/address address
                       :grant/status status
-                      :grant/request-date (shared-utils/now)}]
+                      :grant/decision-date decision-date
+                      :grant/request-date (shared-utils/now-secs)}]
             :upsert {:on-conflict [:user/address]
-                     :do-nothing []}}))
-
-(defn update-grant! [{:keys [:user/address] :as args}]
-  (log/debug "update-grant" args)
-  (let [grant-info (select-keys args (remove :user/address grant-column-names))]
-    (db-run! {:update :grant
-              :set grant-info
-              :where [:= :user/address address]})))
+                     :do-update-set [:grant/status :grant/decision-date]}}))
 
 (defn add-donation! [args]
   (log/debug "add-donation" args)
@@ -417,7 +411,7 @@
 (defn add-to-blacklist! [{:keys [:user/address]}]
   (db-run! {:insert-into :blacklist
            :values [{:user/address address
-                     :blacklisted/date (shared-utils/now)}]
+                     :blacklisted/date (shared-utils/now-secs)}]
             :upsert {:on-conflict [:user/address]
                      :do-nothing []}}))
 
@@ -438,7 +432,7 @@
 
 (defn add-content! [args]
   (db-run! {:insert-into :content
-            :values [(merge {:content/creation-date (shared-utils/now)}
+            :values [(merge {:content/creation-date (shared-utils/now-secs)}
                            (select-keys args content-column-names))]}))
 
 

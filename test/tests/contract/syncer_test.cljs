@@ -4,13 +4,15 @@
             [cljs.core.async :refer [<! go timeout]]
             [cljs.test :refer-macros [deftest is testing async]]
             [district.server.db :as district.server.db]
+            [district.server.logging]
             [district.server.smart-contracts :as smart-contracts]
             [district.server.web3 :refer [web3]]
-            [district.server.logging]
+            [district.server.web3-events]
             [mount.core :as mount]
-            [streamtide.shared.smart-contracts-dev :as smart-contracts-dev]
             [streamtide.server.constants :as constants]
-            [streamtide.server.db :as db]))
+            [streamtide.server.db :as db]
+            [streamtide.server.syncer]
+            [streamtide.shared.smart-contracts-dev :as smart-contracts-dev]))
 
 (def waited-events-counter (atom {}))
 

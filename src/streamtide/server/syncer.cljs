@@ -75,10 +75,10 @@
       (db/remove-from-blacklist! _blacklisted))))
 
 (defn patron-added-event [_ {:keys [:args]}]
-  (let [{:keys [:addr]} args]
+  (let [{:keys [:addr :timestamp]} args]
     (safe-go
       (db/upsert-user-info! {:user/address addr})
-      (db/insert-grant! {:user/address addr :grant/status (name :grant.status/approved)}))))
+      (db/upsert-grant! {:user/address addr :grant/status (name :grant.status/approved) :grant/decision-date timestamp}))))
 
 (defn round-started-event [_ {:keys [:args]}]
   (let [{:keys [:round-start :round-id :round-duration]} args]

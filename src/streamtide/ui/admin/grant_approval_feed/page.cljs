@@ -5,6 +5,7 @@
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
     [district.ui.graphql.subs :as gql]
+    [district.ui.web3-tx-id.subs :as tx-id-subs]
     [re-frame.core :refer [subscribe dispatch]]
     [streamtide.ui.admin.grant-approval-feed.events :as gaf-events]
     [streamtide.ui.admin.grant-approval-feed.subs :as gaf-subs]
@@ -15,28 +16,32 @@
     [streamtide.ui.components.user :refer [user-photo social-links]]))
 
 (defn content-approval-entry [{:keys [:user/address :user/photo :user/name :user/socials]}]
-  (let [loading? (subscribe [::gaf-subs/reviewing? address])
-        decision? (subscribe [::gaf-subs/decision? address])
+  (let [tx-id (str "add-patron_" address)
+        loading? (or @(subscribe [::gaf-subs/reviewing? address])
+                     @(subscribe [::tx-id-subs/tx-pending? {:streamtide/add-patron tx-id}]))
+        decision? (or @(subscribe [::gaf-subs/decision? address])
+                      @(subscribe [::tx-id-subs/tx-success? {:streamtide/add-patron tx-id}]))
         nav (partial nav-anchor {:route :route.profile/index :params {:address address}})]
     [:div.contentApproval
-     (when @decision? {:class "remove"})
+     (when decision? {:class "remove"})
      [:div.cel.data
       [nav [user-photo {:src photo :class "lb"}]]
       [nav [:h3 name]]]
      [social-links {:socials socials :class "cel"}]
      [:hr.d-lg-none]
      [:div.cel.buttons
-      (when @loading? {:class "loading"})
+      (when loading? {:class "loading"})
       [:button.btBasic.btBasic-light.btApprove
        (merge {:on-click
-        #(dispatch [::gaf-events/review-grant {:user/address address
+        #(dispatch [::gaf-events/review-grant {:send-tx/id tx-id
+                                               :user/address address
                                                :grant/status :grant.status/approved}])
-        } (when @loading? {:disabled true})) "APPROVE"]
+        } (when loading? {:disabled true})) "APPROVE"]
       [:button.btBasic.btBasic-light.btDeny
        (merge {:on-click
         #(dispatch [::gaf-events/review-grant {:user/address address
                                                :grant/status :grant.status/rejected}])
-        } (when @loading? {:disabled true}) ) "DENY"]]]))
+        } (when loading? {:disabled true}) ) "DENY"]]]))
 
 (def page-size 6)
 
