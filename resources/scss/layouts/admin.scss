@@ -335,6 +335,10 @@
 		}
 		.containerAdmin {
 			width: calc(100% - 241px);
+			h3 {
+				margin-bottom: 15px;
+				font-size: 20px;;
+			}
 		}
 		.contentApprovalFeed {
 			margin-bottom: 64px;
@@ -455,6 +459,10 @@
 			.btBasic {
 				width: calc(18% - 10px);
 				height: 56px;
+				&:disabled {
+					pointer-events: none;
+					background-color: lightgray;
+				}
 			}
 		}
 		.contentRounds {
