@@ -21,7 +21,7 @@
 (defn build-rounds-query [after]
   [:search-rounds
    (cond-> {:first page-size
-            :order-by :rounds.order-by/date
+            :order-by :rounds.order-by/id
             :order-dir :desc}
            after (assoc :after after))
    [:total-count

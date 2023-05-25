@@ -1,5 +1,6 @@
 (ns streamtide.ui.admin.round.events
   (:require
+    [cljs-web3-next.core :as web3]
     [district.ui.logging.events :as logging]
     [district.ui.notification.events :as notification-events]
     [district.ui.smart-contracts.queries :as contract-queries]
@@ -51,3 +52,25 @@
                                                      {:user {:id active-account}
                                                       :matchings matchings}
                                                      ::distribute]}]})))
+
+(re-frame/reg-event-fx
+  ::fill-matching-pool
+  ; TX to distribute matching pool for last round
+  (fn [{:keys [db]} [_ {:keys [:send-tx/id :amount :round] :as data}]]
+    (let [tx-name (str "Filling up matching pool with " amount " ETH")
+          active-account (account-queries/active-account db)
+          amount-wei (-> amount str (web3/to-wei :ether))]
+      {:dispatch [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
+                                       :args []
+                                       :tx-opts {:from active-account :value amount-wei}
+                                       :tx-id {:streamtide/fill-matching-pool id}
+                                       :tx-log {:name tx-name
+                                                :related-href {:name :route.admin/round
+                                                               :params {:round round}}}
+                                       :on-tx-success-n [[::logging/info (str tx-name " tx success") ::fill-matching-pool]
+                                                        [::notification-events/show (str "You successfully filled up matching pool with " amount " amount")]]
+                                       :on-tx-error [::logging/error (str tx-name " tx error")
+                                                     {:user {:id active-account}
+                                                      :round round
+                                                      :amount amount}
+                                                     ::fill-matching-pool]}]})))

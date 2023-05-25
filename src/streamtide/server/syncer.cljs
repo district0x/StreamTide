@@ -90,7 +90,7 @@
                       :round/distributed false}))))
 
 (defn current-round []
-  (first (:items (db/get-rounds {:first 1 :order-by :round.order-by/id :order-dir :desc}))))
+  (first (:items (db/get-rounds {:first 1 :order-by :rounds.order-by/id :order-dir :desc}))))
 
 (defn active-round? [round timestamp]
   (>= (+ (:round/start round) (:round/duration round)) timestamp))

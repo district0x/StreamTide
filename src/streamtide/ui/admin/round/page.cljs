@@ -2,7 +2,7 @@
   "Page to manage a specific round "
   (:require
     [district.graphql-utils :as gql-utils]
-    [district.ui.component.form.input :refer [pending-button]]
+    [district.ui.component.form.input :refer [amount-input pending-button]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
     [district.ui.graphql.subs :as gql]
@@ -67,7 +67,7 @@
 (defn round-open? [round]
   (let [{:keys [:round/start :round/duration]} round
         start (.getTime (gql-utils/gql-date->date start))]
-  (< (+ start (* 1000 duration)) (shared-utils/now))))
+  (> (+ start (* 1000 duration)) (shared-utils/now))))
 
 (defn default-enabled? [donation]
   ; TODO
@@ -288,7 +288,9 @@
 
 (defmethod page :route.admin/round []
   (let [active-page-sub (subscribe [::router-subs/active-page])
-        round-id (-> @active-page-sub :params :round)]
+        round-id (-> @active-page-sub :params :round)
+        form-data (r/atom {:amount 0})
+        tx-id (str "match-pool_" (random-uuid))]
     (fn []
       (let [round-info-query (subscribe [::gql/query {:queries [(build-round-info-query {:round/id round-id})]}])
             loading? (:graphql/loading? @round-info-query)
@@ -311,4 +313,22 @@
               [:div.start (str "Start Time: " (ui-utils/format-graphql-time start))]
               [:div.end (str "End Time: " (ui-utils/format-graphql-time (+ start duration)))]
               [:div.matching (str "Matching pool: " matching-pool " ETH")]
+              (when (round-open? round)
+                (let [match-pool-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/fill-matching-pool tx-id}])
+                      match-pool-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/fill-matching-pool tx-id}])]
+                  [:div.form.fillPoolForm
+                   [:label.inputField
+                    [:span "Fill Up Amount"]
+                    [amount-input {:id :amount
+                                :form-data form-data}]]
+                   [pending-button {:pending? @match-pool-tx-pending?
+                                    :pending-text "Filling Up Matching Pool"
+                                    :disabled (or @match-pool-tx-pending? @match-pool-tx-success? (>= 0 (:amount @form-data)))
+                                    :class (str "btBasic btBasic-light btMatchPool")
+                                    :on-click (fn [e]
+                                                (.stopPropagation e)
+                                                (dispatch [::r-events/fill-matching-pool {:send-tx/id tx-id
+                                                                                          :amount (:amount @form-data)
+                                                                                          :round round}]))}
+                    (if @match-pool-tx-success? "Matching Pool Filled up" "Fill Up Matching Pool")]]))
               [donations round-id (:round/matching-pool round)]])]]]))))
