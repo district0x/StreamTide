@@ -30,3 +30,13 @@
       (format/format-token (bn/number price) {:max-fraction-digits 5
                                               :token "ETH"
                                               :min-fraction-digits min-fraction-digits})))
+(defn truncate-text
+  ([text]
+   (truncate-text text 14))
+  ([text length]
+   (let [text-length (count text)
+         length (max length 7)]
+    (if (<= text-length length)
+      text
+      (str (subs text 0 (- length 7)) "..." (subs text (- text-length 4)))
+      ))))

@@ -3,6 +3,7 @@
   (:require
     [bignumber.core :as bn]
     [cljsjs.bignumber]
+    [clojure.string :as string]
     [district.graphql-utils :as gql-utils]
     [district.ui.component.form.input :refer [amount-input pending-button]]
     [district.ui.component.page :refer [page]]
@@ -84,22 +85,20 @@
     (fn []
       (let [nav-sender (partial nav-anchor {:route :route.profile/index :params {:address (:user/address sender)}})
             enabled? (if (nil? @enabled?) (default-enabled? donation) @enabled?)
-            ]
+            name (:user/name sender)
+            name (if (string/blank? name) (ui-utils/truncate-text (:user/address sender)) (ui-utils/truncate-text name 40))]
         [:div.donation
-         [:div.data
-          ; TODO cut addresses
-          [:span [nav-sender [:span (or (:user/name sender) (:user/address sender))]]
-           [social-links {:socials (:user/socials sender) :class "cel"}]
-           ]]
-         [:ul.score
-          [:li
-           [:span (ui-utils/format-graphql-time date)]]
-          [:li
-           ;; TODO format amount (wei->eth)
-           [:span (ui-utils/format-price amount)]]
-          [:li [:span.checkmark
-                {:on-click #(dispatch [::r-events/enable-donation {:id id :enabled? (not enabled?)}])
-                 :class (when enabled? "checked")}]]]]))))
+         [:div.cell.col-sender
+          [:span.name [nav-sender [:span name]]
+           [social-links {:socials (filter #(:social/verified %) (:user/socials sender))
+                          :class "cel"}]]]
+         [:div.cell.col-date
+          [:span (ui-utils/format-graphql-time date)]]
+         [:div.cell.col-amount
+          [:span (ui-utils/format-price amount)]]
+         [:div.cell.col-include [:span.checkmark
+               {:on-click #(dispatch [::r-events/enable-donation {:id id :enabled? (not enabled?)}])
+                :class (when enabled? "checked")}]]]))))
 
 (defn multipliers [receiver values]
   (let [id (:user/address receiver)
@@ -125,23 +124,22 @@
   (let [nav-receiver (partial nav-anchor {:route :route.profile/index :params {:address (:user/address receiver)}})]
     [:<>
      [:div.receiver
-      [nav-receiver [user-photo {:class "lb" :src photo}]]
-      [:div.data
-       [:span
-        [nav-receiver [:h3 name]]
-        [social-links {:socials socials :class "cel"}]]]
-      [:ul.score
-       [:li [:span (ui-utils/format-price (get matchings address))]]
-       [:li
-        [multipliers receiver multiplier-factors]]]]
+      [:div.cell.col-receiver
+       [nav-receiver [user-photo {:class "lb" :src photo}]]
+       [:span.name
+        [nav-receiver [:h3 (if (string/blank? name) (ui-utils/truncate-text address) (ui-utils/truncate-text name 40))]]
+        [social-links {:socials (filter #(:social/verified %) socials)
+                       :class "cel"}]]]
+      [:div.cell.col-matching [:span (ui-utils/format-price (get matchings address))]]
+      [:div.cell.col-multiplier
+       [multipliers receiver multiplier-factors]]]
      [:div.donationsInner
        [:div.headerDonations.d-none.d-md-flex
         [:div.cel-data
-         [:span.titleCel.col-user "Sender"]]
-        [:div.cel-score
+         [:span.titleCel.col-sender "Sender"]
          [:span.titleCel.col-date "Date"]
          [:span.titleCel.col-amount "Amount"]
-         [:span.titleCel.col-amount "Included"]]]
+         [:span.titleCel.col-include "Include"]]]
        (doall
          (for [{:keys [:donation/id] :as donation} donations]
            ^{:key id} [donation-entry donation]
@@ -280,12 +278,11 @@
                                                              :id @form-data}]))]
         [:div.contentDonation
          [:h2 "Donations"]
-         [:div.headerDonations.d-none.d-md-flex
+         [:div.headerReceivers.d-none.d-md-flex
           [:div.cel-data
-           [:span.titleCel.col-user "Receiver"]]
-          [:div.cel-score
-           [:span.titleCel.col-amount "Matching Amount"]
-           [:span.titleCel.col-amount "Multiplier"]]]
+           [:span.titleCel.col-receiver "Receiver"]
+           [:span.titleCel.col-matching "Matching Amount"]
+           [:span.titleCel.col-multiplier "Multiplier"]]]
 
          (if (or loading? has-more?)
            [spinner/spin]
