@@ -43,7 +43,7 @@
      [:div.cel.duration
       [nav [:span duration]]]
      [:div.cel.matching-pool
-      [nav [:span matching-pool]]]
+      [nav [:span (ui-utils/format-price matching-pool)]]]
      [:div.cel.distributed
       [nav [:span (if distributed "YES" "NO")]]]]))
 

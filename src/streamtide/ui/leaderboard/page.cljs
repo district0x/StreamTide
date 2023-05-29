@@ -12,7 +12,8 @@
     [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
     [streamtide.ui.components.search :refer [search-tools]]
     [streamtide.ui.components.spinner :as spinner]
-    [streamtide.ui.components.user :refer [user-photo]]))
+    [streamtide.ui.components.user :refer [user-photo]]
+    [streamtide.ui.utils :as ui-utils]))
 
 (def page-size 6)
 
@@ -56,12 +57,11 @@
       [nav [:h3 (:user/name receiver)]]]
      [:ul.score
       [:li
-       ;; TODO format amount (wei->eth)
-       [:span donation-amount]]
+       [:span (ui-utils/format-price donation-amount)]]
       [:li
-       [:span matching-amount]]
+       [:span (ui-utils/format-price matching-amount)]]
       [:li
-       [:span total-amount]]]]))
+       [:span (ui-utils/format-price total-amount)]]]]))
 
 (defn leaderboard-entries [form-data leaders-search]
   (let [all-leaders (->> @leaders-search

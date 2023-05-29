@@ -3,6 +3,7 @@
   (:require
     [bignumber.core :as bn]
     [camel-snake-kebab.core :as camel-snake-kebab]
+    [cljsjs.bignumber]
     [cljs-web3-next.eth :as web3-eth]
     [cljs-web3-next.core :as web3-core]
     [cljs.core.async :as async :refer [<! go]]
@@ -113,9 +114,8 @@
     (safe-go
       (let [round (current-round)
             round-id (:round/id round)
-            ;; TODO probably we'll need bigints to add
-            matching-pool (+ (:round/matching-pool round) (int value))]
-        (db/update-round! {:round/id round-id :round/matching-pool matching-pool})))))
+            matching-pool (bn/+ (js/BigNumber. (:round/matching-pool round)) (js/BigNumber. value))]
+        (db/update-round! {:round/id round-id :round/matching-pool (bn/fixed matching-pool)})))))
 
 (defn distribute-event [_ {:keys [:args]}]
   (let [{:keys [:to :amount :timestamp]} args]

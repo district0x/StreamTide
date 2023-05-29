@@ -85,7 +85,7 @@
                   round-id (:round/id round)]
               (is (= (count rounds) 1))
               (is (> round-id 0))
-              (is (= (:round/matching-pool round) 0))
+              (is (= (:round/matching-pool round) "0"))
               (is (> (:round/start round) 0))
 
               (<! (web3-eth/send-transaction! @web3 {:from admin :to (smart-contracts/contract-address :streamtide-fwd) :value 1000}))
@@ -94,11 +94,11 @@
                     round (first rounds)]
                 (is (= (count rounds) 1))
                 (is (= round-id (:round/id round)))
-                (is (= (:round/matching-pool round) 1000))))
+                (is (= (:round/matching-pool round) "1000"))))
 
             (<! (web3-eth/send-transaction! @web3 {:from admin :to (smart-contracts/contract-address :streamtide-fwd) :value 1500}))
             (<! (wait-event :matching-pool-donation))
-            (is (= (:round/matching-pool (first (:items (db/get-rounds {:first 6})))) 2500))
+            (is (= (:round/matching-pool (first (:items (db/get-rounds {:first 6})))) "2500"))
 
             (<! (smart-contracts/contract-send :streamtide-fwd :donate [[user]["500"]] {:from user2 :value "500"}))
             (<! (wait-event :donate))

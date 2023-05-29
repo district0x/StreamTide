@@ -18,8 +18,33 @@
                                (:streamtide/db (mount/args))))
           :stop (stop))
 
-(def db-get #(db/get %1 {:format-opts {:allow-namespaced-names? true}}))
-(def db-all #(db/all %1 {:format-opts {:allow-namespaced-names? true}}))
+; columns holding big numbers
+(def big-numbers-fields [:round/matching-pool
+                         :matching/amount
+                         :leader/donation-amount
+                         :leader/matching-amount
+                         :leader/total-amount
+                         :donation/amount])
+
+(defn- fix-exp-numbers [results]
+  "when storing a big number, they may get converted to exponential notation.
+  This makes sure all the numbers are expressed in the same plain format"
+  (let [f (fn [result] (reduce (fn [result field]
+                                 (if (get result field)
+                                   (update result field shared-utils/safe-number-str)
+                                   result))
+                               result big-numbers-fields))]
+
+    (if (seq? results)
+      (mapv #(f %) results)
+      (f results))))
+
+(def db-get (fn [query]
+              (-> (db/get query {:format-opts {:allow-namespaced-names? true}})
+                  fix-exp-numbers)))
+(def db-all (fn [query]
+              (-> (db/all query {:format-opts {:allow-namespaced-names? true}})
+                  fix-exp-numbers)))
 (def db-run! #(db/run! %1 {:format-opts {:allow-namespaced-names? true}}))
 
 ;; DATABASE Schema
@@ -111,7 +136,7 @@
   [[:round/id :integer primary-key]
    [:round/start :timestamp not-nil]
    [:round/duration :unsigned :integer not-nil]
-   [:round/matching-pool :unsigned :integer]
+   [:round/matching-pool :unsigned :integer not-nil]   ;; TODO use string to avoid precision errors? order-by is important
    [:round/distributed :tinyint]])
 
 (def events-columns

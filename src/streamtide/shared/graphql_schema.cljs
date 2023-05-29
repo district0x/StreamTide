@@ -257,7 +257,7 @@ type Donation {
     donation_sender: User!
     donation_receiver: User!
     donation_date: Date
-    donation_amount: Int
+    donation_amount: String
     donation_coin: ID
     donation_round: Round
 }
@@ -273,7 +273,7 @@ type Matching {
     matching_id: ID!
     matching_receiver: User!
     matching_date: Date
-    matching_amount: Int
+    matching_amount: String
     matching_coin: ID
     matching_round: Round
 }
@@ -287,9 +287,9 @@ type MatchingList {
 
 type Leader {
     leader_receiver: User!
-    leader_donationAmount: Int
-    leader_matchingAmount: Int
-    leader_totalAmount: Int
+    leader_donationAmount: String
+    leader_matchingAmount: String
+    leader_totalAmount: String
 }
 
 type LeaderList {
@@ -303,7 +303,7 @@ type Round {
     round_id: ID!
     round_start: Date
     round_duration: Int
-    round_matchingPool: Int
+    round_matchingPool: String
     round_distributed: Boolean
 }
 

@@ -1,6 +1,9 @@
 (ns streamtide.ui.utils
   "Frontend utilities"
-  (:require [cljs-time.coerce :as tc]
+  (:require [bignumber.core :as bn]
+            [cljs-time.coerce :as tc]
+            [cljs-web3-next.core :as web3]
+            [district.format :as format]
             [district.graphql-utils :as gql-utils]))
 
 (defn switch-popup [switch-atom show]
@@ -15,3 +18,15 @@
   (.toLocaleString (tc/to-date (gql-utils/gql-date->date gql-time))
                    js/undefined #js {:hour12 false :dateStyle "short" :timeStyle "short"} ))
 
+(defn from-wei
+  ([amount]
+   (from-wei amount :ether))
+  ([amount unit]
+   (web3/from-wei (str amount) unit)))
+
+(defn format-price [price]
+  (let [price (from-wei price :ether)
+        min-fraction-digits (if (= "0" price) 0 4)]
+      (format/format-token (bn/number price) {:max-fraction-digits 5
+                                              :token "ETH"
+                                              :min-fraction-digits min-fraction-digits})))

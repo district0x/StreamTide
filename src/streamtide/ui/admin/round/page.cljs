@@ -1,6 +1,8 @@
 (ns streamtide.ui.admin.round.page
   "Page to manage a specific round "
   (:require
+    [bignumber.core :as bn]
+    [cljsjs.bignumber]
     [district.graphql-utils :as gql-utils]
     [district.ui.component.form.input :refer [amount-input pending-button]]
     [district.ui.component.page :refer [page]]
@@ -94,7 +96,7 @@
            [:span (ui-utils/format-graphql-time date)]]
           [:li
            ;; TODO format amount (wei->eth)
-           [:span amount]]
+           [:span (ui-utils/format-price amount)]]
           [:li [:span.checkmark
                 {:on-click #(dispatch [::r-events/enable-donation {:id id :enabled? (not enabled?)}])
                  :class (when enabled? "checked")}]]]]))))
@@ -129,7 +131,7 @@
         [nav-receiver [:h3 name]]
         [social-links {:socials socials :class "cel"}]]]
       [:ul.score
-       [:li [:span (get matchings address)]]
+       [:li [:span (ui-utils/format-price (get matchings address))]]
        [:li
         [multipliers receiver multiplier-factors]]]]
      [:div.donationsInner
@@ -158,6 +160,8 @@
       (default-factor receiver)
       factor)))
 
+(def new-bn js/BigNumber.)
+
 ; computes the matching belonging to each receiver based on the received donations.
 ; Some donations may be disabled, hence not counting for the computation. Additionally, each receiver has an individual
 ; matching-factor, which cap the percentage of the pool the receiver can obtain.
@@ -170,10 +174,10 @@
                                (:user/address receiver)
                                (-> (reduce (fn [acc donation]
                                              (if (donation-enabled? donation donations-enabled)
-                                               (+ acc (js/Math.sqrt (:donation/amount donation)))
+                                               (bn/+ acc (bn/sqrt (new-bn (:donation/amount donation))))
                                                acc))
-                                           0 donations)
-                                   (js/Math.pow 2))))
+                                           (new-bn 0) donations)
+                                   (bn/pow 2))))
                            {} donations-by-receiver)
         ; fetch the multiplier factor given to each receiver. Builds a dict: receiver-id -> multiplier
         receivers-multipliers (into {} (map (fn [receiver]
@@ -187,9 +191,10 @@
                                              {multiplier
                                               (reduce-kv (fn [acc receiver amount]
                                                            (if (>= (get receivers-multipliers receiver) multiplier)
-                                                             (+ amount acc)
-                                                             acc)) 0 amounts)})
+                                                             (bn/+ amount acc)
+                                                             acc)) (new-bn 0) amounts)})
                                            multipliers-vals))
+        matching-pool (new-bn matching-pool)
         ; distributed the matching pool based on the granted amounts and multipliers.
         ; for each receiver, it gets all its applicable multipliers values (i.e., multiplier <= receiver-multiplier).
         ; and for each of them we compute the proportional amount she receives based on its donations
@@ -200,14 +205,15 @@
                                                                                (<= multiplier (get receivers-multipliers receiver)))
                                                                              multipliers-vals)
                                                          prev_mult 0
-                                                         acc 0]
+                                                         acc (new-bn 0)]
                                                     (let [multiplier (first multipliers)]
                                                       (if multiplier
-                                                        (let [divisor (/ matching-pool (get summed-by-multiplier multiplier))]
+                                                        (let [divisor (bn// matching-pool (get summed-by-multiplier multiplier))]
                                                           (recur (next multipliers) multiplier
-                                                                 (+ acc (* amount (- multiplier prev_mult) divisor))))
-                                                        (js/Math.floor acc))))))
+                                                                 (bn/+ acc (bn/* amount (bn/* (- multiplier prev_mult) divisor)))))
+                                                        (bn/fixed (.integerValue acc js/BigNumber.ROUND_FLOOR)))))))
                                        {} amounts)]
+    (print receivers-matchings)
     receivers-matchings))
 
 ; this commented out version of compute matchings applies the receiver's matching factor when getting the donations amount.
@@ -312,7 +318,7 @@
                  (str "Status: " status)])
               [:div.start (str "Start Time: " (ui-utils/format-graphql-time start))]
               [:div.end (str "End Time: " (ui-utils/format-graphql-time (+ start duration)))]
-              [:div.matching (str "Matching pool: " matching-pool " ETH")]
+              [:div.matching (str "Matching pool: " (ui-utils/format-price matching-pool))]
               (when (round-open? round)
                 (let [match-pool-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/fill-matching-pool tx-id}])
                       match-pool-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/fill-matching-pool tx-id}])]
