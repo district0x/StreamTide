@@ -73,21 +73,35 @@
   (> (+ start (* 1000 duration)) (shared-utils/now))))
 
 (defn default-enabled? [donation]
-  ; TODO
-  true)
+  "returns if a donation is enabled by default.
+  It checks if the sender's discord account is verified"
+  (->> donation
+       :donation/sender
+       :user/socials
+       (filter #(and (:social/verified %) (= (name :discord) (:social/network %))))
+       seq
+       some?))
 
 (defn default-factor [receiver]
-  ; TODO
-  1)
+  "returns the multiplier factor a receiver should have based on her verified networks"
+  (->> receiver
+       :user/socials
+       (filter #(:social/verified %))
+       (map #(:social/network %))
+       set
+       (clojure.set/intersection #{(name :discord) (name :twitter) (name :eth)})
+       count
+       (nth (sort multiplier-factors))))
 
-(defn donation-entry [{:keys [:donation/id :donation/sender :donation/amount :donation/date] :as donation}]
+(defn donation-entry [{:keys [:donation/id :donation/sender :donation/amount :donation/date] :as donation} disabled?]
   (let [enabled? (subscribe [::r-subs/donation id])]
-    (fn []
+    (fn [_ disabled?]
       (let [nav-sender (partial nav-anchor {:route :route.profile/index :params {:address (:user/address sender)}})
             enabled? (if (nil? @enabled?) (default-enabled? donation) @enabled?)
             name (:user/name sender)
             name (if (string/blank? name) (ui-utils/truncate-text (:user/address sender)) (ui-utils/truncate-text name 40))]
         [:div.donation
+         {:class (when (or disabled? (not enabled?)) "disabled")}
          [:div.cell.col-sender
           [:span.name [nav-sender [:span name]]
            [social-links {:socials (filter #(:social/verified %) (:user/socials sender))
@@ -121,16 +135,19 @@
                 [:label {:for key :title (str "factor " value)}]])))]))))
 
 (defn receiver-entry [{:keys [:user/address :user/name :user/photo :user/socials] :as receiver} donations matchings]
-  (let [nav-receiver (partial nav-anchor {:route :route.profile/index :params {:address (:user/address receiver)}})]
+  (let [nav-receiver (partial nav-anchor {:route :route.profile/index :params {:address (:user/address receiver)}})
+        matching (get matchings address)
+        disabled? (= matching "0")]
     [:<>
      [:div.receiver
+      {:class (when disabled? "disabled")}
       [:div.cell.col-receiver
        [nav-receiver [user-photo {:class "lb" :src photo}]]
        [:span.name
         [nav-receiver [:h3 (if (string/blank? name) (ui-utils/truncate-text address) (ui-utils/truncate-text name 40))]]
         [social-links {:socials (filter #(:social/verified %) socials)
                        :class "cel"}]]]
-      [:div.cell.col-matching [:span (ui-utils/format-price (get matchings address))]]
+      [:div.cell.col-matching [:span (ui-utils/format-price matching)]]
       [:div.cell.col-multiplier
        [multipliers receiver multiplier-factors]]]
      [:div.donationsInner
@@ -142,7 +159,7 @@
          [:span.titleCel.col-include "Include"]]]
        (doall
          (for [{:keys [:donation/id] :as donation} donations]
-           ^{:key id} [donation-entry donation]
+           ^{:key id} [donation-entry donation disabled?]
            ))]]))
 
 

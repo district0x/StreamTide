@@ -88,6 +88,10 @@
 		background: $bgCard;
 		padding: 13.36px 13.83px 18.83px;
 
+		&.disabled {
+			background: $disabled;
+		}
+
 		.user {
 			width: 56px;
 			margin-right: 23.66px;
