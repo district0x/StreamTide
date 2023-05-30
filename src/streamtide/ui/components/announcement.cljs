@@ -5,7 +5,6 @@
 
 ; TODO currently it takes the first announcement. Maybe it should show all?
 
-; TODO maybe move this to a common ns
 (defn build-announcement-query []
   (let []
     [:announcements

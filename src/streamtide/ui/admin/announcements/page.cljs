@@ -17,7 +17,6 @@
 ; TODO maybe use a simpler editor. A textarea should be good enough
 (def editor (r/adapt-react-class js/editor.Editor))
 
-;; TODO maybe move this to a common ns?
 (defn build-announcements-query []
   (let []
     [:announcements

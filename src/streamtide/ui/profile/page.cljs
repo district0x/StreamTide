@@ -21,8 +21,6 @@
 
 (def page-size 6)
 
-
-;; TODO maybe move this to some common ns
 (defn build-user-info-query [{:keys [:user/address]}]
   [:user
    {:user/address address}

@@ -1,6 +1,7 @@
 (ns streamtide.shared.utils
   (:require
     [bignumber.core :as bn]
+    [cljsjs.bignumber]
     [clojure.string :as string])
   (:require-macros [streamtide.shared.utils]))
 
@@ -22,6 +23,4 @@
 
 (defn safe-number-str [number]
   "Make sure number are not in scientific notation"
-  (cond (nil? number) ""
-        (and (= (type number) "string") (not (string/includes? number "e"))) number
-        :else (.toLocaleString (bn/number number) "fullwide" #js {:useGrouping false})))
+  (if (nil? number) "" (-> number js/BigNumber. bn/fixed)))

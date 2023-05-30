@@ -45,7 +45,6 @@
 
 (def page-size 6)
 
-;; TODO maybe move this to a common ns?
 (defn build-grants-query [{:keys [:statuses]} after]
   (let []
     [:search-grants

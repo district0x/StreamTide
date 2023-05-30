@@ -25,7 +25,6 @@
                       :route :route.admin/grant-approval-feed
                       :roles [:role/admin]}])
 
-; TODO maybe move this to a common ns?
 (defn build-get-roles-query []
   [:roles])
 

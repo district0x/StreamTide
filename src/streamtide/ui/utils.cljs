@@ -3,6 +3,7 @@
   (:require [bignumber.core :as bn]
             [cljs-time.coerce :as tc]
             [cljs-web3-next.core :as web3]
+            [clojure.string :as string]
             [district.format :as format]
             [district.graphql-utils :as gql-utils]))
 
@@ -40,3 +41,10 @@
       text
       (str (subs text 0 (- length 7)) "..." (subs text (- text-length 4)))
       ))))
+
+
+(defn user-or-address [name address]
+  "Returns a truncated name if available or truncated address otherwise"
+  (if (string/blank? name)
+    (truncate-text address)
+    (truncate-text name 35)))

@@ -3,7 +3,6 @@
   (:require
     [bignumber.core :as bn]
     [cljsjs.bignumber]
-    [clojure.string :as string]
     [district.graphql-utils :as gql-utils]
     [district.ui.component.form.input :refer [amount-input pending-button]]
     [district.ui.component.page :refer [page]]
@@ -98,8 +97,7 @@
     (fn [_ disabled?]
       (let [nav-sender (partial nav-anchor {:route :route.profile/index :params {:address (:user/address sender)}})
             enabled? (if (nil? @enabled?) (default-enabled? donation) @enabled?)
-            name (:user/name sender)
-            name (if (string/blank? name) (ui-utils/truncate-text (:user/address sender)) (ui-utils/truncate-text name 40))]
+            name (ui-utils/user-or-address (:user/name sender) (:user/address sender))]
         [:div.donation
          {:class (when (or disabled? (not enabled?)) "disabled")}
          [:div.cell.col-sender
@@ -144,7 +142,7 @@
       [:div.cell.col-receiver
        [nav-receiver [user-photo {:class "lb" :src photo}]]
        [:span.name
-        [nav-receiver [:h3 (if (string/blank? name) (ui-utils/truncate-text address) (ui-utils/truncate-text name 40))]]
+        [nav-receiver [:h3 (ui-utils/user-or-address name address)]]
         [social-links {:socials (filter #(:social/verified %) socials)
                        :class "cel"}]]]
       [:div.cell.col-matching [:span (ui-utils/format-price matching)]]
