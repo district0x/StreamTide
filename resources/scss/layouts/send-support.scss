@@ -1,7 +1,21 @@
 #send-support {
 	padding-bottom: 52px;
+	.headerPastDonations {
+		h2 {
+			margin-bottom: 15px;
+			font-size: 20px;;
+		}
+	}
 	.contentSendSupport {
 		margin-bottom: 22.57px;
+	}
+	.cart {
+		.no-items-found {
+			text-align: center;
+			color: hsla(218.87325, 33.333332%, 41.764706%, 0.5);
+			padding-top: 50px;
+			padding-bottom: 80px;
+		}
 	}
 	.cardSendSupport {
 		height: 201px;
@@ -89,6 +103,50 @@
 			&:disabled {
 				pointer-events: none;
 				background-color: lightgray;
+			}
+		}
+		margin-bottom: 50px;
+	}
+	.donation {
+		width: 100%;
+		margin-bottom: 14px;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		border-radius: 6px;
+		position: relative;
+		overflow: hidden;
+		background: $bgCard;
+		padding: 13.36px 13.83px 18.83px;
+		.user {
+			margin-right: 21.05px;
+		}
+		.data {
+			width: calc(100% - 80px);
+			font-size: 16px;
+			line-height: 22px;
+			h3 {
+				margin-bottom: 5px;
+				font-weight: $bold;
+			}
+		}
+		.score {
+			margin-top: 15.83px;
+			width: 100%;
+			li {
+				width: 100%;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				font-size: 16px;
+				line-height: 28px;
+				h4 {
+					font-weight: $bold;
+					color: $blackWhite;
+				}
+				&:last-child {
+					margin-bottom: 0;
+				}
 			}
 		}
 	}
@@ -201,5 +259,84 @@
 				margin: 0 38px 0 0;
 			}
 		}
+
+		.headerDonations {
+			margin-bottom: 14.15px;
+			display: flex;
+			justify-content: space-between;
+			.titleCel {
+				font-size: 18px;
+				font-weight: $bold;
+				letter-spacing: 0;
+				line-height: 25px;
+			}
+			.cel-data {
+				width: 100%;
+				max-width: calc(100% - 591.94px);
+				display: flex;
+				justify-content: space-between;
+				.col-user {
+					width: calc(100% - 164px);
+				}
+			}
+			.cel-score {
+				width: 60%;
+				max-width: 578.11px;
+				padding-right: 13.83px;
+				display: flex;
+				span {
+					width: 50%;
+					display: inline-block;
+					text-align: center;
+				}
+			}
+		}
+
+		.donation {
+			margin-bottom: 11.62px;
+			display: flex;
+			flex-wrap: nowrap;
+			padding: 13.36px 13.83px 18.83px;
+			.user {
+				width: 56px;
+				margin-right: 23.66px;
+			}
+			.data {
+				width: 100%;
+				max-width: calc(100% - 657.77px);
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				h3 {
+					font-size: 20px;
+					line-height: 26px;
+					width: calc(100% - 164px);
+					margin-bottom: 0;
+				}
+				span {
+					width: 164px;
+					display: inline-block;
+					text-align: center;
+					font-size: 18px;
+					line-height: 26px;
+				}
+			}
+			.score {
+				width: calc(60% - 39.83px);
+				max-width: 578.11px;
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin: 0 0 0 auto;
+				li {
+					width: 50%;
+					display: block;
+					text-align: center;
+					font-size: 18px;
+					line-height: 26px;
+				}
+			}
+		}
+
 	}
 }

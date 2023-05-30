@@ -14,6 +14,7 @@
 
 (re-frame/reg-event-fx
   ::send-support
+  ; Make transaction to send donations to patrons
   (fn [{:keys [db]} [_ {:keys [:donations :send-tx/id] :as data}]]
     (let [tx-name (str "Sending donations to patrons")
           active-account (account-queries/active-account db)
@@ -37,8 +38,13 @@
                                                   :related-href {:name :route.send-support/index}}
                                          :on-tx-success-n [[::logging/info (str tx-name " tx success") ::send-support]
                                                            [::notification-events/show "You successfully make donations "]
-                                                           [::st-events/clean-cart]]
+                                                           [::send-support-success]]
                                          :on-tx-error [::logging/error (str tx-name " tx error")
                                                        {:user {:id active-account}
                                                         :donations donations}
                                                        ::send-support]}])})))
+
+(re-frame/reg-event-fx
+  ::send-support-success
+  (fn [{:keys [db]} [_]]
+    {:dispatch [::st-events/clean-cart]}))

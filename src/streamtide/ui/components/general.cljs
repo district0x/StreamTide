@@ -6,10 +6,10 @@
     [streamtide.ui.subs :as streamtide-subs]))
 
 
-(defn no-items-found [extra-classes]
+(defn no-items-found [{:keys [:message :extra-classes] :or {message "No items found"}}]
   "Default list result when there are no items"
   [:div.no-items-found {:class (str/join " " extra-classes)}
-   "No items found"])
+   message])
 
 (defn support-seal [{:keys [:main?]}]
   "Shows the Streamtide seal"
