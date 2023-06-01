@@ -157,8 +157,8 @@ contract MVPCLR is OwnableUpgradeable {
         emit Distribute(patrons[i], amounts[i]);
         totalAmount += amounts[i];  // Add the amount to totalAmount
     }
-    matchingPool -= totalAmount; // Subtract the total distributed amount from the matching pool
-    emit DistributeRound(roundId, matchingPool);  
+//    matchingPool -= totalAmount; // Subtract the total distributed amount from the matching pool
+    emit DistributeRound(roundId, totalAmount);
 }
     
     //only designated multisig address can call this function

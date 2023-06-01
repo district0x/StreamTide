@@ -2,6 +2,14 @@ const fs = require('fs');
 const path = require('path');
 const edn = require("jsedn");
 
+function smartContractsTemplate (map, env) {
+  return `(ns streamtide.shared.smart-contracts-${env})
+
+(def smart-contracts
+  ${map})
+`;
+}
+
 function encodeSmartContracts (smartContracts) {
   if (Array.isArray(smartContracts)) {
     smartContracts = new edn.Map(smartContracts);
