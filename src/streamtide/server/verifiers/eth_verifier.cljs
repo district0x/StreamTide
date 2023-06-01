@@ -15,7 +15,7 @@
           min-balance (js/parseFloat min-balance)]
       (if (>= balance-eth min-balance)
         {:valid? true
-         :url user-address}
+         :url (str "https://etherscan.io/address/" user-address)}
         {:valid? false}))))
 
 (defn verify [user-address]
