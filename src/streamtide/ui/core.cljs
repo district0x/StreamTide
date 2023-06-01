@@ -54,10 +54,11 @@
   ; if the current account has an active session, it sets the JWT for GrahpQL
   interceptors
   (fn [{:keys [:db]}]
-    (let [{:keys [:user/address :jwt]} (-> db :active-session)]
-      (when (and (some? address)
-                 (= address (web3-accounts-queries/active-account db)))
-        {:dispatch [::gql-events/set-authorization-token jwt]}))))
+    (let [{:keys [:user/address :jwt]} (-> db :active-session)
+          jwt (when (and (some? address)
+                         (= address (web3-accounts-queries/active-account db)))
+                jwt)]
+      {:dispatch [::gql-events/set-authorization-token jwt]})))
 
 (re-frame/reg-event-db
   ::init-defaults
