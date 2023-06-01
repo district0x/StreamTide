@@ -7,52 +7,61 @@
     [streamtide.ui.components.verifiers :as verifiers]))
 
 (re-frame/reg-event-fx
-  ::save-settings
+  ::do-save-settings
   ; Send a GraphQL mutation request to save user's settings
+  (fn [{:keys [db]} [_ {:keys [:form-data :on-success :on-error] :as data}]]
+    (if (empty? form-data)
+      {:dispatch (conj on-error [{:message "No settings to save"}])}
+      (let [query
+            {:queries [[:update-user-info
+                        {:input
+                          {:user/name :$name
+                           :user/description :$description
+                           :user/tagline :$tagline
+                           :user/handle :$handle
+                           :user/url :$url
+                           :user/perks :$perks
+                           ;; TODO for simplicity we are uploading photos as base64
+                           ;; TODO consider using as multipart or using a separated (REST?) API
+                           :user/photo :$photo
+                           :user/bg-photo :$bgphoto
+                           :user/socials :$socials
+                           }}
+                        [:user/address]]]
+             :variables [{:variable/name :$name
+                          :variable/type :String}
+                         {:variable/name :$description
+                          :variable/type :String}
+                         {:variable/name :$tagline
+                          :variable/type :String}
+                         {:variable/name :$handle
+                          :variable/type :String}
+                         {:variable/name :$url
+                          :variable/type :String}
+                         {:variable/name :$perks
+                          :variable/type :String}
+                         {:variable/name :$photo
+                          :variable/type :String}
+                         {:variable/name :$bgphoto
+                          :variable/type :String}
+                         {:variable/name :$socials
+                          :variable/type (keyword "[SocialLinkInput!]")}
+                         ]}]
+        {:db (assoc db :uploading-settings true)
+         :dispatch [::gql-events/mutation
+                    {:query query
+                     :variables (-> form-data
+                                    (select-keys [:name :description :tagline :handle :url :perks :socials :photo :bg-photo])
+                                    (clojure.set/rename-keys {:bg-photo :bgphoto}))
+                     :on-success on-success
+                     :on-error on-error}]}))))
+
+(re-frame/reg-event-fx
+  ::save-settings
   (fn [{:keys [db]} [_ {:keys [:form-data] :as data}]]
-    (let [query
-          {:queries [[:update-user-info
-                      {:input
-                        {:user/name :$name
-                         :user/description :$description
-                         :user/tagline :$tagline
-                         :user/handle :$handle
-                         :user/url :$url
-                         :user/perks :$perks
-                         ;; TODO for simplicity we are uploading photos as base64
-                         ;; TODO consider using as multipart or using a separated (REST?) API
-                         :user/photo :$photo
-                         :user/bg-photo :$bgphoto
-                         :user/socials :$socials
-                         }}
-                      [:user/address]]]
-           :variables [{:variable/name :$name
-                        :variable/type :String}
-                       {:variable/name :$description
-                        :variable/type :String}
-                       {:variable/name :$tagline
-                        :variable/type :String}
-                       {:variable/name :$handle
-                        :variable/type :String}
-                       {:variable/name :$url
-                        :variable/type :String}
-                       {:variable/name :$perks
-                        :variable/type :String}
-                       {:variable/name :$photo
-                        :variable/type :String}
-                       {:variable/name :$bgphoto
-                        :variable/type :String}
-                       {:variable/name :$socials
-                        :variable/type (keyword "[SocialLinkInput!]")}
-                       ]}]
-      {:db (assoc db :uploading-settings true)
-       :dispatch [::gql-events/mutation
-                  {:query query
-                   :variables (-> form-data
-                                  (select-keys [:name :description :tagline :handle :url :perks :socials :photo :bg-photo])
-                                  (clojure.set/rename-keys {:bg-photo :bgphoto}))
-                   :on-success [::save-settings-success]
-                   :on-error [::save-settings-error]}]})))
+    {:dispatch [::do-save-settings {:form-data form-data
+                                    :on-success [::save-settings-success]
+                                    :on-error [::save-settings-error]}]}))
 
 (re-frame/reg-event-fx
   ::save-settings-success
@@ -197,6 +206,14 @@
                 ;; TODO proper error handling
                 {:error (map :message error)
                  :form-data form-data} ::set-visibility]}))
+
+(re-frame/reg-event-fx
+  ::save-and-request-grant
+  ; Save the current settings and sends a GraphQL mutation query to request a grant.
+  (fn [{:keys [db]} [_ {:keys [:form-data :on-success] :as data}]]
+    {:dispatch [::do-save-settings {:form-data form-data
+                                    :on-success [::request-grant {:on-success on-success}]
+                                    :on-error [::request-grant-error]}]}))
 
 (re-frame/reg-event-fx
   ::request-grant

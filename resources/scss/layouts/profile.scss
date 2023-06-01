@@ -144,6 +144,9 @@
 		.midias {
 			display: flex;
 			flex-wrap: wrap;
+			> div {
+				width: 100%;
+			}
 			.cards {
 				display: flex;
 			}
@@ -238,6 +241,7 @@
 				.midia {
 					width: calc(50% - 25px);
 					margin: 0 12.5px 24px;
+					height: 348px;
 				}
 			}
 		}

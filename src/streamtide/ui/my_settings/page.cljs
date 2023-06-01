@@ -248,12 +248,12 @@
                  [content-card content]
                  )))])])))))
 
-(defn popup-request-grant [grant-popup-open? show-grant-popup-fn]
+(defn popup-request-grant [grant-popup-open? show-grant-popup-fn settings-form-data]
   (let [form-data (r/atom {})
         close-popup (fn [ev]
                       (show-grant-popup-fn ev false)
                       (reset! form-data {}))]
-    (fn []
+    (fn [_ _ settings-form-data]
       (let [checked? (:agreed @form-data)
             loading? @(subscribe [::ms-subs/requesting-grant?])]
         [:div {:id "popUpGrant" :style {"display" (if @grant-popup-open? "flex" "none")}}
@@ -273,8 +273,10 @@
             [:input.btBasic.btBasic-light {:disabled (or loading? (not checked?))
                                            :type "submit"
                                            :value "SUBMIT FOR APPROVAL"
-                                           :on-click #(dispatch [::ms-events/request-grant {:on-success
-                                                                                            (fn [] (close-popup nil))}])}]]]]]))))
+                                           :on-click #(dispatch [::ms-events/save-and-request-grant
+                                                                 {:form-data settings-form-data
+                                                                  :on-success
+                                                                  (fn [] (close-popup nil))}])}]]]]]))))
 
 (defn popup-add-content [add-content-popup-open? show-add-content-popup-fn]
   (let [init-form {:type :image}
@@ -358,6 +360,15 @@
                                   {:id [:socials :eth]
                                    :icon-src "/img/layout/ico_eth.svg"
                                    :read-only true})]]))))
+
+(defn clean-form-data [form-data form-values initial-values]
+  (cond-> form-values
+          true (select-keys (keys (filter (fn [[key val]]
+                                            (or (= key :name)
+                                                (not= (key initial-values) val))) form-values)))
+          (:socials @form-data) (update :socials socials-kw->gql)
+          (:photo @form-data) (update :photo photo->gql)
+          (:bg-photo @form-data) (update :bg-photo photo->gql)))
 
 (defmethod page :route.my-settings/index []
   (let [active-account (subscribe [::accounts-subs/active-account])
@@ -463,15 +474,9 @@
             [:hr]
             [:button.btBasic.btBasic-light.btSubmit
              {:type "submit"
+              :disabled (empty? @form-data)
               :on-click #(dispatch [::ms-events/save-settings
-                                    {:form-data (cond-> form-values
-                                                        true (select-keys (keys (filter (fn [[key val]]
-                                                                                          (or (= key :name)
-                                                                                          (not= (key initial-values) val))) form-values)))
-                                                        (:socials @form-data) (update :socials socials-kw->gql)
-                                                        (:photo @form-data) (update :photo photo->gql)
-                                                        (:bg-photo @form-data) (update :bg-photo photo->gql))}])}
-             ;; TODO disable button when no field is modified
+                                    {:form-data (clean-form-data form-data form-values initial-values)}])}
              "SAVE CHANGES"]]]
           (when (= :grant.status/approved grant-status)
             [:div.sectionYourContent
@@ -484,5 +489,5 @@
              "ADD CONTENT"]
             [contents]
            ]])]
-         [popup-request-grant grant-popup-open? show-grant-popup-fn]
+         [popup-request-grant grant-popup-open? show-grant-popup-fn (clean-form-data form-data form-values initial-values)]
          [popup-add-content add-content-popup-open? show-add-content-popup-fn]]))))

@@ -227,6 +227,10 @@
 			line-height: 65px;
 			font-size: 18px;
 			letter-spacing: 1.87px;
+			&:disabled {
+				pointer-events: none;
+				background-color: lightgray;
+			}
 		}
 	}
 	.sectionYourContent {
@@ -378,6 +382,9 @@
 			.yourContents {
 				display: flex;
 				flex-wrap: wrap;
+				> div {
+					width: 100%;
+				}
 				.yourContent {
 					width: calc(50% - 25px);
 					margin: 0 12.5px 24px;
