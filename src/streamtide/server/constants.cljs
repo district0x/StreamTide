@@ -7,6 +7,7 @@
    :streamtide/blacklisted-removed-event [:streamtide-fwd :BlacklistedRemoved]
    :streamtide/patron-added-event [:streamtide-fwd :PatronAdded]
    :streamtide/round-started-event [:streamtide-fwd :RoundStarted]
+   :streamtide/round-closed-event [:streamtide-fwd :RoundClosed]
    :streamtide/matching-pool-donation-event [:streamtide-fwd :MatchingPoolDonation]
    :streamtide/distribute-event [:streamtide-fwd :Distribute]
    :streamtide/donate-event [:streamtide-fwd :Donate]

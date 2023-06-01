@@ -96,6 +96,14 @@
 (defn active-round? [round timestamp]
   (>= (+ (:round/start round) (:round/duration round)) timestamp))
 
+(defn round-closed-event [_ {:keys [:args]}]
+  (let [{:keys [:round-id :timestamp]} args]
+    (safe-go
+      (let [round (db/get-round round-id)]
+        (when (active-round? round timestamp)
+          (db/update-round! {:round/id round-id
+                             :round/duration (- timestamp (:round/start round))}))))))
+
 (defn donate-event [_ {:keys [:args]}]
   (let [{:keys [:sender :value :patron-address :round-id :timestamp]} args]
     (safe-go
@@ -221,6 +229,7 @@
                              :streamtide/blacklisted-removed-event blacklisted-removed-event
                              :streamtide/patron-added-event patron-added-event
                              :streamtide/round-started-event round-started-event
+                             :streamtide/round-closed-event round-closed-event
                              :streamtide/matching-pool-donation-event matching-pool-donation-event
                              :streamtide/distribute-event distribute-event
                              :streamtide/donate-event donate-event
