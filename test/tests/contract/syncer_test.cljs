@@ -78,14 +78,18 @@
             (<! (wait-event :patron-added))
             (is (= (:grant/status (db/get-grant user)) (name :grant.status/approved)))
 
-            (<! (smart-contracts/contract-send :streamtide-fwd :start-round [1000] {:from admin}))
+            (<! (smart-contracts/contract-send :streamtide-fwd :close-round [] {:from admin}))
+
+            (<! (smart-contracts/contract-send :streamtide-fwd :start-round [1000] {:from admin :value "1000"}))
             (<! (wait-event :round-started))
+            (<! (wait-event :matching-pool-donation))
+
             (let [rounds (:items (db/get-rounds {:first 6}))
                   round (first rounds)
                   round-id (:round/id round)]
               (is (= (count rounds) 1))
               (is (> round-id 0))
-              (is (= (:round/matching-pool round) "0"))
+              (is (= (:round/matching-pool round) "1000"))
               (is (> (:round/start round) 0))
 
               (<! (web3-eth/send-transaction! @web3 {:from admin :to (smart-contracts/contract-address :streamtide-fwd) :value 1000}))
@@ -94,17 +98,19 @@
                     round (first rounds)]
                 (is (= (count rounds) 1))
                 (is (= round-id (:round/id round)))
-                (is (= (:round/matching-pool round) "1000"))))
+                (is (= (:round/matching-pool round) "2000"))))
 
             (<! (web3-eth/send-transaction! @web3 {:from admin :to (smart-contracts/contract-address :streamtide-fwd) :value 1500}))
             (<! (wait-event :matching-pool-donation))
-            (is (= (:round/matching-pool (first (:items (db/get-rounds {:first 6})))) "2500"))
+            (is (= (:round/matching-pool (first (:items (db/get-rounds {:first 6})))) "3500"))
 
             (<! (smart-contracts/contract-send :streamtide-fwd :donate [[user]["500"]] {:from user2 :value "500"}))
             (<! (wait-event :donate))
             (let [donations (:items (db/get-donations {:sender user2 :receiver user :first 6}))
                   donation (first donations)
-                  round-id (:round/id (first (:items (db/get-rounds {:first 1}))))]
+                  round-id (:round/id (first (:items (db/get-rounds {:first 1}))))
+                  permissions (db/get-user-content-permissions {:user/source-user user2 :user/target-user user})]
+              (is (= (count permissions) 1))
               (is (= (count donations) 1))
               (is (= (:donation/sender donation) user2))
               (is (= (:donation/receiver donation) user))

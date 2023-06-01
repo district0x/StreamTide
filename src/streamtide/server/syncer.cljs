@@ -107,7 +107,9 @@
                            :donation/date timestamp
                            :donation/amount value
                            :donation/coin (name :eth)
-                           :round/id round-id})))))
+                           :round/id round-id})
+        (db/add-user-content-permission! {:user/source-user sender
+                                          :user/target-user patron-address})))))
 
 (defn matching-pool-donation-event [_ {:keys [:args]}]
   (let [{:keys [:sender :value]} args]

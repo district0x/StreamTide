@@ -253,7 +253,7 @@
                            [:= :c.content/public 1] ; get content if is public ...
                            [:= :u.user/address current-user] ; ... or is the owner
                            [:exists {:select [1] :from [[:user-roles :ur]] :where [:and [:= :ur.user/address current-user] [:= :ur.role/role "admin"]]}] ; ... or is an admin
-                           [:in current-user {:select [:ucp.user/target-user] :from [[:user-content-permissions :ucp]] :where [:= :ucp.user/source-user current-user]}] ; ... or has explicit permission to it
+                           [:in address {:select [:ucp.user/target-user] :from [[:user-content-permissions :ucp]] :where [:= :ucp.user/source-user current-user]}] ; ... or has explicit permission to it
                            ]
                    }
                   address (sqlh/merge-where [:= :u.user/address address])
@@ -361,6 +361,13 @@
 ;                                                     order-by)
 ;                                                (or (keyword order-dir) :asc)]]))]
 ;    (paged-query query page-size page-start-idx)))
+
+(defn get-user-content-permissions [{:keys [:user/source-user :user/target-user]}]
+  (db-all (cond->
+            {:select [:*]
+             :from [[:user-content-permissions :ucp]]}
+            source-user (sqlh/merge-where [:= :ucp.user/source-user source-user])
+            target-user (sqlh/merge-where [:= :ucp.user/target-user target-user]))))
 
 (defn get-roles [user-address]
   (db-all {:select [:user-roles.role/role]
@@ -475,6 +482,12 @@
                     [:= :content/id id]
                     [:= :user/address address]]}))
 
+
+(defn add-user-content-permission! [{:keys [:user/source-user :user/target-user] :as args}]
+  (db-run! {:insert-into :user-content-permissions
+            :values [(select-keys args user-content-permission-column-names)]
+            :upsert {:on-conflict [:user/source-user :user/target-user]
+                     :do-nothing []}}))
 
 (defn all-events []
   (db-all {:select [:*]
