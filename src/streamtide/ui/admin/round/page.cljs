@@ -324,13 +324,14 @@
            (if loading?
              [spinner/spin]
              [:div.contentRound
-              (let [status (if (round-open? round) "open" (if distributed "distributed" "closed"))]
+              (let [status (if (round-open? round) "open" (if (not= "0" distributed) "distributed" "closed"))]
                 [:div.status
                  {:class status}
                  (str "Status: " status)])
               [:div.start (str "Start Time: " (ui-utils/format-graphql-time start))]
               [:div.end (str "End Time: " (ui-utils/format-graphql-time (+ start duration)))]
               [:div.matching (str "Matching pool: " (ui-utils/format-price matching-pool))]
+              [:div.distributed (str "Distributed amount: " (ui-utils/format-price distributed))]
               (when (round-open? round)
                 (let [match-pool-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/fill-matching-pool tx-id}])
                       match-pool-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/fill-matching-pool tx-id}])]

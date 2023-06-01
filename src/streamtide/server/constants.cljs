@@ -10,5 +10,5 @@
    :streamtide/round-closed-event [:streamtide-fwd :RoundClosed]
    :streamtide/matching-pool-donation-event [:streamtide-fwd :MatchingPoolDonation]
    :streamtide/distribute-event [:streamtide-fwd :Distribute]
-   :streamtide/donate-event [:streamtide-fwd :Donate]
-   :streamtide/failed-distribute-event [:streamtide-fwd :FailedDistribute]})
+   :streamtide/distribute-round-event [:streamtide-fwd :DistributeRound]
+   :streamtide/donate-event [:streamtide-fwd :Donate]})

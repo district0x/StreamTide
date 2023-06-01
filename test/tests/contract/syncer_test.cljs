@@ -79,6 +79,7 @@
             (is (= (:grant/status (db/get-grant user)) (name :grant.status/approved)))
 
             (<! (smart-contracts/contract-send :streamtide-fwd :close-round [] {:from admin}))
+            (<! (wait-event :round-closed))
 
             (<! (smart-contracts/contract-send :streamtide-fwd :start-round [1000] {:from admin :value "1000"}))
             (<! (wait-event :round-started))
@@ -90,6 +91,7 @@
               (is (= (count rounds) 1))
               (is (> round-id 0))
               (is (= (:round/matching-pool round) "1000"))
+              (is (= (:round/distributed round) "0"))
               (is (> (:round/start round) 0))
 
               (<! (web3-eth/send-transaction! @web3 {:from admin :to (smart-contracts/contract-address :streamtide-fwd) :value 1000}))
@@ -141,13 +143,24 @@
 
                   (let [matchings (:items (db/get-matchings {:sender user2 :receiver user :first 6}))
                         matching (last matchings)
-                        round-id (:round/id (first (:items (db/get-rounds {:first 1}))))]
+                        round (first (:items (db/get-rounds {:first 1})))
+                        round-id (:round/id round)]
                     (is (= (count matchings) 1))
                     (is (= (:matching/receiver matching) user))
                     (is (= (str (:matching/amount matching)) "1000"))
                     (is (> (:matching/date matching) 0))
                     (is (= (:matching/coin matching) "eth"))
-                    (is (= (:round/id matching) round-id)))
+                    (is (= (:round/id matching) round-id))
+                    (is (= (:round/distributed round) "1000")))
+
+                  (<! (smart-contracts/contract-send :streamtide-fwd :start-round [1000] {:from admin :value "1000"}))
+                  (<! (wait-event :round-started))
+
+                  (<! (smart-contracts/contract-send :streamtide-fwd :close-round [] {:from admin}))
+                  (<! (wait-event :round-closed))
+
+                  (let [round (first (:items (db/get-rounds {:first 1 :order-by :rounds.order-by/id :order-dir :desc})))]
+                    (is (< (int (:round/duration round)) 1000)))
 
                   (web3-evm/revert!
                     @web3

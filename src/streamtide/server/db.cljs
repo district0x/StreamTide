@@ -20,6 +20,7 @@
 
 ; columns holding big numbers
 (def big-numbers-fields [:round/matching-pool
+                         :round/distributed
                          :matching/amount
                          :leader/donation-amount
                          :leader/matching-amount
@@ -137,7 +138,7 @@
    [:round/start :timestamp not-nil]
    [:round/duration :unsigned :integer not-nil]
    [:round/matching-pool :unsigned :integer not-nil]   ;; TODO use string to avoid precision errors? order-by is important
-   [:round/distributed :tinyint]])
+   [:round/distributed :unsigned :integer]])
 
 (def events-columns
   [[:event/contract-key :varchar not-nil]

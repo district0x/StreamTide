@@ -45,7 +45,7 @@
      [:div.cel.matching-pool
       [nav [:span (ui-utils/format-price matching-pool)]]]
      [:div.cel.distributed
-      [nav [:span (if distributed "YES" "NO")]]]]))
+      [nav [:span (if (not= "0" distributed) "YES" "NO")]]]]))
 
 
 (defn round-entries [rounds-search]

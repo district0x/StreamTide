@@ -304,7 +304,7 @@ type Round {
     round_start: Date
     round_duration: Int
     round_matchingPool: String
-    round_distributed: Boolean
+    round_distributed: String
 }
 
 type RoundList {

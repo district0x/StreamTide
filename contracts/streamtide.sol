@@ -21,7 +21,7 @@ contract MVPCLR is OwnableUpgradeable {
     event RoundStarted(uint256 roundStart, uint256 roundId, uint256 roundDuration);
     event RoundClosed(uint256 roundId); // Added event
     event MatchingPoolDonation(address sender, uint256 value, uint256 roundId);
-    event Distribute(address to, uint256 amount);
+    event Distribute(address to, uint256 amount, uint256 roundId);
     event DistributeRound(uint256 roundId, uint256 amount);
     
 
@@ -154,7 +154,7 @@ contract MVPCLR is OwnableUpgradeable {
         // Make sure the recipient address is a valid patron address
         require(isPatron[patrons[i]], "CLR:distribute - Not a valid recipient");
         patrons[i].transfer(amounts[i]); // Reverts transaction if transfer fails
-        emit Distribute(patrons[i], amounts[i]);
+        emit Distribute(patrons[i], amounts[i], roundId);
         totalAmount += amounts[i];  // Add the amount to totalAmount
     }
 //    matchingPool -= totalAmount; // Subtract the total distributed amount from the matching pool

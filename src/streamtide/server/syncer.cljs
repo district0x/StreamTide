@@ -88,7 +88,7 @@
                       :round/start round-start
                       :round/duration round-duration
                       :round/matching-pool 0
-                      :round/distributed false}))))
+                      :round/distributed 0}))))
 
 (defn current-round []
   (first (:items (db/get-rounds {:first 1 :order-by :rounds.order-by/id :order-dir :desc}))))
@@ -107,8 +107,7 @@
 (defn donate-event [_ {:keys [:args]}]
   (let [{:keys [:sender :value :patron-address :round-id :timestamp]} args]
     (safe-go
-      (let [round (current-round)
-            round-id (when (active-round? round timestamp) (:round/id round))]
+      (let [round-id (when (not= (str round-id) "0") round-id)]
         (db/upsert-user-info! {:user/address sender})
         (db/add-donation! {:donation/sender sender
                            :donation/receiver patron-address
@@ -120,26 +119,28 @@
                                           :user/target-user patron-address})))))
 
 (defn matching-pool-donation-event [_ {:keys [:args]}]
-  (let [{:keys [:sender :value]} args]
+  (let [{:keys [:sender :value :round-id]} args]
     (safe-go
-      (let [round (current-round)
-            round-id (:round/id round)
+      (let [round (db/get-round round-id)
             matching-pool (bn/+ (js/BigNumber. (:round/matching-pool round)) (js/BigNumber. value))]
         (db/update-round! {:round/id round-id :round/matching-pool (bn/fixed matching-pool)})))))
 
 (defn distribute-event [_ {:keys [:args]}]
-  (let [{:keys [:to :amount :timestamp]} args]
+  (let [{:keys [:to :amount :timestamp :round-id]} args]
     (safe-go
-      (let [round-id (:round/id (current-round))]
-        (db/add-matching! {:matching/receiver to
-                           :matching/amount amount
-                           :matching/date timestamp
-                           :matching/coin (name :eth)
-                           :round/id round-id})))))
+      (db/add-matching! {:matching/receiver to
+                         :matching/amount amount
+                         :matching/date timestamp
+                         :matching/coin (name :eth)
+                         :round/id round-id}))))
 
-(defn failed-distribute-event [_ {:keys [:args]}]
-  ;nothing to do, I guess... ¯\_(ツ)_/¯
-  )
+(defn distribute-round-event [_ {:keys [:args]}]
+  (let [{:keys [:round-id :amount :timestamp]} args]
+    (safe-go
+      (let [round (db/get-round round-id)
+            distributed-amount (bn/+ (js/BigNumber. (:round/distributed round)) (js/BigNumber. amount))]
+        (db/update-round! {:round/id round-id
+                           :round/distributed (bn/fixed distributed-amount)})))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -232,8 +233,8 @@
                              :streamtide/round-closed-event round-closed-event
                              :streamtide/matching-pool-donation-event matching-pool-donation-event
                              :streamtide/distribute-event distribute-event
-                             :streamtide/donate-event donate-event
-                             :streamtide/failed-distribute-event failed-distribute-event}
+                             :streamtide/distribute-round-event distribute-round-event
+                             :streamtide/donate-event donate-event}
             callback-ids (doall (for [[event-key callback] event-callbacks]
                                   (web3-events/register-callback! event-key (dispatcher callback))))]
         (web3-events/register-after-past-events-dispatched-callback! (fn []
