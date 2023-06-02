@@ -180,13 +180,13 @@
       (logic/request-grant! user-address)
       true)))
 
-(defn review-grant-mutation [_ {:keys [:user/address :grant/status] :as args} {:keys [:current-user]}]
-  (log/debug "review-grant-mutation" args)
+(defn review-grants-mutation [_ {:keys [:user/addresses :grant/status] :as args} {:keys [:current-user]}]
+  (log/debug "review-grants-mutation" args)
   (try-catch-throw
-    (logic/review-grant! (user-id current-user)
-                         {:user/address address
-                          :grant/status (gql-name->db-name status)})
-    (logic/get-grant (user-id current-user) address)))
+    (logic/review-grants! (user-id current-user)
+                          {:user/addresses addresses
+                           :grant/status (gql-name->db-name status)})
+    true))
 
 (defn blacklist-mutation [_ {:keys [:user/address :blacklist] :as args} {:keys [:current-user]}]
   (log/debug "blacklist-mutation" args)
@@ -259,7 +259,7 @@
            :announcements announcements-query-resolver}
    :Mutation {:update-user-info update-user-info-mutation
               :request-grant request-grant-mutation
-              :review-grant review-grant-mutation
+              :review-grants review-grants-mutation
               :blacklist blacklist-mutation
               :add-announcement add-announcement-mutation
               :remove-announcement remove-announcement-mutation

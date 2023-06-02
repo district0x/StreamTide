@@ -107,7 +107,8 @@
                                         (dispatch [::r-events/start-round {:send-tx/id tx-id
                                                                            :duration (get-duration @form-data)}]))}
             (if @start-round-tx-success? "Started" "Start")]]]
-          [:h3 "Previous Rounds"]
+          [:div.headerRound
+           [:h3 "Previous Rounds"]]
           [:div.headerRounds.d-none.d-lg-flex
            [:div.cel.cel-id
             [:span.titleCel.col-id "Id"]]

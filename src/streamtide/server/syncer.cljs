@@ -68,18 +68,20 @@
 (defn blacklisted-added-event [_ {:keys [:args]}]
   (let [{:keys [:_blacklisted]} args]
     (safe-go
-      (db/add-to-blacklist! _blacklisted))))
+      (db/add-to-blacklist! {:user/address _blacklisted}))))
 
 (defn blacklisted-removed-event [_ {:keys [:args]}]
   (let [{:keys [:_blacklisted]} args]
     (safe-go
-      (db/remove-from-blacklist! _blacklisted))))
+      (db/remove-from-blacklist! {:user/address _blacklisted}))))
 
-(defn patron-added-event [_ {:keys [:args]}]
-  (let [{:keys [:addr :timestamp]} args]
+(defn patrons-added-event [_ {:keys [:args]}]
+  (let [{:keys [:addresses :timestamp]} args]
     (safe-go
-      (db/upsert-user-info! {:user/address addr})
-      (db/upsert-grant! {:user/address addr :grant/status (name :grant.status/approved) :grant/decision-date timestamp}))))
+      (db/upsert-users-info! (map (fn [address] {:user/address address}) addresses))
+      (db/upsert-grants! {:user/addresses addresses
+                          :grant/status (name :grant.status/approved)
+                          :grant/decision-date timestamp}))))
 
 (defn round-started-event [_ {:keys [:args]}]
   (let [{:keys [:round-start :round-id :round-duration]} args]
@@ -228,7 +230,7 @@
                              :streamtide/admin-removed-event admin-removed-event
                              :streamtide/blacklisted-added-event blacklisted-added-event
                              :streamtide/blacklisted-removed-event blacklisted-removed-event
-                             :streamtide/patron-added-event patron-added-event
+                             :streamtide/patrons-added-event patrons-added-event
                              :streamtide/round-started-event round-started-event
                              :streamtide/round-closed-event round-closed-event
                              :streamtide/matching-pool-donation-event matching-pool-donation-event

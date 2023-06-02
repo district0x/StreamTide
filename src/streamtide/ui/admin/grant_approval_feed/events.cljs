@@ -14,58 +14,57 @@
   ::review-grant
   ; If the grant is approved, this sends a TX to include the user as a patron.
   ; If the grant is rejected, this send a GraphQL mutation request to change the status of a pending grant to rejected
-  (fn [{:keys [db]} [_ {:keys [:user/address :grant/status :send-tx/id] :as data}]]
+  (fn [{:keys [db]} [_ {:keys [:user/addresses :grant/status :send-tx/id] :as data}]]
     (if (= status :grant.status/approved)
-      (let [tx-name (str "Approving grant for user: " address)
+      (let [tx-name (str "Approving grant for " (count addresses) " users")
             active-account (account-queries/active-account db)]
-        {:dispatch [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
-                                         :fn :add-patron
-                                         :args [address]
+        {:db (assoc-in db [:reviewing-grants?] true)
+         :dispatch [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
+                                         :fn :add-patrons
+                                         :args [addresses]
                                          :tx-opts {:from active-account}
                                          :tx-id {:streamtide/add-patron id}
                                          :tx-log {:name tx-name
                                                   :related-href {:name :route.admin/grant-approval-feed}}
                                          :on-tx-success-n [[::logging/info (str tx-name " tx success") ::review-grant]
-                                                           [::notification-events/show (str "You successfully approve grant for user: " address)]]
+                                                           [::notification-events/show (str "You successfully approve grant for " + (count addresses) + "users: ")]
+                                                           [::review-grant-success data]]
                                          :on-tx-error [::logging/error (str tx-name " tx error")
                                                        {:user {:id active-account}
-                                                        :patron address}
+                                                        :patron addresses}
                                                        ::review-grant]}]})
 
       (let [query
-            {:queries [[:reviewGrant
-                        {:user/address :$address
-                         :grant/status :$status}
-                        [:grant/status
-                         [:grant/user [:user/address]]]]]
-             :variables [{:variable/name :$address
-                          :variable/type :ID!}
+            {:queries [[:review-grants
+                        {:user/addresses :$addresses
+                         :grant/status :$status}]]
+             :variables [{:variable/name :$addresses
+                          :variable/type (keyword "[ID!]!")}
                          {:variable/name :$status
                           :variable/type :GrantStatus!}]}]
-        {:db (assoc-in db [:reviewing-grant address] true)
+        {:db (assoc-in db [:reviewing-grants?] true)
          :dispatch [::gql-events/mutation
                     {:query query
-                     :variables {:address address
+                     :variables {:addresses addresses
                                  :status (gql-utils/kw->gql-name status)}
-                     :on-success [::review-grant-success]
-                     :on-error [::review-grant-error {:user/address address}]}]}))))
+                     :on-success [::review-grant-success data]
+                     :on-error [::review-grant-error {:user/address addresses}]}]}))))
 
 
 (re-frame/reg-event-fx
   ::review-grant-success
-  (fn [{:keys [db]} [_ result]]
+  (fn [{:keys [db]} [_ args]]
     ;; TODO Show message to user
-    (js/console.log "GRANT REVIEWED")
-    (let [address (-> result :review-grant :grant/user :user/address)
-          status (gql-utils/gql-name->kw (-> result :review-grant :grant/status))]
+    (js/console.log "GRANTS REVIEWED")
+    (let [{:keys [:user/addresses :grant/status]} args]
       {:db (-> db
-               (update :reviewing-grant dissoc address)
-               (assoc-in [:reviewed-grant address] status))})))
+               (dissoc :reviewing-grants?)
+               (update :reviewed-grant? merge (reduce (fn [col address] (conj col {address status})) {} addresses)))})))
 
 (re-frame/reg-event-fx
   ::review-grant-error
   (fn [{:keys [db]} [_ {:keys [:user/address]} error]]
-    {:db (update db :reviewing-grant dissoc address)
+    {:db (dissoc db :reviewing-grants?)
      :dispatch [::logging/error
                 (str "Failed to modify grant status for user " address)
                 ;; TODO proper error handling

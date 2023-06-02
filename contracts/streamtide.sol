@@ -16,7 +16,7 @@ contract MVPCLR is OwnableUpgradeable {
     event BlacklistedRemoved(address _blacklisted);
     event MatchingPoolFilled(uint256 amount);
 
-    event PatronAdded(address addr);
+    event PatronsAdded(address payable[] addresses);
 
     event RoundStarted(uint256 roundStart, uint256 roundId, uint256 roundDuration);
     event RoundClosed(uint256 roundId); // Added event
@@ -117,11 +117,13 @@ contract MVPCLR is OwnableUpgradeable {
         emit BlacklistedRemoved(_address);
 }
 
-    function addPatron(address payable addr) public onlyAdmin {
-        require(!isBlacklisted[addr], "Patron address is blacklisted");
-        isPatron[addr] = true;
-        emit PatronAdded(addr);
-
+    function addPatrons(address payable[] calldata addresses) public onlyAdmin {
+        for (uint256 i = 0; i < addresses.length; i++) {
+            address addr = addresses[i];
+            require(!isBlacklisted[addr], "Patron address is blacklisted");
+            isPatron[addr] = true;
+        }
+        emit PatronsAdded(addresses);
 }
 
     function donate(address[] memory patronAddresses, uint256[] memory amounts) public payable {

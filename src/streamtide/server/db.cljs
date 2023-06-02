@@ -51,7 +51,7 @@
 ;; DATABASE Schema
 
 (def user-columns
-  [[:user/address address primary-key]
+  [[:user/address address primary-key not-nil]
    [:user/name :varchar default-nil]
    [:user/description :varchar default-nil]
    [:user/photo :varchar default-nil]
@@ -123,7 +123,7 @@
    [(sql/call :foreign-key :user/target-user) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
 (def blacklist-columns
-  [[:user/address address primary-key]
+  [[:user/address address primary-key not-nil]
    [:blacklisted/date :timestamp]
    ;; TODO can we only ban actual users?
    ;[(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
@@ -134,7 +134,7 @@
    [:announcement/text :varchar not-nil]])
 
 (def round-columns
-  [[:round/id :integer primary-key]
+  [[:round/id :integer primary-key not-nil]
    [:round/start :timestamp not-nil]
    [:round/duration :unsigned :integer not-nil]
    [:round/matching-pool :unsigned :integer not-nil]   ;; TODO use string to avoid precision errors? order-by is important
@@ -223,7 +223,7 @@
   (let [page-start-idx (when after (js/parseInt after))
         page-size first
         query (cond->
-                {:select [:user.* [(sql/call :iif :blacklist.user/address true false) :user/blacklisted]]
+                {:select [:user.* [(sql/call :case [:<> :blacklist.user/address nil] true :else false) :user/blacklisted]]
                  :from [:user]
                  :left-join [:blacklist [:= :user.user/address :blacklist.user/address]]}
                 (some? blacklisted) (sqlh/merge-where [(if blacklisted :!= :=) :blacklist.user/address nil])
@@ -391,6 +391,14 @@
               :upsert {:on-conflict [:user/address]
                        :do-update-set (keys user-info)}})))
 
+(defn upsert-users-info! [args]
+  (log/debug "user-upsert-users-info!" args)
+  (let [user-infos (map #(select-keys % user-column-names) args)]
+    (db-run! {:insert-into :user
+              :values user-infos
+              :upsert {:on-conflict [:user/address]
+                       :do-update-set user-column-names}})))
+
 (defn upsert-user-socials! [social-links]
   (log/debug "user-social" {:social-links social-links})
   (db-run! {:insert-into :social-link
@@ -402,14 +410,15 @@
   (db-run! {:delete-from :social-link
             :where [:and [:= :user/address user-address] [:in :social/network social-networks]]}))
 
-(defn upsert-grant! [{:keys [:user/address :grant/status :grant/decision-date] :as args}]
-  "Insert a new grant for a user or update it if the user already requested a grant"
-  (log/debug "insert-grant" args)
+(defn upsert-grants! [{:keys [:user/addresses :grant/status :grant/decision-date] :as args}]
+  "Insert new grants for given users or update them if the users already requested a grant"
+  (log/debug "insert-grants" args)
   (db-run! {:insert-into :grant
-            :values [{:user/address address
-                      :grant/status status
-                      :grant/decision-date decision-date
-                      :grant/request-date (shared-utils/now-secs)}]
+            :values (map (fn [address]
+                           {:user/address address
+                            :grant/status status
+                            :grant/decision-date decision-date
+                            :grant/request-date (or decision-date (shared-utils/now-secs))}) addresses)
             :upsert {:on-conflict [:user/address]
                      :do-update-set [:grant/status :grant/decision-date]}}))
 

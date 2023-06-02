@@ -105,10 +105,10 @@ type Mutation {
     requestGrant
     : Boolean
 
-    reviewGrant(
-        user_address: ID!
+    reviewGrants(
+        user_addresses: [ID!]!
         grant_status: GrantStatus!
-    ): Grant
+    ): Boolean
 
     addContent(
         content_type: ContentType!

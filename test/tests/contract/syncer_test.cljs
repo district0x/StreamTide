@@ -67,15 +67,15 @@
 
             (<! (smart-contracts/contract-send :streamtide-fwd :add-blacklisted [user2] {:from admin}))
             (<! (wait-event :blacklisted-added))
-            (is (db/blacklisted? user2))
+            (is (db/blacklisted? {:user/address user2}))
 
             (<! (smart-contracts/contract-send :streamtide-fwd :remove-blacklisted [user2] {:from admin}))
             (<! (wait-event :blacklisted-removed))
-            (is (not (db/blacklisted? user2)))
+            (is (not (db/blacklisted? {:user/address user2})))
 
             (is (not= (:grant/status (db/get-grant user)) (name :grant.status/approved)))
-            (<! (smart-contracts/contract-send :streamtide-fwd :add-patron [user] {:from admin}))
-            (<! (wait-event :patron-added))
+            (<! (smart-contracts/contract-send :streamtide-fwd :add-patrons [[user]] {:from admin}))
+            (<! (wait-event :patrons-added))
             (is (= (:grant/status (db/get-grant user)) (name :grant.status/approved)))
 
             (<! (smart-contracts/contract-send :streamtide-fwd :close-round [] {:from admin}))

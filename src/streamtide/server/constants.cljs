@@ -5,7 +5,7 @@
    :streamtide/admin-removed-event [:streamtide-fwd :AdminRemoved]
    :streamtide/blacklisted-added-event [:streamtide-fwd :BlacklistedAdded]
    :streamtide/blacklisted-removed-event [:streamtide-fwd :BlacklistedRemoved]
-   :streamtide/patron-added-event [:streamtide-fwd :PatronAdded]
+   :streamtide/patrons-added-event [:streamtide-fwd :PatronsAdded]
    :streamtide/round-started-event [:streamtide-fwd :RoundStarted]
    :streamtide/round-closed-event [:streamtide-fwd :RoundClosed]
    :streamtide/matching-pool-donation-event [:streamtide-fwd :MatchingPoolDonation]
