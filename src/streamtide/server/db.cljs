@@ -406,9 +406,13 @@
             :upsert {:on-conflict [:user/address :social/network]
                      :do-update-set (keys (select-keys (first social-links) social-link-column-names))}}))
 
-(defn remove-user-socials! [user-address social-networks]
-  (db-run! {:delete-from :social-link
-            :where [:and [:= :user/address user-address] [:in :social/network social-networks]]}))
+(defn remove-user-socials! [{:keys [:user/address :social/networks :social/url] :as args}]
+  (log/debug "remove-user-socials" args)
+  (when (not-empty (select-keys args [:user/address :social/url]))
+    (db-run! (cond-> {:delete-from :social-link}
+                     address (sqlh/merge-where [:= :user/address address])
+                     networks (sqlh/merge-where [:in :social/network networks])
+                     url (sqlh/merge-where [:= :social/url url])))))
 
 (defn upsert-grants! [{:keys [:user/addresses :grant/status :grant/decision-date] :as args}]
   "Insert new grants for given users or update them if the users already requested a grant"

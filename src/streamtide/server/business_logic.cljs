@@ -103,13 +103,12 @@
     (let [network (shared-utils/uuid->network state)
           {:keys [:valid? :url]} (<! (verifiers/verify network (merge args
                                                                       {:user/address current-user})))]
-      (when valid? (stdb/upsert-user-socials! [{:user/address current-user
-                                               :social/network (name network)
-                                               :social/url url
-                                               :social/verified true}]))
-      ;; TODO remove verified social account from other users that have it verified
-      (print "IS VALID" valid?)
-      (print "URL" url)
+      (when valid?
+        (stdb/remove-user-socials! {:social/url url})  ; removes social network from any other users
+        (stdb/upsert-user-socials! [{:user/address current-user
+                                     :social/network (name network)
+                                     :social/url url
+                                     :social/verified true}]))
       valid?)))
 
 (defn generate-twitter-oauth-url [current-user args]
