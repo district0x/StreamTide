@@ -1,31 +1,31 @@
 (ns streamtide.ui.admin.black-listing.events
   (:require
-    [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
+    [district.ui.notification.events :as notification-events]
+    [district.ui.smart-contracts.queries :as contract-queries]
+    [district.ui.web3-accounts.queries :as account-queries]
+    [district.ui.web3-tx.events :as tx-events]
     [re-frame.core :as re-frame]))
 
 (re-frame/reg-event-fx
   ::blacklist
-  ; Sends a GraphQL mutation requesto to blacklist or whitelist a user
-  ; TODO shall we rather blacklist in the smart contract side?
-  (fn [{:keys [db]} [_ {:keys [:user/address :user/blacklisted] :as data}]]
-    (let [query
-          {:queries [[:blacklist
-                      {:user/address :$address
-                       :blacklist :$blacklist}
-                      [:user/address
-                       :user/blacklisted]]]
-           :variables [{:variable/name :$address
-                        :variable/type :ID!}
-                       {:variable/name :$blacklist
-                        :variable/type :Boolean!}
-                       ]}]
-      {:db (assoc-in db [:blacklisting address] true)
-       :dispatch [::gql-events/mutation
-                  {:query query
-                   :variables {:address address :blacklist blacklisted}
-                   :on-success [::blacklist-success]
-                   :on-error [::blacklist-error {:user/address address}]}]})))
+  ; Sends a transaction to blacklist or whitelist a user
+  (fn [{:keys [db]} [_ {:keys [:user/address :user/blacklisted? :send-tx/id] :as data}]]
+    (let [tx-name (str (if blacklisted? "Blacklisting" "Whitelisting") " address " address)
+          active-account (account-queries/active-account db)]
+      {:dispatch [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
+                                       :fn (if blacklisted? :add-blacklisted :remove-blacklisted)
+                                       :args [address]
+                                       :tx-opts {:from active-account}
+                                       :tx-id {:streamtide/blacklist id}
+                                       :tx-log {:name tx-name
+                                                :related-href {:name :route.admin/black-listing}}
+                                       :on-tx-success-n [[::logging/info (str tx-name " tx success") ::blacklist]
+                                                         [::notification-events/show (str "You successfully " (if blacklisted? "blacklisted" "whitelisted") " address " address)]]
+                                       :on-tx-error [::logging/error (str tx-name " tx error")
+                                                     {:user {:id active-account}
+                                                      :address address}
+                                                     ::blacklist]}]})))
 
 (re-frame/reg-event-fx
   ::blacklist-success

@@ -2,10 +2,11 @@
   "Page to show and manage blacklisted users.
   It shows a list of all users where and admin can blacklist or whitelist them"
   (:require
-    [district.ui.component.form.input :refer [text-input]]
+    [district.ui.component.form.input :refer [text-input pending-button]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
     [district.ui.graphql.subs :as gql]
+    [district.ui.web3-tx-id.subs :as tx-id-subs]
     [re-frame.core :refer [subscribe dispatch]]
     [reagent.core :as r]
     [streamtide.ui.admin.black-listing.events :as bl-events]
@@ -13,7 +14,8 @@
     [streamtide.ui.components.admin-layout :refer [admin-layout]]
     [streamtide.ui.components.general :refer [nav-anchor no-items-found]]
     [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
-    [streamtide.ui.components.spinner :as spinner]))
+    [streamtide.ui.components.spinner :as spinner]
+    [streamtide.ui.utils :as ui-utils]))
 
 (def page-size 6)
 
@@ -37,24 +39,33 @@
                :user/blacklisted]]]]))
 
 (defn blacklist-entry [{:keys [:user/name :user/address :user/blacklisted]}]
-  (let [loading? (subscribe [::bl-subs/blacklisting? address])
-        blacklist-fn (fn [blacklisted]
-                       (dispatch [::bl-events/blacklist {:user/address address
-                                                         :user/blacklisted blacklisted}]))
-        nav (partial nav-anchor {:route :route.profile/index :params {:address address}})]
-    [:div.contentBlackList
-     [:div.cel.name
-      [nav [:h3 name]]]
-     [:div.cel.eth
-      [nav [:span address]]]
-     [:div.cel.button
-      (when @loading? {:class "loading"})
-      (if
-        blacklisted
-        [:button.btBasic.btBasic-light.btAllow {:on-click
-                                                #(blacklist-fn false)} "ALLOW"]
-        [:button.btBasic.btBasic-light.btBlackList {:on-click
-                                                    #(blacklist-fn true)} "BLACKLIST"])]]))
+  (fn []
+    (let [tx-id (str "blacklist-" (random-uuid) address)]
+      (let [loading? (subscribe [::bl-subs/blacklisting? address])
+            blacklist-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/blacklist tx-id}])
+            blacklist-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/blacklist tx-id}])
+            blacklist-button (fn [{:keys [:text :pending :completed :class]} blacklisted?]
+                               [pending-button {:pending? @blacklist-tx-pending?
+                                                :pending-text pending
+                                                :disabled (or @blacklist-tx-pending? @blacklist-tx-success?)
+                                                :class (str "btBasic btBasic-light " class)
+                                                :on-click (fn [e]
+                                                            (.stopPropagation e)
+                                                            (dispatch [::bl-events/blacklist {:user/address address
+                                                                                              :user/blacklisted? blacklisted?
+                                                                                              :send-tx/id tx-id}]))}
+                              (if @blacklist-tx-success? completed text)])
+            nav (partial nav-anchor {:route :route.profile/index :params {:address address}})]
+        [:div.contentBlackList
+         [:div.cel.name
+          [nav [:h3 (ui-utils/truncate-text name 28)]]]
+         [:div.cel.eth
+          [nav [:span address]]]
+         [:div.cel.button
+          (when @loading? {:class "loading"})
+          (if blacklisted
+            [blacklist-button {:text "ALLOW" :pending "ALLOWING" :completed "ALLOWED" :class "btAllow"} false]
+            [blacklist-button {:text "BLACKLIST" :pending "BLACKLISTING" :completed "BLACKLISTED" :class "btBlackList"} true])]]))))
 
 
 (defn blacklist-list [form-data users-search]
