@@ -4,6 +4,7 @@
   It also load the content of the persistent storage into the re-frame db"
   (:require [akiroz.re-frame.storage :as storage]
             [cljsjs.jquery]
+            [cljsjs.jwt-decode]
             [district.cljs-utils :as cljs-utils]
             [district.ui.component.router :refer [router]]
             [district.ui.graphql.events :as gql-events]
@@ -19,6 +20,7 @@
             [district.ui.web3]
             [mount.core :as mount]
             [re-frame.core :as re-frame]
+            [streamtide.shared.utils :as shared-utils]
             [streamtide.ui.about.page]
             [streamtide.ui.admin.announcements.page]
             [streamtide.ui.admin.black-listing.page]
@@ -60,6 +62,13 @@
                 jwt)]
       {:dispatch [::gql-events/set-authorization-token jwt]})))
 
+(defn check-session [session]
+  (let [jwt (:jwt session)
+        expire (:exp (js->clj (js/jwt_decode jwt) :keywordize-keys true))]
+    (when (and expire
+               (> expire (+(shared-utils/now-secs) 7200))) ;; when jwt is about to expire we don't use it
+      session)))
+
 (re-frame/reg-event-db
   ::init-defaults
   ; Loads into the re-frame DB the entries persisted in the browser local store.
@@ -67,7 +76,7 @@
   (fn [db [store]]
     (-> db
         (assoc :day-night-switch (:day-night-switch store))
-        (assoc :active-session (:active-session store))
+        (assoc :active-session (check-session (:active-session store)))
         (assoc :cart (:cart store))
         (assoc :multipliers (:multipliers store))
         (assoc :donations (:donations store)))))

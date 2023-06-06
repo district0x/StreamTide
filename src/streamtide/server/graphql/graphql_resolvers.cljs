@@ -162,9 +162,10 @@
 (defn sign-in-mutation [_ {:keys [:data-signature :data] :as args} {:keys [config]}]
   (log/debug "sign-in-mutation" args)
   (try-catch-throw
-    (let [sign-in-secret (-> config :graphql :sign-in-secret)
-          user-address (authorization/recover-personal-signature data data-signature)
-          jwt (authorization/create-jwt user-address sign-in-secret)]
+    (let [user-address (authorization/recover-personal-signature data data-signature)
+          sign-in-secret (-> config :graphql :sign-in-secret)
+          expires-in (-> config :graphql :expires-in)
+          jwt (authorization/create-jwt user-address sign-in-secret expires-in)]
       (logic/validate-sign-in user-address)
       {:jwt jwt :user/address user-address})))
 
