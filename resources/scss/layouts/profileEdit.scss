@@ -233,100 +233,6 @@
 			}
 		}
 	}
-	.sectionYourContent {
-		//display: none;
-		display: block;
-		background: $bgSite;
-		padding: 0px 0 52px;
-		.yourContent {
-			border-radius: 7px;
-			overflow: hidden;
-			//max-width: calc(50% - 25px);
-			&.remove {
-				transition: all 0.75s ease-in-out;
-				opacity: 0;
-				transform: scale(0);
-				//max-width: 0;
-				//display: none;
-			}
-			//&.removing {
-			//	transition: all 0.75s ease-in-out;
-			//	opacity: 0;
-			//	transform: scale(0);
-			//}
-		}
-		.header {
-			background: $headerContent;
-			color: $white;
-			display: flex;
-			align-items: center;
-			padding: 0 11px;
-			height: 39.61px;
-		}
-		.buttons {
-			margin: 0 0 0 auto;
-			display: flex;
-			align-items: center;
-			button {
-				width: 21px;
-				height: 21px;
-				background-color: transparent;
-				background-position: center;
-				background-repeat: no-repeat;
-				background-size: contain;
-				text-indent: -999em;
-				padding: 0;
-			}
-			.btPin {
-				background-image: url('../img/layout/icon-pin-content.svg');
-				&.selected {
-					background-image: url('../img/layout/icon-pin-content-hover.svg');
-				}
-			}
-			.btRemove {
-				background-image: url('../img/layout/icon-x-lilac.svg');
-			}
-			hr {
-				border: none;
-				border-left: 1px solid $lilac;
-				width: 0;
-				height: 21px;
-				margin: 0 13px;
-			}
-		}
-		.yourContents {
-			.yourContent {
-				width: 100%;
-				margin-bottom: 15.5px;
-				float: left;
-				.content {
-					width: 100%;
-					//line-height: 0;
-					height: 353px;
-				}
-				img,
-				video,
-				iframe {
-					width: 100%;
-					height: auto;
-					position: relative;
-					z-index: 10;
-				}
-				video,
-				iframe {
-					height: 100%;
-				}
-			}
-		}
-		.btAdd {
-			width: 100%;
-			margin: 0 auto;
-			height: 65px;
-			line-height: 65px;
-			font-size: 18px;
-			letter-spacing: 1.87px;
-		}
-	}
 	&.approved {
 		.apply {
 			display: none;
@@ -347,9 +253,6 @@
 			hr {
 				display: block;
 			}
-		}
-		.sectionYourContent {
-			display: block;
 		}
 		.contentEditProfile {
 			.socialLinks {
@@ -377,19 +280,6 @@
 		}
 		hr {
 			margin-bottom: 58px;
-		}
-		.sectionYourContent {
-			.yourContents {
-				display: flex;
-				flex-wrap: wrap;
-				> div {
-					width: 100%;
-				}
-				.yourContent {
-					width: calc(50% - 25px);
-					margin: 0 12.5px 24px;
-				}
-			}
 		}
 	}
 	@include media-breakpoint-up(lg) {
@@ -512,40 +402,6 @@
 		.submitField {
 			background: $bgSite;
 			padding: 29px 20px 0px;
-		}
-		.sectionYourContent {
-			padding: 48px 0 160px;
-			.containerContents {
-				background-color: $bgCard;
-				border-radius: 8px;
-				padding: 65px 33px 59px;
-				margin-bottom: 23px;
-			}
-			.header {
-				padding: 0 14px;
-				height: 61px;
-			}
-			.buttons {
-				button {
-					width: 33.16px;
-					height: 33.16px;
-				}
-				.btPin {
-					margin-right: 10.12px;
-					&:hover {
-						background-image: url('../img/layout/icon-pin-content-hover.svg');
-					}
-				}
-				.btRemove {
-					transition: $trasitionbt;
-					&:hover {
-						background-image: url('../img/layout/icon-x-dark-hover.svg');
-					}
-				}
-				hr {
-					display: none;
-				}
-			}
 		}
 		&.approved {
 			.containerEdit {

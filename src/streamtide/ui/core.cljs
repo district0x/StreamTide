@@ -34,6 +34,7 @@
             [streamtide.ui.grants.page]
             [streamtide.ui.home.page]
             [streamtide.ui.leaderboard.page]
+            [streamtide.ui.my-content.page]
             [streamtide.ui.my-settings.page]
             [streamtide.ui.oauth-callback.verifier]
             [streamtide.ui.profile.page]

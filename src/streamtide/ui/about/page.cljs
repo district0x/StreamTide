@@ -4,7 +4,7 @@
     [district.ui.component.page :refer [page]]
     [streamtide.ui.components.app-layout :refer [app-layout]]))
 
-(defmethod page :route.my-settings-grants/index []
+(defmethod page :route.about/index []
   (let []
     (fn []
       [app-layout

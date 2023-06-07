@@ -17,7 +17,10 @@
                      {:text "Leaderboard"
                       :route :route.leaderboard/index}
                      {:text "About"
-                      :route :route.my-settings-grants/index}
+                      :route :route.about/index}
+                     {:text  "My Content"
+                      :route :route.my-content/index
+                      :require-session? true}
                      {:text  "My Settings"
                       :route :route.my-settings/index
                       :require-session? true}
