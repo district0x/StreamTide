@@ -1,7 +1,6 @@
 (ns streamtide.ui.my-settings.page
   ; Page to edit the user profile
   (:require
-    [cljsjs.tinymce-react]
     [district.graphql-utils :as gql-utils]
     [district.ui.component.form.input :refer [text-input get-by-path assoc-by-path file-drag-input checkbox-input radio-group]]
     [district.ui.component.page :refer [page]]
@@ -15,10 +14,6 @@
     [streamtide.ui.my-settings.events :as ms-events]
     [streamtide.ui.my-settings.subs :as ms-subs]
     [streamtide.ui.utils :refer [switch-popup]]))
-
-
-; TODO maybe use a simpler editor. A textarea should be good enough
-(def editor (r/adapt-react-class js/editor.Editor))
 
 (def page-size 6)
 
@@ -300,11 +295,10 @@
               [:div.biography
                [:h2.titleEdit "Biography"]
                [:div.textField
-                [editor {:id "biography"
-                         :disabled loading?
-                         :value (:description form-values)
-                         :onEditorChange (fn [value]
-                                           (swap! form-data assoc :description value))}]]]
+                [initializable-text-input
+                 (merge input-params
+                        {:id :description
+                         :input-type :textarea})]]]
               [social-links input-params]
               [:hr.lineProfileEdit]
               [grant-info grant-status show-grant-popup-fn]
@@ -312,15 +306,11 @@
               [:div.perks
                [:h2 "Perks Button URL"]
                [:p "Lorem ipsum dolor sit amet, consectetur adipiscing elit."]
-               ;[:input.inputField {:type "url" :defaultValue "TODO"}]
                [initializable-text-input
                 (merge input-params
                        {:class "inputField"
                         :id :perks
-                        :type :url})]
-
-               ])
-              ]]]
+                        :type :url})]])]]]
            [:div.submitField
             [:hr]
             [:button.btBasic.btBasic-light.btSubmit

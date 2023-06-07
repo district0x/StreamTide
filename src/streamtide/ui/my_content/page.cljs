@@ -2,7 +2,6 @@
   ; Page to manage user content
   (:require
     [cljs-time.coerce :as tc]
-    [cljsjs.tinymce-react]
     [district.graphql-utils :as gql-utils]
     [district.ui.component.form.input :refer [text-input get-by-path assoc-by-path file-drag-input checkbox-input radio-group]]
     [district.ui.component.page :refer [page]]

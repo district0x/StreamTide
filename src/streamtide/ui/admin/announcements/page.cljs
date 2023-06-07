@@ -1,7 +1,7 @@
 (ns streamtide.ui.admin.announcements.page
   "Page to manage the announcements which appear in the top of the page"
   (:require
-    [cljsjs.tinymce-react]
+    [district.ui.component.form.input :refer [textarea-input]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.subs :as gql]
     [re-frame.core :refer [subscribe dispatch]]
@@ -13,9 +13,6 @@
 
 ; TODO currently admins can create many announcements but users would only see the first one.
 ; Maybe we would allow enabling or disabling the announcement without having to delete them, or even give some validity period
-
-; TODO maybe use a simpler editor. A textarea should be good enough
-(def editor (r/adapt-react-class js/editor.Editor))
 
 (defn build-announcements-query []
   (let []
@@ -61,11 +58,9 @@
           [:span.titleCel.col-user "Add Announcement"]
           [:div.form.formAnnouncement
            [:div.textField
-            [editor {:id "textareaAnnouncement"
-                     :disabled @adding?
-                     :value (:announcement @form-data)
-                     :onEditorChange (fn [value]
-                                       (swap! form-data assoc :announcement value))}]]
+            [textarea-input {:id :announcement
+                             :form-data form-data
+                             :disabled @adding?}]]
            [:input.btBasic.btBasic-light
             {:type "submit"
              :value "POST"
