@@ -162,12 +162,17 @@
 (defn sign-in-mutation [_ {:keys [:data-signature :data] :as args} {:keys [config]}]
   (log/debug "sign-in-mutation" args)
   (try-catch-throw
-    (let [user-address (authorization/recover-personal-signature data data-signature)
-          sign-in-secret (-> config :graphql :sign-in-secret)
-          expires-in (-> config :graphql :expires-in)
-          jwt (authorization/create-jwt user-address sign-in-secret expires-in)]
+    (let [{:keys [sign-in-secret expires-in]} (-> config :graphql)
+          user-address (authorization/recover-personal-signature data data-signature)]
+      (authorization/validate-data data sign-in-secret user-address)
       (logic/validate-sign-in user-address)
-      {:jwt jwt :user/address user-address})))
+      (let [jwt (authorization/create-jwt user-address sign-in-secret expires-in)]
+        {:jwt jwt :user/address user-address}))))
+
+(defn generate-otp-mutation [_ {:keys [:user/address] :as args} {:keys [config]}]
+  (log/debug "generate-otp-mutation" args)
+  (try-catch-throw
+    (authorization/generate-otp (-> config :graphql :sign-in-secret) address)))
 
 (defn roles-query-resolver [_ _ {:keys [:current-user]}]
   (log/debug "roles resolver" current-user)
@@ -268,6 +273,7 @@
               :remove-content remove-content-mutation
               :set-content-visibility set-content-visibility-mutation
               :sign-in sign-in-mutation
+              :generate-otp generate-otp-mutation
               :verify-social verify-social-mutation
               :generate-twitter-oauth-url generate-twitter-oauth-url-mutation}
    :User {:user/socials user->socials-resolver

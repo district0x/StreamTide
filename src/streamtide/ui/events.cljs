@@ -4,7 +4,9 @@
             [district.ui.logging.events :as logging]
             [district.ui.web3-accounts.queries :as account-queries]
             [district.ui.web3.queries :as web3-queries]
-            [re-frame.core :as re-frame]))
+            [goog.string :as gstring]
+            [re-frame.core :as re-frame]
+            [streamtide.shared.utils :as shared-utils]))
 
 (def interceptors [re-frame/trim-v])
 
@@ -19,12 +21,29 @@
 
 (re-frame/reg-event-fx
   :user/sign-in
-  ; To log-in, the user needs to sign a message with its wallet and send it to the server.
+  ; To log-in, the user first requests an OTP to the server.
+  ; Then it sign a message (containing the OTP) with its wallet and send it to the server.
   ; The server will produce a JWT which is stored in the browser to be sent on each request.
   (fn [{:keys [db]} _]
     (let [active-account (account-queries/active-account db)
-          ;; TODO for extra security, the data to sign should include an expiration timestamp or one-time-token
-          data-str " Sign in to Streamtide! "]
+          query
+          {:queries [[:generate-otp
+                      {:user/address :$address}]]
+           :variables [{:variable/name :$address
+                        :variable/type :ID!}]}]
+      {:dispatch [::gql-events/mutation
+                  {:query query
+                   :variables {:address active-account}
+                   :on-success [:user/request-signature]
+                   :on-error [::logging/error " Error Requesting OTP to server."]}]})))
+
+(re-frame/reg-event-fx
+  :user/request-signature
+  ; Once having the OTP, the user sign a message with its wallet and send it to the server.
+  (fn [{:keys [db]} [_ response]]
+    (let [otp (:generate-otp response)
+          active-account (account-queries/active-account db)
+          data-str (gstring/format shared-utils/auth-data-msg otp)]
       {:web3/personal-sign
        {:web3 (web3-queries/web3 db)
         :data-str data-str

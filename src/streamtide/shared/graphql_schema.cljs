@@ -125,6 +125,10 @@ type Mutation {
         content_public: Boolean!
     ): Boolean
 
+    generateOtp(
+        user_address: ID!
+    ): String!
+
     signIn(
         dataSignature: String!
         data: String!

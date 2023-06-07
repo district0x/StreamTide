@@ -24,3 +24,7 @@
 (defn safe-number-str [number]
   "Make sure number are not in scientific notation"
   (if (nil? number) "" (-> number js/BigNumber. bn/fixed)))
+
+(def auth-data-msg
+  ; message to sign for log-in. '%s' is replaced by the OTP
+  "Sign in to Streamtide! OTP:%s")

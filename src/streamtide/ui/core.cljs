@@ -6,6 +6,7 @@
             [cljsjs.jquery]
             [cljsjs.jwt-decode]
             [district.cljs-utils :as cljs-utils]
+            [district.shared.error-handling :refer [try-catch]]
             [district.ui.component.router :refer [router]]
             [district.ui.graphql.events :as gql-events]
             [district.ui.graphql]
@@ -63,11 +64,12 @@
       {:dispatch [::gql-events/set-authorization-token jwt]})))
 
 (defn check-session [session]
-  (let [jwt (:jwt session)
-        expire (:exp (js->clj (js/jwt_decode jwt) :keywordize-keys true))]
-    (when (and expire
-               (> expire (+(shared-utils/now-secs) 7200))) ;; when jwt is about to expire we don't use it
-      session)))
+  (try-catch
+    (let [jwt (:jwt session)
+          expire (when jwt (:exp (js->clj (js/jwt_decode jwt) :keywordize-keys true)))]
+      (when (and expire
+                 (> expire (+ (shared-utils/now-secs) 7200))) ;; when jwt is about to expire we don't use it
+      session))))
 
 (re-frame/reg-event-db
   ::init-defaults
