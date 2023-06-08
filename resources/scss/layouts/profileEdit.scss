@@ -142,6 +142,9 @@
 					span {
 						display: none;
 					}
+					&.verifiable {
+						background: $disabled;
+					}
 				}
 				input {
 					width: 100%;
@@ -158,6 +161,9 @@
 					width: 32px;
 					height: 32px;
 				}
+			}
+			p {
+				margin-bottom: 20px;
 			}
 		}
 		.apply {

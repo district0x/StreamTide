@@ -1,6 +1,7 @@
 (ns streamtide.ui.my-settings.page
   ; Page to edit the user profile
   (:require
+    [clojure.string :as string]
     [district.graphql-utils :as gql-utils]
     [district.ui.component.form.input :refer [text-input get-by-path assoc-by-path file-drag-input checkbox-input radio-group]]
     [district.ui.component.page :refer [page]]
@@ -47,7 +48,7 @@
   [text-input (merge {:value (get-by-path form-values id)}
                      (apply dissoc opts [:form-values]))])
 
-(defn social-link-edit [{:keys [:id :form-data :form-values :icon-src :read-only]}]
+(defn social-link-edit [{:keys [:id :form-data :form-values :icon-src :verifiable?]}]
   (let [value-id (conj id :url)
         verified? (get-by-path form-values (conj id :verified))
         network (last id)]
@@ -57,7 +58,8 @@
        [:img.icon {:src icon-src}]]
       (if verified?
         [:div.verified
-         {:title "verified"}]
+         {:title "verified"}])
+      (when (and verifiable? (not verified?))
         [:button.btVerify
          {:on-click #(dispatch [::ms-events/verify-social
                                 {:social/network network
@@ -68,19 +70,20 @@
                                                                       (update-in data path dissoc network)
                                                                       data)))))}])}
          "VERIFY"])
-      (when-not read-only
+      (when-not (string/blank? (:url (get-by-path form-values id)))
         [:button.btRemove
          {:on-click (fn []
                       (swap! form-data assoc-by-path value-id ""))}
          "REMOVE"])]
      [:label.editField
+      (when verifiable? {:class "verifiable"})
       [:span "URL"]
       [initializable-text-input
        (merge {:form-data form-data
                :form-values form-values
                :id value-id
                :type :url}
-              (when read-only
+              (when verifiable?
                 {:disabled true}))]]]))
 
 
@@ -186,30 +189,36 @@
             input-params {:read-only loading?
                           :form-values form-values
                           :form-data form-data}]
-        [:div.socialLinks
-         [:h2.titleEdit "Social Links"]
-         [social-link-edit (merge input-params
-                                  {:id [:socials :facebook]
-                                   :icon-src "/img/layout/ico_facebook.svg"})]
-         [social-link-edit (merge input-params
-                                  {:id [:socials :twitter]
-                                   :icon-src "/img/layout/ico_twitter.svg"})]
-         [social-link-edit (merge input-params
-                                  {:id [:socials :linkedin]
-                                   :icon-src "/img/layout/ico_linkedin.svg"})]
-         [social-link-edit (merge input-params
-                                  {:id [:socials :instagram]
-                                   :icon-src "/img/layout/ico_instagram.svg"})]
-         [social-link-edit (merge input-params
-                                  {:id [:socials :pinterest]
-                                   :icon-src "/img/layout/ico_pinterest.svg"})]
-         [social-link-edit (merge input-params
-                                  {:id [:socials :discord]
-                                   :icon-src "/img/layout/ico_discord.svg"})]
-         [social-link-edit (merge input-params
-                                  {:id [:socials :eth]
-                                   :icon-src "/img/layout/ico_eth.svg"
-                                   :read-only true})]]))))
+        [:<>
+         [:div.socialLinks
+          [:h2.titleEdit "Connected accounts"]
+          [:p "Connect your social accounts to verify your identity and get the most out of Streamtide."]
+          [social-link-edit (merge input-params
+                                   {:id [:socials :twitter]
+                                    :icon-src "/img/layout/ico_twitter.svg"
+                                    :verifiable? true})]
+          [social-link-edit (merge input-params
+                                   {:id [:socials :discord]
+                                    :icon-src "/img/layout/ico_discord.svg"
+                                    :verifiable? true})]
+          [social-link-edit (merge input-params
+                                   {:id [:socials :eth]
+                                    :icon-src "/img/layout/ico_eth.svg"
+                                    :verifiable? true})]]
+         [:div.socialLinks
+          [:h2.titleEdit "Social Links"]
+          [social-link-edit (merge input-params
+                                   {:id [:socials :facebook]
+                                    :icon-src "/img/layout/ico_facebook.svg"})]
+          [social-link-edit (merge input-params
+                                   {:id [:socials :linkedin]
+                                    :icon-src "/img/layout/ico_linkedin.svg"})]
+          [social-link-edit (merge input-params
+                                   {:id [:socials :instagram]
+                                    :icon-src "/img/layout/ico_instagram.svg"})]
+          [social-link-edit (merge input-params
+                                   {:id [:socials :pinterest]
+                                    :icon-src "/img/layout/ico_pinterest.svg"})]]]))))
 
 (defn clean-form-data [form-data form-values initial-values]
   (cond-> form-values
