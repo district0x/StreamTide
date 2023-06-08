@@ -43,7 +43,7 @@
   },
   "devDependencies": {
     "@openzeppelin/contracts": "^4.8.2",
-    "@openzeppelin/contracts-upgradeable": "^4.8.2",
+    "@openzeppelin/contracts-upgradeable": "^4.9.1",
     "@truffle/hdwallet-provider": "2.1.9",
     "bootstrap": "4.2.1",
     "breakpoint-sass": "2.7.1",
