@@ -467,7 +467,11 @@
 				.help-block {
 					display: none;
 				}
-				width: calc(82% - 10px);
+				width: calc(50% - 5px);
+			}
+			.fieldDescription {
+				font-weight: bold;
+				margin-bottom: 10px;
 			}
 			label.inputField {
 				display: flex;
@@ -485,11 +489,16 @@
 				}
 			}
 			.formRounds {
-				display: flex;
-				justify-content: space-between;
+				.field {
+					.inputContainer {
+						display: flex;
+						margin-left: 15px;
+						gap: 10px;
+					}
+				}
 			}
 			.btBasic {
-				width: calc(18% - 10px);
+				width: 100%;
 				height: 56px;
 				&:disabled {
 					pointer-events: none;

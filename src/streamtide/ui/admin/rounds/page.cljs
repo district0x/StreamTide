@@ -2,7 +2,7 @@
   "Page to show and manage rounds.
   It shows a list of previous rounds and its details and also allow create new ones"
   (:require
-    [district.ui.component.form.input :refer [text-input int-input pending-button]]
+    [district.ui.component.form.input :refer [text-input amount-input int-input pending-button]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
     [district.ui.graphql.subs :as gql]
@@ -83,29 +83,40 @@
     (fn []
       (let [rounds-search (subscribe [::gql/query {:queries [(build-rounds-query nil)]}
                                      {:id :rounds}])
+            last-distributed? (-> @rounds-search first :search-rounds :items first :round/distributed (not= "0"))
             start-round-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/start-round tx-id}])
             start-round-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/start-round tx-id}])]
         [admin-layout
          [:div.headerRound
           [:span.titleCel "Start new Round"]
           [:div.form.formRounds
-           [:label.inputField
-            [:span "Days"]
-            [int-input {:id :days
-                        :form-data form-data}]]
-           [:label.inputField
-            [:span "Hours"]
-            [int-input {:id :hours
-                        :form-data form-data}]]
-            ; TODO Disable if round still active or not distributed
+           [:div.field.duration
+            [:div.fieldDescription "Duration"]
+            [:div.inputContainer
+             [:label.inputField
+              [:span "Days"]
+              [int-input {:id :days
+                          :form-data form-data}]]
+             [:label.inputField
+              [:span "Hours"]
+              [int-input {:id :hours
+                          :form-data form-data}]]]]
+           [:div.field.matchingPool
+            [:div.fieldDescription "Matching Pool"]
+            [:div.inputContainer
+             [:label.inputField
+              [:span "ETH"]
+              [amount-input {:id :pool
+                             :form-data form-data}]]]]
            [pending-button {:pending? @start-round-tx-pending?
                             :pending-text "Starting"
-                            :disabled (or @start-round-tx-pending? @start-round-tx-success?)
+                            :disabled (or @start-round-tx-pending? @start-round-tx-success? (not last-distributed?))
                             :class (str "btBasic btBasic-light btStartRound")
                             :on-click (fn [e]
                                         (.stopPropagation e)
                                         (dispatch [::r-events/start-round {:send-tx/id tx-id
-                                                                           :duration (get-duration @form-data)}]))}
+                                                                           :duration (get-duration @form-data)
+                                                                           :matching-pool (:pool @form-data)}]))}
             (if @start-round-tx-success? "Started" "Start")]]]
           [:div.headerRound
            [:h3 "Previous Rounds"]]
@@ -121,4 +132,3 @@
            [:div.cel.cel-distributed
             [:span.titleCel.col-eth "Distributed"]]]
          [round-entries rounds-search]]))))
-

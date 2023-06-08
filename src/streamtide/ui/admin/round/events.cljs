@@ -55,7 +55,7 @@
 
 (re-frame/reg-event-fx
   ::fill-matching-pool
-  ; TX to distribute matching pool for last round
+  ; TX to fill up matching pool
   (fn [{:keys [db]} [_ {:keys [:send-tx/id :amount :round] :as data}]]
     (let [tx-name (str "Filling up matching pool with " amount " ETH")
           active-account (account-queries/active-account db)
