@@ -27,12 +27,12 @@
                                          :tx-log {:name tx-name
                                                   :related-href {:name :route.admin/grant-approval-feed}}
                                          :on-tx-success-n [[::logging/info (str tx-name " tx success") ::review-grant]
-                                                           [::notification-events/show (str "You successfully approve grant for " + (count addresses) + "users: ")]
                                                            [::review-grant-success data]]
-                                         :on-tx-error [::logging/error (str tx-name " tx error")
-                                                       {:user {:id active-account}
-                                                        :patron addresses}
-                                                       ::review-grant]}]})
+                                         :on-tx-error-n [[::logging/error (str tx-name " tx error")
+                                                          {:user {:id active-account}
+                                                           :patron addresses}
+                                                          ::review-grant]
+                                                         [::review-grant-error data]]}]})
 
       (let [query
             {:queries [[:review-grants
@@ -48,24 +48,23 @@
                      :variables {:addresses addresses
                                  :status (gql-utils/kw->gql-name status)}
                      :on-success [::review-grant-success data]
-                     :on-error [::review-grant-error {:user/address addresses}]}]}))))
+                     :on-error [::review-grant-error {:user/addresses addresses}]}]}))))
 
 
 (re-frame/reg-event-fx
   ::review-grant-success
   (fn [{:keys [db]} [_ args]]
-    ;; TODO Show message to user
-    (js/console.log "GRANTS REVIEWED")
     (let [{:keys [:user/addresses :grant/status]} args]
       {:db (-> db
                (dissoc :reviewing-grants?)
-               (update :reviewed-grant? merge (reduce (fn [col address] (conj col {address status})) {} addresses)))})))
+               (update :reviewed-grant? merge (reduce (fn [col address] (conj col {address status})) {} addresses)))
+       :dispatch [::notification-events/show (str "Grants successfully " (if (= :grant.status/approved status) "approved" "rejected")  )]})))
 
 (re-frame/reg-event-fx
   ::review-grant-error
-  (fn [{:keys [db]} [_ {:keys [:user/address]} error]]
+  (fn [{:keys [db]} [_ {:keys [:user/addresses]} error]]
     {:db (dissoc db :reviewing-grants?)
-     :dispatch [::logging/error
-                (str "Failed to modify grant status for user " address)
-                ;; TODO proper error handling
-                {:error (map :message error)} ::review-grant]}))
+     :dispatch-n [[::notification-events/show "[ERROR] An error occurs while reviewing grants"]
+                  [::logging/error
+                   (str "Failed to modify grant status for users " addresses)
+                   {:error (map :message error)} ::review-grant]]}))

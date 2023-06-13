@@ -2,6 +2,7 @@
   (:require
     [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
+    [district.ui.notification.events :as notification-events]
     [re-frame.core :as re-frame]
     [streamtide.ui.components.verifiers :as verifiers]))
 
@@ -65,19 +66,17 @@
 (re-frame/reg-event-fx
   ::save-settings-success
   (fn [{:keys [db]} [_ result]]
-    ;; TODO Show message to user
-    (js/console.log "SETTING SAVED")
-    {:db (dissoc db :uploading-settings)}
-    ))
+    {:db (dissoc db :uploading-settings)
+     :dispatch [::notification-events/show "Settings saved successfully"]}))
 
 (re-frame/reg-event-fx
   ::save-settings-error
   (fn [{:keys [db]} [_ error]]
     {:db (dissoc db :uploading-settings)
-     :dispatch [::logging/error
-                "Failed to save settings"
-                ;; TODO proper error handling
-                {:error (map :message error)} ::save-settings]}))
+     :dispatch-n [[::notification-events/show "[ERROR] An error occurs while trying to save settings"]
+                  [::logging/error
+                   "Failed to save settings"
+                   {:error (map :message error)} ::save-settings]]}))
 
 (re-frame/reg-event-fx
   ::save-and-request-grant
@@ -102,20 +101,19 @@
 (re-frame/reg-event-fx
   ::request-grant-success
   (fn [{:keys [db]} [_ {:keys [:on-success]} result]]
-    ;; TODO Show message to user
-    (js/console.log "GRANT REQUESTED")
     (when on-success
       (on-success))
-    {:db (dissoc db :requesting-grant)}))
+    {:db (dissoc db :requesting-grant)
+     :dispatch [::notification-events/show "Grant has been requested"]}))
 
 (re-frame/reg-event-fx
   ::request-grant-error
   (fn [{:keys [db]} [_ error]]
     {:db (dissoc db :requesting-grant)
-     :dispatch [::logging/error
-                 "Failed to request grant"
-                 ;; TODO proper error handling
-                 {:error (map :message error)} ::request-grant]}))
+     :dispatch-n [[::notification-events/show "[ERROR] An error occurs while requesting grant"]
+                  [::logging/error
+                   "Failed to request grant"
+                   {:error (map :message error)} ::request-grant]]}))
 
 (re-frame/reg-event-fx
   ::verify-social
@@ -129,11 +127,10 @@
 (re-frame/reg-event-fx
   ::verify-social-success
   (fn [{:keys [db]} [_ {:keys [:social/network :on-success] :as args} result]]
-    ;; TODO Show message to user
-    (js/console.log "SOCIAL VERIFIED")
     (when on-success
       (on-success))
-    {:db (update db :verifying-social dissoc network)}))
+    {:db (update db :verifying-social dissoc network)
+     :dispatch [::notification-events/show "Social account verified"]}))
 
 (re-frame/reg-event-fx
   ::verify-social-error
@@ -141,8 +138,8 @@
     (when on-error
       (on-error))
     {:db (update db :verifying-social dissoc network)
-     :dispatch [::logging/error
-                "Failed to verify social"
-                ;; TODO proper error handling
-                {:error error
-                 :form-data form-data} ::verify-social]}))
+     :dispatch-n [[::notification-events/show "[ERROR] An error occurs while verifying your social account"]
+                  [::logging/error
+                   "Failed to verify social"
+                   {:error error
+                    :form-data form-data} ::verify-social]]}))

@@ -3,6 +3,7 @@
   (:require
     [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
+    [district.ui.notification.events :as notification-events]
     [re-frame.core :refer [subscribe dispatch] :as re-frame]
     [streamtide.shared.utils :as shared-utils]
     [streamtide.ui.config :refer [config-map]]))
@@ -76,12 +77,11 @@
 (re-frame/reg-event-fx
   ::request-twitter-oauth-url-error
   (fn [{:keys [db]} [_ data error]]
-    {:dispatch [::logging/error
-                "Failed to verify oauth verifier"
-                ;; TODO proper error handling.
-                ;; TODO on error, it should call the callback on-error
-                {:error (map :message error)
-                 :data data} ::request-twitter-oauth-error]}))
+    {:dispatch-n [(when (:on-error data) (conj (:on-error data) {:message "Failed to retrieve twitter oauth URL"}))
+                  [::logging/error
+                   "Failed to verify oauth verifier"
+                   {:error (map :message error)
+                    :data data} ::request-twitter-oauth-error]]}))
 
 (re-frame/reg-event-fx
   ::trigger-oauth-authentication
@@ -141,8 +141,8 @@
   ::verify-code-error
   (fn [{:keys [db]} [_ {:keys [:on-error] :as data} error]]
     {:dispatch-n [(when on-error on-error)
+                  [::notification-events/show "[ERROR] An error occurs while verifying oauth verifier"]
                   [::logging/error
-                "Failed to verify oauth verifier"
-                ;; TODO proper error handling
-                {:error (map :message error)
-                 :data data} ::verify-code]]}))
+                   "Failed to verify oauth verifier"
+                   {:error (map :message error)
+                    :data data} ::verify-code]]}))

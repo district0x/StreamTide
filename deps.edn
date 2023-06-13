@@ -18,6 +18,7 @@
   district0x/district-server-middleware-logging {:mvn/version "1.0.0"}
   district0x/district-time {:mvn/version "1.0.1"}
   district0x/district-ui-component-form {:mvn/version "0.2.15"}
+  district0x/district-ui-component-notification {:mvn/version "1.0.1"}
   district0x/district-ui-graphql {:mvn/version "1.0.15"}
   district0x/district-ui-logging {:mvn/version "1.1.0"}
   district0x/district-ui-notification {:mvn/version "1.0.1"}

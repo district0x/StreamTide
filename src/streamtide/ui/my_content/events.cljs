@@ -3,6 +3,7 @@
     [district.graphql-utils :as gql-utils]
     [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
+    [district.ui.notification.events :as notification-events]
     [re-frame.core :as re-frame]))
 
 
@@ -30,22 +31,21 @@
 (re-frame/reg-event-fx
   ::upload-content-success
   (fn [{:keys [db]} [_ {:keys [:on-success]} result]]
-    ;; TODO Show message to user
-    (js/console.log "CONTENT UPLOADED")
     (when on-success
       (on-success))
     (merge
-      {:db (dissoc db :uploading-content)})))
+      {:db (dissoc db :uploading-content)
+       :dispatch [::notification-events/show "Content added successfully"]})))
 
 (re-frame/reg-event-fx
   ::upload-content-error
   (fn [{:keys [db]} [_ form-data error]]
     {:db (dissoc db :uploading-content)
-     :dispatch [::logging/error
-                "Failed to upload content"
-                ;; TODO proper error handling
-                {:error (map :message error)
-                 :form-data form-data} ::upload-content]}))
+     :dispatch-n [[::logging/error
+                   "Failed to upload content"
+                   {:error (map :message error)
+                    :form-data form-data} ::upload-content]
+                  [::notification-events/show "[ERROR] An error occurs while adding content"]]}))
 
 (re-frame/reg-event-fx
   ::remove-content
@@ -66,8 +66,6 @@
 (re-frame/reg-event-fx
   ::remove-content-success
   (fn [{:keys [db]} [_ {:keys [:content/id :on-success]} result]]
-    ;; TODO Show message to user
-    (js/console.log "CONTENT REMOVED")
     (when on-success
       (on-success))
     {:db (-> db
@@ -78,11 +76,11 @@
   ::remove-content-error
   (fn [{:keys [db]} [_ {:keys [:content/id] :as form-data} error]]
     {:db (update db :removing-content dissoc id)
-     :dispatch [::logging/error
-                "Failed to remove content"
-                ;; TODO proper error handling
-                {:error (map :message error)
-                 :form-data form-data} ::remove-content]}))
+     :dispatch-n [[::logging/error
+                   "Failed to remove content"
+                   {:error (map :message error)
+                    :form-data form-data} ::remove-content]
+                  [::notification-events/show "[ERROR] An error occurs while removing content"]]}))
 
 (re-frame/reg-event-fx
   ::content-added
@@ -117,8 +115,6 @@
 (re-frame/reg-event-fx
   ::set-visibility-success
   (fn [{:keys [db]} [_ {:keys [:content/id]} result]]
-    ;; TODO Show message to user
-    (js/console.log "VISIBILITY CHANGED")
     {:db (update db :setting-visibility dissoc id)}))
 
 (re-frame/reg-event-fx
@@ -127,8 +123,8 @@
     (when on-error
       (on-error))
     {:db (update db :setting-visibility dissoc id)
-     :dispatch [::logging/error
-                "Failed to setting visibility"
-                ;; TODO proper error handling
-                {:error (map :message error)
-                 :form-data form-data} ::set-visibility]}))
+     :dispatch-n [[::logging/error
+                   "Failed to setting visibility"
+                   {:error (map :message error)
+                    :form-data form-data} ::set-visibility]
+                  [::notification-events/show "[ERROR] An error occurs while updating visibility"]]}))

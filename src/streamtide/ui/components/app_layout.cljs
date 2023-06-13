@@ -2,6 +2,7 @@
   "Main layouts components for rendering the page"
   (:require
     [district.graphql-utils :as gql-utils]
+    [district.ui.component.notification :as notification]
     [district.ui.graphql.subs :as gql]
     [district.ui.router.subs :as router-subs]
     [re-frame.core :refer [subscribe dispatch]]
@@ -108,4 +109,5 @@
        (map-indexed (fn [index item]
                       (with-meta item {:key (keyword "c" index)}))
                     children)
-       [footer]])))
+       [footer]
+       [notification/notification]])))

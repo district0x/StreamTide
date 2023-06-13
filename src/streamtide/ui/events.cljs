@@ -2,6 +2,7 @@
   "Streamtide common events"
   (:require [district.ui.graphql.events :as gql-events]
             [district.ui.logging.events :as logging]
+            [district.ui.notification.events :as notification-events]
             [district.ui.web3-accounts.queries :as account-queries]
             [district.ui.web3.queries :as web3-queries]
             [goog.string :as gstring]
@@ -35,7 +36,9 @@
                   {:query query
                    :variables {:address active-account}
                    :on-success [:user/request-signature]
-                   :on-error [::logging/error " Error Requesting OTP to server."]}]})))
+                   :on-error [::dispatch-n
+                              [[::notification-events/show "[ERROR] An error occurs while requesting OTP to the server"]
+                               [::logging/error " Error Requesting OTP to the server."]]]}]})))
 
 (re-frame/reg-event-fx
   :user/request-signature
@@ -49,7 +52,9 @@
         :data-str data-str
         :from active-account
         :on-success [:user/-authenticate {:data-str data-str}]
-        :on-error [::logging/error " Error Signing with Active Ethereum Account. "]}})))
+        :on-error [::dispatch-n
+                   [[::notification-events/show "[ERROR] Error signing with current account"]
+                    [::logging/error "Error Signing with Active Ethereum Account."]]]}})))
 
 (re-frame/reg-event-fx
   :user/-authenticate
@@ -87,8 +92,8 @@
 (re-frame/reg-event-fx
   :authentication-error
   (fn [_ [_ error]]
-    ;; TODO show error to the user
-    {:dispatch [::logging/error "Failed to authenticate" {:error error}]}))
+    {:dispatch-n [[::notification-events/show "[ERROR] An error occurs while authenticating"]
+                  [::logging/error "Failed to authenticate" {:error error}]]}))
 
 (re-frame/reg-event-fx
   :user/sign-out
@@ -124,4 +129,8 @@
     {:db (dissoc db :cart)
      :store (dissoc store :cart)}))
 
-
+(re-frame/reg-event-fx
+  ::dispatch-n
+  (fn [_ [_ evs & args]]
+    {:dispatch-n
+     (map #(conj % args) evs)}))

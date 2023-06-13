@@ -37,7 +37,7 @@
                                          :tx-log {:name tx-name
                                                   :related-href {:name :route.send-support/index}}
                                          :on-tx-success-n [[::logging/info (str tx-name " tx success") ::send-support]
-                                                           [::notification-events/show "You successfully make donations "]
+                                                           [::notification-events/show "Donations successfully sent"]
                                                            [::send-support-success]]
                                          :on-tx-error [::logging/error (str tx-name " tx error")
                                                        {:user {:id active-account}

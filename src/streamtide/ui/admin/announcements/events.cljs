@@ -2,6 +2,7 @@
   (:require
     [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
+    [district.ui.notification.events :as notification-events]
     [re-frame.core :as re-frame]))
 
 (re-frame/reg-event-fx
@@ -23,19 +24,18 @@
 (re-frame/reg-event-fx
   ::add-announcement-success
   (fn [{:keys [db]} [_ {:keys [:on-success]} result]]
-    ;; TODO Show message to user
-    (js/console.log "ANNOUNCEMENT ADDED")
     (when on-success (on-success))
-    {:db (dissoc db :adding-announcement?)}))
+    {:db (dissoc db :adding-announcement?)
+     :dispatch [::notification-events/show "Announcement added successfully"]}))
 
 (re-frame/reg-event-fx
   ::add-announcement-error
   (fn [{:keys [db]} [_ error]]
     {:db (dissoc db :adding-announcement?)
-     :dispatch [::logging/error
-                (str "Failed to add announcement")
-                ;; TODO proper error handling
-                {:error (map :message error)} ::add-announcement]}))
+     :dispatch-n [[::notification-events/show "[ERROR] An error occurs while adding an announcement"]
+                  [::logging/error
+                   "Failed to add announcement"
+                   {:error (map :message error)} ::add-announcement]]}))
 
 (re-frame/reg-event-fx
   ::remove-announcement
@@ -56,15 +56,14 @@
 (re-frame/reg-event-fx
   ::remove-announcement-success
   (fn [{:keys [db]} [_ {:keys [:announcement/id]} result]]
-    ;; TODO Show message to user
-    (js/console.log "ANNOUNCEMENT REMOVED")
-    {:db (update db :removing-announcement? dissoc id)}))
+    {:db (update db :removing-announcement? dissoc id)
+     :dispatch [::notification-events/show "Announcement removed successfully"]}))
 
 (re-frame/reg-event-fx
   ::remove-announcement-error
   (fn [{:keys [db]} [_ {:keys [:announcement/id]} error]]
     {:db (update db :removing-announcement? dissoc id)
-     :dispatch [::logging/error
-                (str "Failed to remove announcement")
-                ;; TODO proper error handling
-                {:error (map :message error)} ::remove-announcement]}))
+     :dispatch-n [[::notification-events/show "[ERROR] An error occurs while removing an announcement"]
+                  [::logging/error
+                   "Failed to remove announcement"
+                   {:error (map :message error)} ::remove-announcement]]}))

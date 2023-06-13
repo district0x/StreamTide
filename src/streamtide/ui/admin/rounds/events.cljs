@@ -24,7 +24,7 @@
                                        :tx-log {:name tx-name
                                                 :related-href {:name :route.admin/rounds}}
                                        :on-tx-success-n [[::logging/info (str tx-name " tx success") ::start-round]
-                                                        [::notification-events/show (str "You successfully started a new round with duration " duration)]]
+                                                        [::notification-events/show (str "New round successfully started")]]
                                        :on-tx-error [::logging/error (str tx-name " tx error")
                                                      {:user {:id active-account}
                                                       :duration duration}

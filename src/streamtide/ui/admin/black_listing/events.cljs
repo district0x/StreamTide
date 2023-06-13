@@ -21,26 +21,8 @@
                                        :tx-log {:name tx-name
                                                 :related-href {:name :route.admin/black-listing}}
                                        :on-tx-success-n [[::logging/info (str tx-name " tx success") ::blacklist]
-                                                         [::notification-events/show (str "You successfully " (if blacklisted? "blacklisted" "whitelisted") " address " address)]]
+                                                         [::notification-events/show (str "Address " address " successfully " (if blacklisted? "blacklisted" "whitelisted"))]]
                                        :on-tx-error [::logging/error (str tx-name " tx error")
                                                      {:user {:id active-account}
                                                       :address address}
                                                      ::blacklist]}]})))
-
-(re-frame/reg-event-fx
-  ::blacklist-success
-  (fn [{:keys [db]} [_ result]]
-    ;; TODO Show message to user
-    (let [address (-> result :blacklist :user/address)]
-      {:db (-> db
-               (update :blacklisting dissoc address))})))
-
-(re-frame/reg-event-fx
-  ::blacklist-error
-  (fn [{:keys [db]} [_ {:keys [:user/address]} error]]
-    {:db (update db :blacklisting dissoc address)
-     :dispatch [::logging/error
-                "Failed to save blacklist"
-                ;; TODO proper error handling
-                {:user/address address
-                 :error (map :message error)} ::save-settings]}))

@@ -47,7 +47,7 @@
                                                 :related-href {:name :route.admin/round
                                                                :params {:round round}}}
                                        :on-tx-success-n [[::logging/info (str tx-name " tx success") ::distribute]
-                                                        [::notification-events/show (str "You successfully distribute matching pool for round " round)]]
+                                                        [::notification-events/show (str "Matching pool successfully distributed for round " round)]]
                                        :on-tx-error [::logging/error (str tx-name " tx error")
                                                      {:user {:id active-account}
                                                       :matchings matchings}
@@ -68,7 +68,7 @@
                                                 :related-href {:name :route.admin/round
                                                                :params {:round round}}}
                                        :on-tx-success-n [[::logging/info (str tx-name " tx success") ::fill-matching-pool]
-                                                        [::notification-events/show (str "You successfully filled up matching pool with " amount " amount")]]
+                                                        [::notification-events/show (str "Matching pool successfully filled with " amount " ETH")]]
                                        :on-tx-error [::logging/error (str tx-name " tx error")
                                                      {:user {:id active-account}
                                                       :round round
