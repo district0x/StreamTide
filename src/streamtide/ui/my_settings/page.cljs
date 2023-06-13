@@ -12,6 +12,7 @@
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [no-items-found support-seal]]
     [streamtide.ui.components.spinner :as spinner]
+    [streamtide.ui.components.user :refer [avatar-placeholder]]
     [streamtide.ui.my-settings.events :as ms-events]
     [streamtide.ui.my-settings.subs :as ms-subs]
     [streamtide.ui.utils :refer [switch-popup]]))
@@ -123,7 +124,7 @@
   [file-drag-input {:form-data form-data
                     :group-class "photo"
                     :id id
-                    :img-attributes {:src (-> form-values id :selected-file :url-data)}
+                    :img-attributes {:src (or (-> form-values id :selected-file :url-data) avatar-placeholder)}
                     :label nil
                     :accept "image/*"
                     :file-accept-pred (fn [{:keys [name type size] :as props}]

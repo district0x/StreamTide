@@ -1,17 +1,19 @@
 (ns streamtide.ui.components.user
   "Components to show user-related stuff")
 
+(def avatar-placeholder "/img/avatar/profile_placeholder.svg")
+
 (defn user-photo [{:keys [:class :src]}]
   [:div.user
    {:class class}
    [:div.photo
-    [:img {:src src}]]])
+    [:img {:src (or src avatar-placeholder)}]]])
 
 (defn user-photo-profile [{:keys [:src]} & children]
   [:div.photoProfile
    children
    [:div.photo
-    [:img {:src src}]]])
+    [:img {:src (or src avatar-placeholder)}]]])
 
 (defn social-links [{:keys [:class :socials]}]
   [:div.socialLinks

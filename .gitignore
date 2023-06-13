@@ -6,7 +6,7 @@
 /resources/public/js/manifest.edn
 /resources/public/css/main.css
 /resources/public/img/avatar/*
-!resources/public/img/avatar/.gitkeep
+!resources/public/img/avatar/profile_placeholder.svg
 /resources/public/contracts/build/
 /node_modules/
 /.cpcache/

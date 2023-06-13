@@ -12,7 +12,7 @@
     [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
     [streamtide.ui.components.search :refer [search-tools]]
     [streamtide.ui.components.spinner :as spinner]
-    [streamtide.ui.components.user :refer [user-photo]]))
+    [streamtide.ui.components.user :refer [user-photo avatar-placeholder]]))
 
 (def page-size 6)
 
@@ -44,9 +44,9 @@
   [:li.card {:key address}
    [nav-anchor {:route :route.profile/index :params {:address address}}
     [:div.thumb
-     [:img {:src photo}]]
+     [:img {:src (or photo avatar-placeholder)}]]
     [:div.content
-     [user-photo (merge {:src bg-photo} (when star? {:class "star"}))]
+     (when bg-photo [user-photo (merge {:src bg-photo} (when star? {:class "star"}))])
      [:h3 name]
      [:p (format/truncate description 180)]]]])
 

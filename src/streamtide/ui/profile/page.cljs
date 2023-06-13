@@ -16,7 +16,7 @@
     [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
     [streamtide.ui.components.media-embed :as embed]
     [streamtide.ui.components.spinner :as spinner]
-    [streamtide.ui.components.user :refer [user-photo-profile social-links]]
+    [streamtide.ui.components.user :refer [user-photo-profile social-links avatar-placeholder]]
     [streamtide.ui.profile.events :as p-events]))
 
 (def page-size 6)
