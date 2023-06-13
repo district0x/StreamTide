@@ -105,6 +105,7 @@
                                                                       {:user/address current-user})))]
       (when valid?
         (stdb/remove-user-socials! {:social/url url})  ; removes social network from any other users
+        (stdb/upsert-user-info! {:user/address current-user})
         (stdb/upsert-user-socials! [{:user/address current-user
                                      :social/network (name network)
                                      :social/url url
@@ -145,8 +146,12 @@
     (when socials
       (let [[to-delete to-update] ((juxt filter remove) #(clojure.string/blank? (:social/url %)) socials)]
         (when (seq to-update) (stdb/upsert-user-socials! (map #(merge % {:user/address current-user
-                                                                         :social/verified false}) to-update)))
-        (when (seq to-delete) (stdb/remove-user-socials! current-user (map :social/network to-delete)))))))
+                                                                         :social/verified false})
+                                                              (filter #(not (contains?
+                                                                               #{:twitter :discord :eth}
+                                                                               (keyword (:social/network %))))
+                                                                      to-update))))
+        (when (seq to-delete) (stdb/remove-user-socials! {:user/address current-user :social/networks (map :social/network to-delete)}))))))
 
 (defn validate-sign-in [current-user]
   "Validates a user can sign in. That is, if not blacklisted"
