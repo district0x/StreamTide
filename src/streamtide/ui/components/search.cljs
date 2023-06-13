@@ -8,7 +8,7 @@
   "display a search form"
   (let [search-input-form-data (r/atom {search-id (get @form-data search-id)})]
     (fn [{:keys [:form-data :search-id :select-options :search-result-count
-                 :on-search-change :on-select-change]}]
+                 :on-search-change :on-select-change]} & others]
       [:div.form.formFilter.simpleForm
        [:div.searchForm
         ;; TODO check if works on mobile. Check if we rather use :input or text-input from district-ui-component-form
@@ -41,4 +41,6 @@
                        :value js/undefined
                        :options select-options
                        :on-change on-select-change}]]
-       others])))
+       (map-indexed (fn [index item]
+                      (with-meta item {:key (keyword "c" index)}))
+                    others)])))

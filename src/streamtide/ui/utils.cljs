@@ -15,7 +15,6 @@
 
 (defn format-graphql-time [gql-time]
   "Pretty printed version of the time coming from the server"
-  ;; TODO Check if works well with timezones
   (.toLocaleString (tc/to-date (gql-utils/gql-date->date gql-time))
                    js/undefined #js {:hour12 false :dateStyle "short" :timeStyle "short"} ))
 
