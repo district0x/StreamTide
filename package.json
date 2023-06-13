@@ -43,7 +43,7 @@
     "**/graphql": "^16.6.0"
   },
   "devDependencies": {
-    "@openzeppelin/contracts": "^4.8.2",
+    "@openzeppelin/contracts": "^4.9.1",
     "@openzeppelin/contracts-upgradeable": "^4.8.2",
     "@truffle/hdwallet-provider": "2.1.9",
     "bootstrap": "4.2.1",
