@@ -13,6 +13,7 @@
             [district.ui.notification]
             [district.ui.reagent-render]
             [district.ui.router]
+            [district.ui.router.events :as router-events]
             [district.ui.smart-contracts]
             [district.ui.web3-accounts.events :as web3-accounts-events]
             [district.ui.web3-accounts.queries :as web3-accounts-queries]
@@ -31,6 +32,7 @@
             [streamtide.ui.config :as config]
             [streamtide.ui.config :refer [config-map]]
             [streamtide.ui.effects]
+            [streamtide.ui.events :as st-events]
             [streamtide.ui.grants.page]
             [streamtide.ui.home.page]
             [streamtide.ui.leaderboard.page]
@@ -64,6 +66,14 @@
                 jwt)]
       {:dispatch [::gql-events/set-authorization-token jwt]})))
 
+(re-frame/reg-event-fx
+  ::close-mobile-menu
+  ; Closes the mobile menu, if open, when navigating to another page
+  interceptors
+  (fn [{:keys [:db]}]
+    (when (:menu-mobile-open? db)
+      {:dispatch [::st-events/menu-mobile-switch]})))
+
 (defn check-session [session]
   (try-catch
     (let [jwt (:jwt session)
@@ -94,7 +104,10 @@
      ; when the account is changed, it sets the GraphQL JWT associated the current account, if any
      :forward-events [{:register    :accounts-changed
                        :events      #{::web3-accounts-events/accounts-changed}
-                       :dispatch-to [::set-graphql-auth]}]}))
+                       :dispatch-to [::set-graphql-auth]}
+                      {:register :on-navigate
+                       :events #{::router-events/navigate}
+                       :dispatch-to [::close-mobile-menu]}]}))
 
 (defn ^:export init []
   (dev-setup)

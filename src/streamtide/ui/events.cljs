@@ -21,6 +21,14 @@
        :db (assoc db :day-night-switch day-or-night)})))
 
 (re-frame/reg-event-fx
+  ::menu-mobile-switch
+  ; Open or close the mobile menu
+  [interceptors]
+  (fn [{:keys [db]} _]
+    (let [menu-open? (not (:menu-mobile-open? db))]
+      {:db (assoc db :menu-mobile-open? menu-open?)})))
+
+(re-frame/reg-event-fx
   :user/sign-in
   ; To log-in, the user first requests an OTP to the server.
   ; Then it sign a message (containing the OTP) with its wallet and send it to the server.

@@ -57,10 +57,12 @@
 
 (defn header []
   "Common header for all the pages. Shows the navigation menu, login button and so"
-  (let [day-night (subscribe [::st-subs/day-night-switch])]
+  (let [day-night (subscribe [::st-subs/day-night-switch])
+        show-mobile-menu? (subscribe [::st-subs/menu-mobile-switch])]
     (fn []
   [:header
-   {:id "headerSite"}
+   {:id "headerSite"
+    :class (when @show-mobile-menu? "open")}
     [announcement]
     [:div.contentHeader
      [:div.container
@@ -75,10 +77,14 @@
                                              (dispatch [::st-events/day-night-switch]))}
         [:img {:src "/img/layout/icon-moon.svg" :alt "icon-night"}]
         [:img {:src "/img/layout/icon-sun.svg" :alt "icon-day"}]]
-       [nav-anchor {:class "btCar" :route :route.send-support/index} ]
-       [sign-in-button]]]]
-   ;[:nav.menuMobile "TODO"]
-   ])))
+       [nav-anchor {:class "btCar" :route :route.send-support/index}]
+       [:button.btMenu.d-lg-none.js-btMenu {:on-click(fn [e]
+                                                        (.stopPropagation e)
+                                                        (dispatch [::st-events/menu-mobile-switch]))} "Menu"]
+       [sign-in-button {:class "d-none d-lg-inline-block"}]]]]
+   [:nav.menuMobile
+    [nav-menu]
+    [sign-in-button {:class "d-lg-none"}]]])))
 
 
 (defn footer []

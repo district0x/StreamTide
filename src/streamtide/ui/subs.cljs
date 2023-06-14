@@ -11,6 +11,11 @@
       "night")))
 
 (re-frame/reg-sub
+  ::menu-mobile-switch
+  (fn [db _]
+    (:menu-mobile-open? db)))
+
+(re-frame/reg-sub
   ::active-session
   (fn [db _]
     (get db :active-session)))

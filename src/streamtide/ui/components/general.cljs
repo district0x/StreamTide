@@ -26,16 +26,18 @@
                    (dissoc props :route :params :query))]
         childs))
 
-(defn sign-in-button []
+(defn sign-in-button [{:keys [:class]}]
   "Button to trigger the user's login or logout"
   (let []
     (fn []
       (let [active-session? (subscribe [::streamtide-subs/active-account-has-session?])]
         (if @active-session?
-          [:a.btLogin.btBasic.btBasic-light.d-none.d-lg-inline-block
-           {:on-click #(dispatch [:user/sign-out])}
+          [:a.btLogin.btBasic.btBasic-light
+           {:class class
+            :on-click #(dispatch [:user/sign-out])}
            (str "Log out")]
-          [:a.btLogin.btBasic.btBasic-light.d-none.d-lg-inline-block
-           {:on-click #(dispatch [:user/sign-in])}
+          [:a.btLogin.btBasic.btBasic-light
+           {:class class
+            :on-click #(dispatch [:user/sign-in])}
            (str "WEB LOGIN")])))))
 
