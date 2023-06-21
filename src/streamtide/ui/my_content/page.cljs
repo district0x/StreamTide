@@ -12,7 +12,7 @@
     [reagent.core :as r]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [no-items-found support-seal nav-anchor]]
-    [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
+    [streamtide.ui.components.infinite-scroll-masonry :refer [infinite-scroll-masonry]]
     [streamtide.ui.components.media-embed :as embed]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.my-content.events :as mc-events]
@@ -107,25 +107,21 @@
         (if (and (empty? all-content)
                  (not loading?))
           [no-items-found]
-          [infinite-scroll {:class "yourContents"
-                            ;:dom-id "yourContents"
-                            :fire-tutorial-next-on-items? true
-                            :element-height 439
-                            :loading? loading?
-                            :has-more? has-more?
-                            :loading-spinner-delegate (fn []
-                                                        [:div.spinner-container [spinner/spin]])
-                            :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content)))]
-                                        (dispatch [::graphql-events/query
-                                                   {:query {:queries [(build-user-content-query {:user/address @active-account} end-cursor)]}
-                                                    :id :user-content
-                                                    :refetch-on [::mc-events/content-added ::mc-events/content-removed]}]))}
-           (when @active-account
-             (doall
-               (for [{:keys [:content/id] :as content} all-content]
-                 ^{:key id}
-                 [content-card content]
-                 )))])])))))
+          [infinite-scroll-masonry {:class "yourContents"
+                                    :loading? loading?
+                                    :has-more? has-more?
+                                    :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content)))]
+                                                 (dispatch [::graphql-events/query
+                                                            {:query {:queries [(build-user-content-query {:user/address @active-account} end-cursor)]}
+                                                             :id :user-content
+                                                             :refetch-on [::mc-events/content-added ::mc-events/content-removed]}]))
+                                    :loading-spinner-delegate (fn [] [:div.spinner-container [spinner/spin]])}
+             (when @active-account
+               (doall
+                 (for [{:keys [:content/id] :as content} all-content]
+                   ^{:key id}
+                   [content-card content]
+                   )))])])))))
 
 
 (defn popup-add-content [add-content-popup-open? show-add-content-popup-fn]
@@ -179,8 +175,8 @@
                                 (switch-popup add-content-popup-open? show))]
     (fn []
       (let [grant-status-query (when @active-account (subscribe [::gql/query {:queries [(build-grant-status-query {:user/address @active-account})]}
-                                                            {:refetch-on [::mc-events/request-grant-success]}]))
-            loading? (or (nil? grant-status-query) (:graphql/loading? (last @grant-status-query)))
+                                                                 {:refetch-on [::mc-events/request-grant-success]}]))
+            loading? (or (nil? grant-status-query) (:graphql/loading? @grant-status-query))
             grant-status (when grant-status-query (-> @grant-status-query :grant :grant/status gql-utils/gql-name->kw))]
         [app-layout
          [:main.pageSite.pageContent.pageEditContent

@@ -79,30 +79,6 @@
 				margin: 0 13px;
 			}
 		}
-		.yourContents {
-			.yourContent {
-				width: 100%;
-				margin-bottom: 15.5px;
-				float: left;
-				.content {
-					width: 100%;
-					//line-height: 0;
-					height: 353px;
-				}
-				img,
-				video,
-				iframe {
-					width: 100%;
-					height: auto;
-					position: relative;
-					z-index: 10;
-				}
-				video,
-				iframe {
-					height: 100%;
-				}
-			}
-		}
 		.btAdd {
 			width: 100%;
 			margin: 0 auto;
@@ -111,15 +87,16 @@
 			font-size: 18px;
 			letter-spacing: 1.87px;
 		}
+		.yourContents {
+			.yourContent {
+				width: calc(100% - 25px);
+				margin: 0 12.5px 24px;
+			}
+		}
 	}
 	@include media-breakpoint-up(md) {
 		.sectionYourContent {
 			.yourContents {
-				display: flex;
-				flex-wrap: wrap;
-				> div {
-					width: 100%;
-				}
 				.yourContent {
 					width: calc(50% - 25px);
 					margin: 0 12.5px 24px;

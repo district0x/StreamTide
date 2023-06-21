@@ -13,7 +13,7 @@
     [re-frame.core :as re-frame :refer [subscribe dispatch]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [no-items-found support-seal]]
-    [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
+    [streamtide.ui.components.infinite-scroll-masonry :refer [infinite-scroll-masonry]]
     [streamtide.ui.components.media-embed :as embed]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [user-photo-profile social-links avatar-placeholder]]
@@ -89,22 +89,17 @@
             all-content (->> @user-content
                           (mapcat (fn [r] (-> r :search-contents :items))))
             has-more? (-> (last @user-content) :search-contents :has-next-page)]
-        ;[:div.midias
-        ; {:id "midias"}
          (if (and (empty? all-content)
                   (not loading?))
            [no-items-found]
-           [infinite-scroll {:class "midias"
-                             :fire-tutorial-next-on-items? true
-                             :element-height 439
-                             :loading? loading?
-                             :has-more? has-more?
-                             :loading-spinner-delegate (fn []
-                                                         [:div.spinner-container [spinner/spin]])
-                             :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content)))]
-                                         (dispatch [::graphql-events/query
-                                                    {:query {:queries [(build-user-content-query {:user/address user-account} end-cursor)]}
-                                                     :id {:user-content user-account :active-account active-account}}]))}
+           [infinite-scroll-masonry {:class "midias"
+                                     :loading? loading?
+                                     :has-more? has-more?
+                                     :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content)))]
+                                                 (dispatch [::graphql-events/query
+                                                            {:query {:queries [(build-user-content-query {:user/address user-account} end-cursor)]}
+                                                             :id {:user-content user-account :active-account active-account}}]))
+                                     :loading-spinner-delegate (fn [] [:div.spinner-container [spinner/spin]])}
             (when-not (:graphql/loading? (first @user-content))
               (doall
                 (for [{:keys [:content/id] :as content} all-content]

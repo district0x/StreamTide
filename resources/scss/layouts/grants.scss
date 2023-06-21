@@ -15,7 +15,7 @@
 		max-width: 698px;
 		margin: 0 auto 20px;
 		position: relative;
-		justify-content: space-around;
+		//justify-content: space-around;
 	}
 	.card {
 		width: calc(50% - 7px);
@@ -65,6 +65,11 @@
 			p {
 				line-height: 19px;
 			}
+		}
+	}
+	@include media-breakpoint-up(md) {
+		.card {
+			width: 218px;
 		}
 	}
 	@include media-breakpoint-up(lg) {
