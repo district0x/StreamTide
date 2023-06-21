@@ -157,6 +157,27 @@
 			}
 		}
 	}
+	&.inputField {
+		select {
+			position: relative;
+			z-index: 1;
+		}
+
+		&:after {
+			position: absolute;
+			content: '';
+			top: 50%;
+			right: 13px;
+			height: 30px;
+			width: 30.25px;
+			background-image: $btArrowSimple;
+			background-repeat: no-repeat;
+			background-position: center;
+			background-size: contain;
+			transform: translateY(-50%);
+			z-index: 0;
+		}
+	}
 }
 
 /* Style items (options): */
