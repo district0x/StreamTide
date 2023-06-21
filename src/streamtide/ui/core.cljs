@@ -100,7 +100,6 @@
   ; on init, it loads the browser local store into the re-frame db
   [(re-frame/inject-cofx :store)]
   (fn [{:keys [db store]}]
-    (log/debug "Localstore content" store ::init)
     {:dispatch [::init-defaults store]
      ; when the account is changed, it sets the GraphQL JWT associated the current account, if any
      :forward-events [{:register    :accounts-changed
