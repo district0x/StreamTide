@@ -59,15 +59,9 @@
      {:regex (re-pattern "(?:https?:\\/\\/)?(?:www\\.)?open\\.spotify\\.com\\/album\\/([a-zA-Z0-9_-]{4,36})")
       :replacement "https://open.spotify.com/embed/album/$1"}
      ; Twitter
-     {:regex (re-pattern "(?:https?:\\/\\/)?(?:twitter\\.com)\\/([^\\/\"\\s]*)\\/statuse?s?\\/([^\\/\"\\s]*)(\\/photo\\/\\d|)")
-      :replacement "https://twitter.com/$1/status/$2"
-      :component [:div
-                  [:blockquote.twitter-tweet
-                    [:a {:href ""}]]
-                  [:script {:async "1"
-                            :src "//platform.twitter.com/widgets.js"
-                            :charset "utf-8"}]]
-      :replacement-target [1 1 1 :href]}]))
+     {:regex (re-pattern "(?:https?:\\/\\/)?(?:twitter\\.com)\\/([^\\/\"\\s]*)\\/statuse?s?\\/([^\\/\"\\s\\?]*)(\\/photo\\/\\d|\\?.*|)")
+      :replacement "https://platform.twitter.com/embed/Tweet.html?id=$2"
+      :iframe-params {:height 450}}]))
 
 (defn- file-ext [filename]
   (string/lower-case (last (string/split filename "."))))
