@@ -45,6 +45,23 @@
 		height: 100%;
 		select {
 			height: 100%;
+			width: 100%;
+			z-index: 1;
+			position: relative;
+		}
+		&.options::after {
+			position: absolute;
+			content: "";
+			top: 50%;
+			right: 13px;
+			height: 30px;
+			width: 30px;
+			background-image: url("../img/layout/icon-down-arrow.svg");
+			background-repeat: no-repeat;
+			background-position: center;
+			background-size: contain;
+			transform: translateY(-50%);
+			z-index: 0;
 		}
 	}
 }

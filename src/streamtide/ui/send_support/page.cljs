@@ -83,8 +83,10 @@
       [nav [:h3 (ui-utils/user-or-address (:user/name receiver) receiver-address)]]]
      [:ul.score
       [:li
+       [:h4.d-lg-none "Date"]
        [:span (ui-utils/format-graphql-time date)]]
       [:li
+       [:h4.d-lg-none "Amount"]
        [:span (ui-utils/format-price amount)]]]]))
 
 (defn donations []
@@ -161,7 +163,7 @@
           [:div.container
            [:div.headerPastDonations
             [:h2 "Past Donations"]]
-           [:div.headerDonations.d-none.d-md-flex
+           [:div.headerDonations.d-none.d-lg-flex
             [:div.cel-data
              [:span.titleCel.col-user "Artist Name"]]
             [:div.cel-score

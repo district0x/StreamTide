@@ -240,8 +240,8 @@
 				position: relative;
 				top: auto;
 				right: auto;
-				width: 26.96px;
-				height: 26.96px;
+				min-width: 26.96px;
+				min-height: 26.96px;
 				&:hover {
 					background-image: url('../img/layout/icon-x-dark-hover.svg');
 				}

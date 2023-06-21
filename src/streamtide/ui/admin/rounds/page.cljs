@@ -37,14 +37,19 @@
   (let [nav (partial nav-anchor {:route :route.admin/round :params {:round id}})]
     [:div.contentRound
      [:div.cel.name
-      [nav [:h3 id]]]
+      [:h4.d-lg-none "ID"]
+      [nav [:h4 id]]]
      [:div.cel.start
+      [:h4.d-lg-none "Start Date"]
       [nav [:span (ui-utils/format-graphql-time start)]]]
      [:div.cel.duration
+      [:h4.d-lg-none "Duration"]
       [nav [:span duration]]]
      [:div.cel.matching-pool
+      [:h4.d-lg-none "Matching Pool"]
       [nav [:span (ui-utils/format-price matching-pool)]]]
      [:div.cel.distributed
+      [:h4.d-lg-none "Distributed"]
       [nav [:span (if (not= "0" distributed) "YES" "NO")]]]]))
 
 

@@ -20,6 +20,7 @@
             [district.ui.web3-accounts]
             [district.ui.web3-tx-id]
             [district.ui.web3]
+            [district.ui.window-size]
             [mount.core :as mount]
             [re-frame.core :as re-frame]
             [streamtide.shared.utils :as shared-utils]

@@ -26,7 +26,6 @@
       [nav [user-photo {:src photo :class "lb"}]]
       [nav [:h3 name]]]
      [social-links {:socials socials :class "cel"}]
-     [:hr.d-lg-none]
      [:div.cel.buttons
        [checkbox-input (merge {:form-data form-data
                                :id address}
@@ -102,7 +101,7 @@
            [:button.btBasic.btBasic-light.btDeny
             (review-button-props :grant.status/rejected)
             "DENY selected"]]
-         [:div.headerApprovalFeed.d-none.d-md-flex
+         [:div.headerApprovalFeed.d-none.d-lg-flex
           [:div.cel.cel-data
            [:span.titleCel.col-user "User Profile"]]
           [:div.cel.cel-socials

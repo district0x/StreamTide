@@ -1,6 +1,7 @@
 (ns streamtide.ui.components.admin-layout
   "Layouts component for rendering the admin page"
   (:require
+    [district.ui.router.events :as router-events]
     [district.ui.router.subs :as router-subs]
     [re-frame.core :refer [subscribe dispatch]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
@@ -20,13 +21,28 @@
   "Menu for admin pages"
   (let [active-page (subscribe [::router-subs/active-page])]
     (fn []
-      [:div.selectAdmin-items.select-hide
-       (doall (map-indexed
-                (fn [idx {:keys [:text :route]}]
-                  [nav-anchor (merge {:key (str idx) :route route}
-                                    (when (= (:name @active-page) route) {:class "same-as-selected"}))
-                   text])
-                admin-nav-menu-items))])))
+      [:<>
+       [:div.selectAdmin-selected.d-lg-none
+        [:select
+         {:on-change (fn [item]
+                       (let [val (-> item .-target .-value)]
+                        (print val)
+                         (dispatch [::router-events/navigate (keyword val)])))
+          :value (-> @(subscribe [::router-subs/active-page]) :name symbol str)}
+         (doall (map-indexed
+                  (fn [idx {:keys [:text :route]}]
+                    [:option
+                     {:key (str idx)
+                      :value (str (symbol route))}
+                     text])
+                  admin-nav-menu-items))]]
+       [:div.selectAdmin-items.select-hide
+        (doall (map-indexed
+                 (fn [idx {:keys [:text :route]}]
+                   [nav-anchor (merge {:key (str idx) :route route}
+                                      (when (= (:name @active-page) route) {:class "same-as-selected"}))
+                    text])
+                 admin-nav-menu-items))]])))
 
 (defn admin-layout []
   "app container component for rendering admin pages. Shows everything app-layout shows plus the admin menu"

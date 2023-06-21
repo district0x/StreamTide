@@ -110,10 +110,12 @@
             [:span.titleCel.col-eth "ETH Address"]]]
           [:div.form.formSearchList
            [:label.cel.cel-data
+            [:h4.d-lg-none "Name"]
             [text-input {:id :search-name
                          :class "inputField"
                          :form-data form-data}]]
            [:label.cel.cel-eth
+            [:h4.d-lg-none "ETH Address"]
             [text-input {:id :search-address
                          :class "inputField"
                          :form-data form-data}]]

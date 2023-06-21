@@ -5,6 +5,7 @@
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
     [district.ui.graphql.subs :as gql]
+    [district.ui.window-size.subs :as w-size-subs]
     [re-frame.core :refer [subscribe dispatch]]
     [reagent.core :as r]
     [streamtide.ui.components.app-layout :refer [app-layout]]
@@ -56,11 +57,12 @@
                         (mapcat (fn [r] (-> r :search-grants :items))))
         loading? (:graphql/loading? (last @grants-search))
         has-more? (-> (last @grants-search) :search-grants :has-next-page)]
+    (print @(subscribe [::w-size-subs/size]))
     (if (and (empty? all-grants)
              (not loading?))
       [no-items-found]
-      [infinite-scroll {:class "contentGrants.container"
-                        :elements-in-row 4
+      [infinite-scroll {:class "contentGrants container"
+                        :elements-in-row (min 4 (+ 2 @(subscribe [::w-size-subs/size])))
                         :element-height 568
                         :fire-tutorial-next-on-items? true
                         :loading? loading?

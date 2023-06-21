@@ -57,10 +57,13 @@
       [nav [:h3 (:user/name receiver)]]]
      [:ul.score
       [:li
+       [:h4.d-md-none "Amount Granted"]
        [:span (ui-utils/format-price donation-amount)]]
       [:li
+       [:h4.d-md-none "Matching Received"]
        [:span (ui-utils/format-price matching-amount)]]
       [:li
+       [:h4.d-md-none "Total Received"]
        [:span (ui-utils/format-price total-amount)]]]]))
 
 (defn leaderboard-entries [form-data leaders-search]

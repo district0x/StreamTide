@@ -40,4 +40,11 @@
     white-space: nowrap;
     text-overflow: ellipsis;
   }
+
+  @include media-breakpoint-down(xs) {
+    .notification-message {
+      font-size: 12px;
+    }
+  }
+
 }

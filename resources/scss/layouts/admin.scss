@@ -6,9 +6,28 @@
 			font-size: 13px;
 			font-weight: $regular;
 		}
+		select {
+			width: 100%;
+		}
 	}
 	.contentApprovalFeed {
 		margin-bottom: 20px;
+	}
+	.containerAdmin {
+		h3 {
+			font-size: 20px;;
+		}
+		.reviewButtons {
+			display: flex;
+			margin-bottom: 10px;
+			justify-content: space-between;
+			.btBasic {
+				&:disabled {
+					pointer-events: none;
+					background-color: lightgray;
+				}
+			}
+		}
 	}
 	.contentApproval {
 		width: 100%;
@@ -88,6 +107,23 @@
 			padding: 0;
 			pointer-events: none;
 		}
+		.buttons {
+			.input-group {
+				justify-content: right;
+				display: flex;
+				input {
+					appearance: revert;
+					-webkit-appearance: revert;
+					-moz-appearance: revert;
+					width: 25px;
+					height: 25px;
+					&.disabled {
+						pointer-events: none;
+					}
+				}
+			}
+		}
+
 	}
 	.contentRounds {
 		margin-bottom: 20px;
@@ -98,9 +134,7 @@
 		border-radius: 6px;
 		position: relative;
 		overflow: hidden;
-		background: $bgCard;
 		padding: 19.86px 15px 18.58px;
-		max-height: 500px;
 		.data {
 			width: 100%;
 			display: flex;
@@ -276,6 +310,81 @@
 			padding: 0;
 		}
 	}
+	@include media-breakpoint-up(sm) {
+		.containerAdmin {
+			.reviewButtons {
+				justify-content: end;
+				.btBasic {
+					margin-left: 20px;
+					width: 180px;
+				}
+			}
+		}
+	}
+	.headerRound {
+		margin-bottom: 30px;
+		.titleCel {
+			display: block;
+			font-weight: $bold;
+			font-size: 20px;
+			line-height: 25px;
+			margin-bottom: 10px;
+		}
+		.fieldDescription {
+			font-weight: bold;
+			margin-bottom: 10px;
+		}
+		label.inputField {
+			display: flex;
+			align-items: center;
+			margin-bottom: 12px;
+			letter-spacing: normal;
+			input {
+				font-size: 18px;
+				font-weight: 400;
+				width: 100%;
+				height: 100%;
+				line-height: 100%;
+				background: none;
+				padding: 0;
+			}
+		}
+		.formRounds {
+			.field {
+				.inputContainer {
+					margin-left: 15px;
+				}
+			}
+		}
+		.inputField {
+			span {
+				font-size: 18px;
+				margin-right: 18px;
+			}
+			.help-block {
+				display: none;
+			}
+		}
+		.btBasic {
+			width: 100%;
+			height: 56px;
+			&:disabled {
+				pointer-events: none;
+				background-color: lightgray;
+			}
+		}
+	}
+	.contentRound {
+		.cel {
+			display: flex;
+			justify-content: space-between;
+		}
+		margin-bottom: 14px;
+		background: $bgCard;
+	}
+	@include media-breakpoint-down(xs) {
+		font-size: 14px;
+	}
 	@include media-breakpoint-up(lg) {
 		.contentAdmin {
 			display: flex;
@@ -289,6 +398,7 @@
 			height: auto;
 			line-height: normal;
 			padding: 0;
+
 			.selectAdmin-items {
 				display: block;
 				position: relative;
@@ -338,24 +448,6 @@
 		}
 		.containerAdmin {
 			width: calc(100% - 241px);
-			h3 {
-				font-size: 20px;;
-			}
-			.reviewButtons {
-				display: flex;
-				justify-content: end;
-				margin-bottom: 10px;
-
-				.btBasic {
-					margin-left: 20px;
-					width: 180px;
-
-					&:disabled {
-						pointer-events: none;
-						background-color: lightgray;
-					}
-				}
-			}
 		}
 		.contentApprovalFeed {
 			margin-bottom: 64px;
@@ -381,9 +473,6 @@
 			}
 			.cel-socials {
 				max-width: 240px;
-			}
-			.cel-buttons {
-				max-width: 261px;
 			}
 		}
 		.contentApproval {
@@ -428,81 +517,28 @@
 				}
 			}
 			.buttons {
-				max-width: 261px;
-				//.btBasic {
-				//	width: calc(50% - 5px);
-				//}
 				.input-group {
 					justify-content: center;
-					display: flex;
-					input {
-						appearance: revert;
-						-webkit-appearance: revert;
-						-moz-appearance: revert;
-						width: 25px;
-						height: 25px;
-						&.disabled {
-							pointer-events: none;
-						}
-					}
 				}
 			}
-
 		}
 		.headerRound{
 			margin-bottom: 40px;
 			.titleCel {
-				display: block;
-				font-weight: $bold;
-				font-size: 20px;
-				line-height: 25px;
 				margin-bottom: 19px;
 			}
 			.inputField {
 				span {
-					font-size: 18px;
-					margin-right: 18px;
 					letter-spacing: normal;
 				}
-				.help-block {
-					display: none;
-				}
 				width: calc(50% - 5px);
-			}
-			.fieldDescription {
-				font-weight: bold;
-				margin-bottom: 10px;
-			}
-			label.inputField {
-				display: flex;
-				align-items: center;
-				margin-bottom: 12px;
-				letter-spacing: normal;
-				input {
-					font-size: 18px;
-					font-weight: 400;
-					width: 100%;
-					height: 100%;
-					line-height: 100%;
-					background: none;
-					padding: 0;
-				}
 			}
 			.formRounds {
 				.field {
 					.inputContainer {
 						display: flex;
-						margin-left: 15px;
 						gap: 10px;
 					}
-				}
-			}
-			.btBasic {
-				width: 100%;
-				height: 56px;
-				&:disabled {
-					pointer-events: none;
-					background-color: lightgray;
 				}
 			}
 		}

@@ -6,19 +6,20 @@
 		}
 	}
 	.contentGrants {
-		padding: 0 6px;
+		padding: 0 14px;
 		text-align: center;
 	}
 	.cards {
-		display: block;
+		display: flex;
 		width: 100%;
 		max-width: 698px;
 		margin: 0 auto 20px;
 		position: relative;
+		justify-content: space-around;
 	}
 	.card {
 		width: calc(50% - 7px);
-		max-width: 160.5px;
+		max-width: 271px;
 		margin: 0 7px 13px;
 		text-align: left;
 		display: block;
@@ -27,11 +28,11 @@
 		overflow: hidden;
 		background: $bgCard;
 		@include media-breakpoint-down(xs) {
-			max-width: 138px;
+			//max-width: 138px;
 		}
 		.thumb {
 			width: 100%;
-			height: 165.28px;
+			height: 257.1px;
 			position: relative;
 			z-index: 0;
 			img {

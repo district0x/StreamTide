@@ -32,7 +32,8 @@
                                                           {:user {:id active-account}
                                                            :patron addresses}
                                                           ::review-grant]
-                                                         [::review-grant-error data]]}]})
+                                                         [::review-grant-error data]]
+                                         :on-tx-hash-error [::review-grant-error data]}]})
 
       (let [query
             {:queries [[:review-grants
