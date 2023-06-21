@@ -115,5 +115,5 @@
        (map-indexed (fn [index item]
                       (with-meta item {:key (keyword "c" index)}))
                     children)
-       [footer]
+       ;[footer]
        [notification/notification]])))
