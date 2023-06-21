@@ -56,6 +56,8 @@
          {:class (cond-> (case type
                            :content-type/image "photo"
                            :content-type/video "video"
+                           :content-type/audio "audio"
+                           :content-type/other "other"
                            "")
                          @removing? (str " removing")
                          @removed? (str " remove"))
@@ -85,8 +87,10 @@
                                                                                 }])}]]]
          [:div.content
           (case type
-            :content-type/image [:img {:src url}]
+            :content-type/image [embed/embed-image url]
             :content-type/video [embed/embed-video url]
+            :content-type/audio [embed/embed-audio url]
+            :content-type/other [embed/embed-other url]
             :default "")]])))))
 
 (defn contents []
@@ -146,7 +150,9 @@
               [:div.type
                [:label.radio-group-label "type:"]
                [radio-group {:id :type :form-data form-data :options [{:key :image :label "image"}
-                                                                      {:key :video :label "video"}]}]]
+                                                                      {:key :video :label "video"}
+                                                                      {:key :audio :label "audio"}
+                                                                      {:key :other :label "other"}]}]]
               [:div.uploadContent
                [:label {:for "addLink"}
                 [text-input (merge {:form-data form-data

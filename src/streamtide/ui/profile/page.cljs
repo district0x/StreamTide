@@ -73,10 +73,14 @@
      {:class (case type
                :content-type/image "photo"
                :content-type/video "video"
+               :content-type/audio "audio"
+               :content-type/other "other"
                "")}
      (case type
-       :content-type/image [:img {:src url}]
+       :content-type/image [embed/embed-image url]
        :content-type/video [embed/embed-video url]
+       :content-type/audio [embed/embed-audio url]
+       :content-type/other [embed/embed-other url]
        :default "")]))
 
 (defn contents [user-account]

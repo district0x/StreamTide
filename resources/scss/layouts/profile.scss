@@ -145,6 +145,9 @@
 			.midia {
 				width: calc(100% - 25px);
 				margin: 0 12.5px 24px;
+				audio, video {
+					width: 100%;
+				}
 			}
 		}
 	}

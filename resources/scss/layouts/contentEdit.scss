@@ -39,6 +39,9 @@
 			//	opacity: 0;
 			//	transform: scale(0);
 			//}
+			audio, video {
+				width: 100%;
+			}
 		}
 		.header {
 			background: $headerContent;

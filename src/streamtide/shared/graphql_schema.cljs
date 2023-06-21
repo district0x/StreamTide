@@ -323,6 +323,8 @@ enum ContentType {
     contentType_video
     contentType_document
     contentType_text
+    contentType_audio
+    contentType_other
 }
 
 enum SocialNetwork {
