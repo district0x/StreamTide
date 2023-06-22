@@ -57,11 +57,13 @@
                [:donation/receiver [:user/address
                                     :user/name
                                     :user/photo
+                                    :user/blacklisted
                                     [:user/socials [:social/network
                                                     :social/url
                                                     :social/verified]]]]
                [:donation/sender [:user/address
                                   :user/name
+                                  :user/blacklisted
                                   [:user/socials [:social/network
                                                   :social/url
                                                   :social/verified]]]]]]]]))
@@ -254,7 +256,9 @@
         distribute-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/distribute tx-id}])
 
         all-donations (->> @donations-search
-                           (mapcat (fn [r] (-> r :search-donations :items))))
+                           (mapcat (fn [r] (-> r :search-donations :items)))
+                           (filter (fn [d] (and (-> d :donation/sender :user/blacklisted not)
+                                                (-> d :donation/receiver :user/blacklisted not)))))
         donations-by-receiver (group-by :donation/receiver all-donations)
         matchings (compute-matchings matching-pool donations-by-receiver
                                      @(subscribe [::r-subs/all-multipliers])

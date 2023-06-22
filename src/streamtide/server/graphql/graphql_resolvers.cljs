@@ -133,11 +133,6 @@
                                                         (:order-by args)
                                                         (update :order-by graphql-utils/gql-name->kw)))))
 
-;(defn search-blacklisted-query-resolver [_ {:keys [:search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
-;  (log/debug "blacklisted args" args)
-;  (try-catch-throw
-;    (logic/get-blacklisted (user-id current-user) args)))
-
 (defn search-users-query-resolver [_ {:keys [:user/name :user/address :user/blacklisted :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
   (log/debug "search users args" args)
   (try-catch-throw
@@ -194,11 +189,11 @@
                            :grant/status (gql-name->db-name status)})
     true))
 
-(defn blacklist-mutation [_ {:keys [:user/address :blacklist] :as args} {:keys [:current-user]}]
-  (log/debug "blacklist-mutation" args)
-  (try-catch-throw
-    (logic/blacklist! (user-id current-user) (select-keys args [:user/address :blacklist]))
-    (logic/get-user (user-id current-user) address)))
+;(defn blacklist-mutation [_ {:keys [:user/address :blacklist] :as args} {:keys [:current-user]}]
+;  (log/debug "blacklist-mutation" args)
+;  (try-catch-throw
+;    (logic/blacklist! (user-id current-user) (select-keys args [:user/address :blacklist]))
+;    (logic/get-user (user-id current-user) address)))
 
 (defn add-announcement-mutation [_ {:keys [:announcement/text] :as args} {:keys [:current-user]}]
   (log/debug "add-announcement-mutation" args)
@@ -260,13 +255,11 @@
            :search-leaders search-leaders-query-resolver
            :search-rounds search-rounds-query-resolver
            :roles roles-query-resolver
-           ;:search_blacklisted search-blacklisted-query-resolver
            :search-users search-users-query-resolver
            :announcements announcements-query-resolver}
    :Mutation {:update-user-info update-user-info-mutation
               :request-grant request-grant-mutation
               :review-grants review-grants-mutation
-              :blacklist blacklist-mutation
               :add-announcement add-announcement-mutation
               :remove-announcement remove-announcement-mutation
               :add-content add-content-mutation

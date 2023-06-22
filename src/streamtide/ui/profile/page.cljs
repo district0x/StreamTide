@@ -32,6 +32,7 @@
     :user/perks
     :user/photo
     :user/bg-photo
+    :user/blacklisted
     [:user/socials [:social/network
                     :social/url]]
     [:user/grant [:grant/status]]]])
@@ -127,17 +128,20 @@
            [:main.pageSite.pageProfile
             {:id "profile"}
             [:div.container
-             [user-header user-info]
-             [:div.contentProfile
-              [support-seal]
-              [:div.aboutProfile
-               [:h2 "A Little About Me"]
-               [:p (:user/description user-info)]]
-              [:div.btsProfile
-               (when (and (= (-> user-info :user/grant :grant/status gql-utils/gql-name->kw) :grant.status/approved)
-                          (not= active-account user-account))
-                 [:a.btBasic.btBasic-light {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
-                  "DONATE / SUPPORT"])
-               (when (not (blank? (:user/perks user-info)))
-                 [:a.btBasic.btBasic-light {:href (:user/perks user-info) :target "_blank"} "PERKS"])]
-              [contents user-account]]]]])))))
+             (if (and user-info (not (:user/blacklisted user-info)))
+               [:<>
+                [user-header user-info]
+                [:div.contentProfile
+                 [support-seal]
+                 [:div.aboutProfile
+                  [:h2 "A Little About Me"]
+                  [:p (:user/description user-info)]]
+                 [:div.btsProfile
+                  (when (and (= (-> user-info :user/grant :grant/status gql-utils/gql-name->kw) :grant.status/approved)
+                             (not= active-account user-account))
+                    [:a.btBasic.btBasic-light {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
+                     "DONATE / SUPPORT"])
+                  (when (not (blank? (:user/perks user-info)))
+                    [:a.btBasic.btBasic-light {:href (:user/perks user-info) :target "_blank"} "PERKS"])]
+                 [contents user-account]]]
+               [:div.not-found "User Not Found"])]]])))))

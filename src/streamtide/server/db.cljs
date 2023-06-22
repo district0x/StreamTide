@@ -2,7 +2,7 @@
   "Module for defining database structure and managing and abstracting queries to the database"
   (:require [district.server.config :refer [config]]
             [district.server.db :as db]
-            [district.server.db.column-types :refer [address default-nil default-zero not-nil primary-key]]
+            [district.server.db.column-types :refer [address default-nil default-zero default-false not-nil primary-key]]
             [honeysql-postgres.helpers :as psqlh]
             [honeysql.core :as sql]
             [honeysql.helpers :as sqlh]
@@ -59,7 +59,8 @@
    [:user/tagline :varchar default-nil]
    [:user/handle :varchar default-nil]
    [:user/url :varchar default-nil]
-   [:user/perks :varchar default-nil]])
+   [:user/perks :varchar default-nil]
+   [:user/blacklisted :tinyint default-false]])
 
 (def social-link-columns
   [[:user/address address not-nil]
@@ -122,13 +123,6 @@
    [(sql/call :foreign-key :user/source-user) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
    [(sql/call :foreign-key :user/target-user) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
-(def blacklist-columns
-  [[:user/address address primary-key not-nil]
-   [:blacklisted/date :timestamp]
-   ;; TODO can we only ban actual users?
-   ;[(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
-  ])
-
 (def announcement-columns
   [[:announcement/id :integer primary-key :autoincrement]
    [:announcement/text :varchar not-nil]])
@@ -157,7 +151,6 @@
 (def matching-column-names (filter keyword? (map first matching-columns)))
 (def user-roles-column-names (filter keyword? (map first user-roles-columns)))
 (def user-content-permission-column-names (filter keyword? (map first user-content-permission-columns)))
-(def blacklist-column-names (filter keyword? (map first blacklist-columns)))
 (def announcement-column-names (filter keyword? (map first announcement-columns)))
 (def round-column-names (filter keyword? (map first round-columns)))
 (def events-column-names (filter keyword? (map first events-columns)))
@@ -209,7 +202,8 @@
         query (cond->
                 {:select [:grant.* :user.*]
                  :from [:grant]
-                 :join [:user [:= :grant.user/address :user.user/address]]}
+                 :join [:user [:= :grant.user/address :user.user/address]]
+                 :where [:!= :user/blacklisted true]}
                 statuses-set (sqlh/merge-where [:in :grant.grant/status statuses-set])
                 search-term  (sqlh/merge-where [:like :user.user/name (str "%" search-term "%")])
                 order-by (sqlh/merge-order-by [[(get {:grants.order-by/request-date :grant.grant/request-date
@@ -223,10 +217,9 @@
   (let [page-start-idx (when after (js/parseInt after))
         page-size first
         query (cond->
-                {:select [:user.* [(sql/call :case [:<> :blacklist.user/address nil] true :else false) :user/blacklisted]]
-                 :from [:user]
-                 :left-join [:blacklist [:= :user.user/address :blacklist.user/address]]}
-                (some? blacklisted) (sqlh/merge-where [(if blacklisted :!= :=) :blacklist.user/address nil])
+                {:select [:*]
+                 :from [:user]}
+                (some? blacklisted) (sqlh/merge-where [:= :user/blacklisted blacklisted])
                 name (sqlh/merge-where [:like :user.user/name (str "%" name "%")])
                 address (sqlh/merge-where [:like :user.user/address (str "%" address "%")])
                 order-by (sqlh/merge-order-by [[(get {:users.order-by/address [:user.user/address [:collate :nocase]]
@@ -250,12 +243,14 @@
                   {:select [:c.* :u.*]
                    :from [[:content :c]]
                    :join [[:user :u] [:= :c.user/address :u.user/address]]
-                   :where [:or
-                           [:= :c.content/public 1] ; get content if is public ...
-                           [:= :u.user/address current-user] ; ... or is the owner
-                           [:exists {:select [1] :from [[:user-roles :ur]] :where [:and [:= :ur.user/address current-user] [:= :ur.role/role "admin"]]}] ; ... or is an admin
-                           [:in address {:select [:ucp.user/target-user] :from [[:user-content-permissions :ucp]] :where [:= :ucp.user/source-user current-user]}] ; ... or has explicit permission to it
+                   :where [:and
+                           [:or
+                            [:= :c.content/public 1] ; get content if is public ...
+                            [:= :u.user/address current-user] ; ... or is the owner
+                            [:exists {:select [1] :from [[:user-roles :ur]] :where [:and [:= :ur.user/address current-user] [:= :ur.role/role "admin"]]}] ; ... or is an admin
+                            [:in address {:select [:ucp.user/target-user] :from [[:user-content-permissions :ucp]] :where [:= :ucp.user/source-user current-user]}] ; ... or has explicit permission to it
                            ]
+                           [:= :user/blacklisted false]]
                    }
                   address (sqlh/merge-where [:= :u.user/address address])
                   only-public (sqlh/merge-where [:= :c.content/public 1])
@@ -318,7 +313,8 @@
                              [:= :d.donation/receiver :u.user/address]
                              [sub-query-matchings :m]
                              [:= :m.matching/receiver :u.user/address]]
-                 :where [:> :leader/total-amount 0]}
+                 :where [:and [:> :leader/total-amount 0]
+                         [:= :user/blacklisted false]]}
                 search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
                 order-by (sqlh/merge-order-by [[(get {:leaders.order-by/username [:u.user/name [:collate :nocase]]
                                                       :leaders.order-by/donation-amount :leader/donation-amount
@@ -345,23 +341,6 @@
                                                      order-by)
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))
-
-;(defn get-blacklisted [{:keys [:sender :receiver :search-term :order-by :order-dir :first :after] :as args}]
-;  (let [page-start-idx (when after (js/parseInt after))
-;        page-size first
-;        query (cond->
-;                {:select [:*]
-;                 :from [[:blacklist :b]]
-;                 :left-join [[:user :u] [:= :b.user/address :u.user/address]]}
-;                search-term (sqlh/merge-where [:or
-;                                               [:like :u.user/name (str "%" search-term "%")]
-;                                               [:like :b.user/address (str "%" search-term "%")]])
-;                order-by (sqlh/merge-order-by [[(get {:blacklisted.order-by/address :b.user/address
-;                                                      :blacklisted.order-by/username [:u.user/name [:collate :nocase]]
-;                                                      :blacklisted.order-by/blacklisted-date :b.blacklisted/date}
-;                                                     order-by)
-;                                                (or (keyword order-dir) :asc)]]))]
-;    (paged-query query page-size page-start-idx)))
 
 (defn get-user-content-permissions [{:keys [:user/source-user :user/target-user]}]
   (db-all (cond->
@@ -449,20 +428,18 @@
               :where [:= :round/id id]})))
 
 (defn blacklisted? [{:keys [:user/address] :as args}]
-  (boolean (seq (db-get {:select [:*]
-                    :from [:blacklist]
-                    :where [:= :user/address address]
-                    :limit 1}))))
+  (:user/blacklisted (db-get {:select [:user/blacklisted]
+                              :from [:user]
+                              :where [:= :user/address address]})))
 
 (defn add-to-blacklist! [{:keys [:user/address]}]
-  (db-run! {:insert-into :blacklist
-           :values [{:user/address address
-                     :blacklisted/date (shared-utils/now-secs)}]
-            :upsert {:on-conflict [:user/address]
-                     :do-nothing []}}))
+  (db-run! {:update :user
+            :set {:user/blacklisted true}
+            :where [:= :user/address address]}))
 
 (defn remove-from-blacklist! [{:keys [:user/address]}]
-  (db-run! {:delete-from :blacklist
+  (db-run! {:update :user
+            :set {:user/blacklisted false}
             :where [:= :user/address address]}))
 
 
@@ -557,9 +534,6 @@
 
   (db-run! (-> (psqlh/create-table :user-content-permissions :if-not-exists)
                (psqlh/with-columns user-content-permission-columns)))
-
-  (db-run! (-> (psqlh/create-table :blacklist :if-not-exists)
-               (psqlh/with-columns blacklist-columns)))
 
   (db-run! (-> (psqlh/create-table :announcement :if-not-exists)
                (psqlh/with-columns announcement-columns)))

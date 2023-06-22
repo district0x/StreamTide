@@ -151,6 +151,10 @@
 			}
 		}
 	}
+	.not-found {
+		text-align: center;
+		font-weight: bold;
+	}
 	@include media-breakpoint-up(md) {
 		.headerProfile {
 			.contentHeaderProfile {

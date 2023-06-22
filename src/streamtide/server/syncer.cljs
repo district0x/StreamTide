@@ -68,11 +68,13 @@
 (defn blacklisted-added-event [_ {:keys [:args]}]
   (let [{:keys [:_blacklisted]} args]
     (safe-go
+      (db/upsert-user-info! {:user/address _blacklisted})
       (db/add-to-blacklist! {:user/address _blacklisted}))))
 
 (defn blacklisted-removed-event [_ {:keys [:args]}]
   (let [{:keys [:_blacklisted]} args]
     (safe-go
+      (db/upsert-user-info! {:user/address _blacklisted})
       (db/remove-from-blacklist! {:user/address _blacklisted}))))
 
 (defn patrons-added-event [_ {:keys [:args]}]

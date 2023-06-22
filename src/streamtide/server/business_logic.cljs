@@ -173,15 +173,6 @@
   ;(when (contains? grant-statuses decision))
   (stdb/upsert-grants! (merge (select-keys args [:user/addresses :grant/status]) {:grant/decision-date (shared-utils/now-secs)})))
 
-(defn blacklist! [current-user {:keys [:user/address :blacklist] :as args}]
-  "blacklists/whitelist a user"
-  (require-auth current-user)
-  (require-admin current-user)
-
-  (if blacklist
-    (stdb/add-to-blacklist! (select-keys args [:user/address]))
-    (stdb/remove-from-blacklist! (select-keys args [:user/address]))))
-
 (defn blacklisted? [_current-user user-address]
   "Checks if a user is currently blacklisted"
   (stdb/blacklisted? {:user/address user-address}))
