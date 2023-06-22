@@ -57,7 +57,6 @@
                         (mapcat (fn [r] (-> r :search-grants :items))))
         loading? (:graphql/loading? (last @grants-search))
         has-more? (-> (last @grants-search) :search-grants :has-next-page)]
-    (print @(subscribe [::w-size-subs/size]))
     (if (and (empty? all-grants)
              (not loading?))
       [no-items-found]

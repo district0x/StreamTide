@@ -26,7 +26,6 @@
         [:select
          {:on-change (fn [item]
                        (let [val (-> item .-target .-value)]
-                        (print val)
                          (dispatch [::router-events/navigate (keyword val)])))
           :value (-> @(subscribe [::router-subs/active-page]) :name symbol str)}
          (doall (map-indexed

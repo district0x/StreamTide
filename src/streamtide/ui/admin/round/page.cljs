@@ -226,7 +226,6 @@
                                                                  (bn/+ acc (bn/* amount (bn/* (- multiplier prev_mult) divisor)))))
                                                         (bn/fixed (.integerValue acc js/BigNumber.ROUND_FLOOR)))))))
                                        {} amounts)]
-    (print receivers-matchings)
     receivers-matchings))
 
 ; this commented out version of compute matchings applies the receiver's matching factor when getting the donations amount.
