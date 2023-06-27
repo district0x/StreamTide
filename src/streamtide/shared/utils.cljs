@@ -28,3 +28,6 @@
 (def auth-data-msg
   ; message to sign for log-in. '%s' is replaced by the OTP
   "Sign in to Streamtide! OTP:%s")
+
+(defn active-round? [round timestamp]
+  (>= (+ (:round/start round) (:round/duration round)) timestamp))

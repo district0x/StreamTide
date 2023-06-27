@@ -9,6 +9,7 @@
     [district.ui.web3-tx-id.subs :as tx-id-subs]
     [re-frame.core :refer [subscribe dispatch]]
     [reagent.core :as r]
+    [streamtide.shared.utils :as shared-utils]
     [streamtide.ui.admin.rounds.events :as r-events]
     [streamtide.ui.components.admin-layout :refer [admin-layout]]
     [streamtide.ui.components.general :refer [nav-anchor no-items-found]]
@@ -33,9 +34,11 @@
              :round/matching-pool
              :round/distributed]]]])
 
-(defn round-entry [{:keys [:round/id :round/start :round/matching-pool :round/duration :round/distributed] :as args}]
-  (let [nav (partial nav-anchor {:route :route.admin/round :params {:round id}})]
+(defn round-entry [{:keys [:round/id :round/start :round/matching-pool :round/duration :round/distributed] :as round}]
+  (let [nav (partial nav-anchor {:route :route.admin/round :params {:round id}})
+        active? (shared-utils/active-round? round (shared-utils/now-secs))]
     [:div.contentRound
+     (when active? {:class "active"})
      [:div.cel.name
       [:h4.d-lg-none "ID"]
       [nav [:h4 id]]]
@@ -50,7 +53,7 @@
       [nav [:span (ui-utils/format-price matching-pool)]]]
      [:div.cel.distributed
       [:h4.d-lg-none "Distributed"]
-      [nav [:span (if (not= "0" distributed) "YES" "NO")]]]]))
+      [nav [:span (ui-utils/format-price distributed)]]]]))
 
 
 (defn round-entries [rounds-search]
@@ -88,7 +91,7 @@
     (fn []
       (let [rounds-search (subscribe [::gql/query {:queries [(build-rounds-query nil)]}
                                      {:id :rounds}])
-            last-distributed? (-> @rounds-search first :search-rounds :items first :round/distributed (not= "0"))
+            last-active? (-> @rounds-search first :search-rounds :items first (shared-utils/active-round? (shared-utils/now-secs)))
             start-round-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/start-round tx-id}])
             start-round-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/start-round tx-id}])]
         [admin-layout
@@ -115,7 +118,7 @@
                              :form-data form-data}]]]]
            [pending-button {:pending? @start-round-tx-pending?
                             :pending-text "Starting"
-                            :disabled (or @start-round-tx-pending? @start-round-tx-success? (not last-distributed?))
+                            :disabled (or @start-round-tx-pending? @start-round-tx-success? last-active?)
                             :class (str "btBasic btBasic-light btStartRound")
                             :on-click (fn [e]
                                         (.stopPropagation e)

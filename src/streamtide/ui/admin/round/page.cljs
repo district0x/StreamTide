@@ -263,23 +263,23 @@
         matchings (compute-matchings matching-pool donations-by-receiver
                                      @(subscribe [::r-subs/all-multipliers])
                                      @(subscribe [::r-subs/all-donations]))]
-      (if (empty? all-donations)
-        [no-items-found]
-        [:<>
-          [:div.donations
-           (doall
-             (for [[receiver donations] donations-by-receiver]
-               ^{:key (:user/address receiver)} [receiver-entry receiver donations matchings]))]
-          [pending-button {:pending? @distribute-tx-pending
-                           :pending-text "Distributing"
-                           :disabled (or @distribute-tx-pending @distribute-tx-success?)
-                           :class (str "btBasic btBasic-light btDistribute" (when-not @distribute-tx-success? " distributed"))
-                           :on-click (fn [e]
-                                       (.stopPropagation e)
-                                       (dispatch [::r-events/distribute {:send-tx/id tx-id
-                                                                         :round round-id
-                                                                         :matchings matchings}]))}
-           (if @distribute-tx-success? "Distributed" "Distribute")]])))
+    [:<>
+     (if (empty? all-donations)
+       [no-items-found]
+       [:div.donations
+        (doall
+          (for [[receiver donations] donations-by-receiver]
+            ^{:key (:user/address receiver)} [receiver-entry receiver donations matchings]))])
+     [pending-button {:pending? @distribute-tx-pending
+                      :pending-text "Distributing"
+                      :disabled (or @distribute-tx-pending @distribute-tx-success?)
+                      :class (str "btBasic btBasic-light btDistribute" (when-not @distribute-tx-success? " distributed"))
+                      :on-click (fn [e]
+                                  (.stopPropagation e)
+                                  (dispatch [::r-events/distribute {:send-tx/id tx-id
+                                                                    :round round-id
+                                                                    :matchings matchings}]))}
+      (if @distribute-tx-success? "Distributed" "Distribute")]]))
 
 (defn donations [round-id matching-pool]
   (let [form-data (r/atom {:round round-id
@@ -311,7 +311,8 @@
   (let [active-page-sub (subscribe [::router-subs/active-page])
         round-id (-> @active-page-sub :params :round)
         form-data (r/atom {:amount 0})
-        tx-id (str "match-pool_" (random-uuid))]
+        tx-id-mp (str "match-pool_" (random-uuid))
+        tx-id-cr (str "close-round_" (random-uuid))]
     (fn []
       (let [round-info-query (subscribe [::gql/query {:queries [(build-round-info-query {:round/id round-id})]}])
             loading? (:graphql/loading? @round-info-query)
@@ -336,21 +337,37 @@
               [:div.matching (str "Matching pool: " (ui-utils/format-price matching-pool))]
               [:div.distributed (str "Distributed amount: " (ui-utils/format-price distributed))]
               (when (round-open? round)
-                (let [match-pool-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/fill-matching-pool tx-id}])
-                      match-pool-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/fill-matching-pool tx-id}])]
-                  [:div.form.fillPoolForm
-                   [:label.inputField
-                    [:span "Fill Up Amount"]
-                    [amount-input {:id :amount
-                                :form-data form-data}]]
-                   [pending-button {:pending? @match-pool-tx-pending?
-                                    :pending-text "Filling Up Matching Pool"
-                                    :disabled (or @match-pool-tx-pending? @match-pool-tx-success? (>= 0 (:amount @form-data)))
-                                    :class (str "btBasic btBasic-light btMatchPool")
-                                    :on-click (fn [e]
-                                                (.stopPropagation e)
-                                                (dispatch [::r-events/fill-matching-pool {:send-tx/id tx-id
-                                                                                          :amount (:amount @form-data)
-                                                                                          :round round}]))}
-                    (if @match-pool-tx-success? "Matching Pool Filled up" "Fill Up Matching Pool")]]))
+                (let [match-pool-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/fill-matching-pool tx-id-mp}])
+                      match-pool-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/fill-matching-pool tx-id-mp}])
+                      close-round-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/close-round tx-id-cr}])
+                      close-round-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/close-round tx-id-cr}])]
+                  [:<>
+                   [:div.form.fillPoolForm
+                    [:label.inputField
+                     [:span "Amount"]
+                     [amount-input {:id :amount
+                                    :form-data form-data}]]
+                    [pending-button {:pending? @match-pool-tx-pending?
+                                     :pending-text "Filling Up Matching Pool"
+                                     :disabled (or @match-pool-tx-pending? @match-pool-tx-success?
+                                                   @close-round-tx-pending? @close-round-tx-success?
+                                                   (>= 0 (:amount @form-data)))
+                                     :class (str "btBasic btBasic-light btMatchPool")
+                                     :on-click (fn [e]
+                                                 (.stopPropagation e)
+                                                 (dispatch [::r-events/fill-matching-pool {:send-tx/id tx-id-mp
+                                                                                           :amount (:amount @form-data)
+                                                                                           :round round}]))}
+                     (if @match-pool-tx-success? "Matching Pool Filled up" "Fill Up Matching Pool")]]
+                   [:div.form.closeRoundForm
+                    [pending-button {:pending? @close-round-tx-pending?
+                                     :pending-text "Closing Round"
+                                     :disabled (or @close-round-tx-pending? @close-round-tx-success?)
+                                     :class (str "btBasic btBasic-light btCloseRound")
+                                     :on-click (fn [e]
+                                                 (.stopPropagation e)
+                                                 (dispatch [::r-events/close-round {:send-tx/id tx-id-cr
+                                                                                    :round round}]))}
+                     (if @close-round-tx-success? "Round Closed" "Close Round")]]]
+                  ))
               [donations round-id (:round/matching-pool round)]])]]]))))

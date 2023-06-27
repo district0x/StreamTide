@@ -70,7 +70,7 @@ contract MVPCLR is OwnableUpgradeable {
 
     function closeRound() public onlyAdmin {
         roundDuration = 0;
-        roundId = 0;
+//        roundId = 0;
         emit RoundClosed(lastActiveRoundId); // Added event emission
 }
 

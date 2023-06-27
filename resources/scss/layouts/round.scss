@@ -6,7 +6,6 @@
 			justify-content: space-between;
 
 			margin-top: 15px;
-			margin-bottom: 40px;
 
 			.inputField {
 				span {
@@ -51,6 +50,20 @@
 					pointer-events: none;
 					background-color: lightgray;
 				}
+			}
+		}
+		.closeRoundForm {
+			display: flex;
+			justify-content: right;
+		}
+		.btMatchPool, .btCloseRound {
+			min-width: 210px;
+		}
+		.btCloseRound {
+			background: chocolate;
+			&:disabled {
+				pointer-events: none;
+				background-color: darksalmon;
 			}
 		}
 	}

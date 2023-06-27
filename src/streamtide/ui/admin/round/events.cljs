@@ -35,7 +35,7 @@
     (let [tx-name (str "Distribute matching pool for round " round)
           active-account (account-queries/active-account db)
           matchings (filter #(> (last %) 0) matchings)
-          [receivers amounts] (apply map vector matchings)
+          [receivers amounts] ((juxt #(map key %) #(map val %)) matchings)
           amounts (map str amounts)]
       (log/debug "matchings" matchings)
       {:dispatch [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
@@ -74,3 +74,24 @@
                                                       :round round
                                                       :amount amount}
                                                      ::fill-matching-pool]}]})))
+
+(re-frame/reg-event-fx
+  ::close-round
+  ; TX to close an ongoing round
+  (fn [{:keys [db]} [_ {:keys [:send-tx/id :round] :as data}]]
+    (let [tx-name "Close round"
+          active-account (account-queries/active-account db)]
+      {:dispatch [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
+                                       :fn :close-round
+                                       :args []
+                                       :tx-opts {:from active-account}
+                                       :tx-id {:streamtide/close-round id}
+                                       :tx-log {:name tx-name
+                                                :related-href {:name :route.admin/round
+                                                               :params {:round round}}}
+                                       :on-tx-success-n [[::logging/info (str tx-name " tx success") ::close-round]
+                                                         [::notification-events/show "Round successfully closed"]]
+                                       :on-tx-error [::logging/error (str tx-name " tx error")
+                                                     {:user {:id active-account}
+                                                      :round round}
+                                                     ::close-round]}]})))

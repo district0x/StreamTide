@@ -97,14 +97,11 @@
 (defn current-round []
   (first (:items (db/get-rounds {:first 1 :order-by :rounds.order-by/id :order-dir :desc}))))
 
-(defn active-round? [round timestamp]
-  (>= (+ (:round/start round) (:round/duration round)) timestamp))
-
 (defn round-closed-event [_ {:keys [:args]}]
   (let [{:keys [:round-id :timestamp]} args]
     (safe-go
       (let [round (db/get-round round-id)]
-        (when (active-round? round timestamp)
+        (when (shared-utils/active-round? round timestamp)
           (db/update-round! {:round/id round-id
                              :round/duration (- timestamp (:round/start round))}))))))
 

@@ -381,6 +381,9 @@
 		}
 		margin-bottom: 14px;
 		background: $bgCard;
+		&.active {
+			background: green;
+		}
 	}
 	@include media-breakpoint-down(xs) {
 		font-size: 14px;

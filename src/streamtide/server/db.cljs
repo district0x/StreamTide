@@ -428,9 +428,10 @@
               :where [:= :round/id id]})))
 
 (defn blacklisted? [{:keys [:user/address] :as args}]
-  (:user/blacklisted (db-get {:select [:user/blacklisted]
-                              :from [:user]
-                              :where [:= :user/address address]})))
+  (let [bl (:user/blacklisted (db-get {:select [:user/blacklisted]
+                                      :from [:user]
+                                      :where [:= :user/address address]}))]
+    (not (or (nil? bl) (zero? bl)))))
 
 (defn add-to-blacklist! [{:keys [:user/address]}]
   (db-run! {:update :user
