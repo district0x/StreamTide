@@ -113,7 +113,9 @@
                            :class (str "theme-" @day-night " " @day-night)}
        [header]
        (map-indexed (fn [index item]
-                      (with-meta item {:key (keyword "c" index)}))
+                      (with-meta
+                        (if (= 0 index) (update item 1 update :class str " closeFooter") item) ; TODO remove this when restoring the footer
+                        {:key (keyword "c" index)}))
                     children)
        ;[footer]
        [notification/notification]])))
