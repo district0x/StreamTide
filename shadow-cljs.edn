@@ -9,28 +9,30 @@
  :http {:port 3449
         :host "0.0.0.0"}
 
- :builds {:dev-ui
+ :builds {:ui
           {:target :browser
            :modules {:main {:init-fn streamtide.ui.core/init}}
            :main streamtide.ui.core
            :infer-externs true
            :output-dir "resources/public/js/"
-           :source-map true
-           :source-map-timestamp true
-           :devtools {:ignore-warnings true
-                      :preloads [devtools.preload
-                                 day8.re-frame-10x.preload]}
-           :closure-defines {re-frame.trace.trace-enabled?        true
-                             day8.re-frame.tracing.trace-enabled? true
-                             goog.DEBUG true}}
+           :dev {
+             :source-map true
+             :source-map-timestamp true
+             :devtools {:ignore-warnings true
+                        :preloads [devtools.preload
+                                   day8.re-frame-10x.preload]}
+             :closure-defines {re-frame.trace.trace-enabled?        true
+                               day8.re-frame.tracing.trace-enabled? true
+                               goog.DEBUG true}}}
 
-          :dev-server
+          :server
           {:target :node-script
            :main streamtide.server.core/-main
-           :js-options {:keep-as-import #{"d3"}}
            :output-dir "server/"
            :output-to "server/streamtide_server.js"
-           :closure-defines {goog.DEBUG true}}
+           :dev {:closure-defines {goog.DEBUG true}
+                 :js-options      {:keep-as-import #{"d3"}}}
+           :release {:compiler-options {:optimizations :simple}}}
 
           :server-tests
           {:target :node-test

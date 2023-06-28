@@ -3,28 +3,40 @@
  :tasks {compile-css {:doc "Compile SCSS -> CSS"
                       :task (do
                               (println "Compiling scss to css")
-                              (shell {:dir "resources/scss"} "sass --no-source-map -s compressed main.scss:../public/css/main.css"))}
+                              (shell {:dir "resources/scss"} "npx sass --no-source-map -s compressed main.scss:../public/css/main.css"))}
          watch-css {:doc "Watch & recompile SCSS to CSS on file changes"
                     :task (do
                             (println "Watching SCSS under resources/scss")
-                            (shell {:dir "resources/scss"} "sass --watch --no-source-map -s compressed main.scss:../public/css/main.css"))}
+                            (shell {:dir "resources/scss"} "npx sass --watch --no-source-map -s compressed main.scss:../public/css/main.css"))}
          watch-ui {:doc "Watch and compile ui code changes CLJS -> JS in src/ui/**"
                    :requires ([babashka.cli :as cli])
                    :task (let [aliases (or *command-line-args* [])
-                               command-args (format "-A:dev:shadow-cljs%s watch dev-ui" (clojure.string.join "" aliases))]
+                               command-args (format "-M:dev:shadow-cljs%s watch ui" (clojure.string.join "" aliases))]
                            (println "Starting watch-ui. args:" command-args)
+                           (clojure command-args))}
+         release-ui {:doc "Compile ui CLJS -> JS in src/ui/** for release"
+                   :requires ([babashka.cli :as cli])
+                   :task (let [aliases (or *command-line-args* [])
+                               command-args (format "-M:shadow-cljs%s release ui" (clojure.string.join "" aliases))]
+                           (println "Preparing UI for release. args:" command-args)
                            (clojure command-args))}
          watch-server {:doc "Watch and compile server code changes CLJS -> JS in src/server/**"
                        :requires ([babashka.cli :as cli])
                        :task (let [aliases (or *command-line-args* [])
-                                   command-args (format "-A:dev:shadow-cljs%s watch dev-server" (clojure.string.join "" aliases))]
-                               (println "Starting watch dev-server args:" command-args)
+                                   command-args (format "-M:dev:shadow-cljs%s watch server" (clojure.string.join "" aliases))]
+                               (println "Starting watch server args:" command-args)
+                               (clojure command-args))}
+         release-server {:doc "Compile server CLJS -> JS in src/server/** for release"
+                       :requires ([babashka.cli :as cli])
+                       :task (let [aliases (or *command-line-args* [])
+                                   command-args (format "-M:shadow-cljs%s release server" (clojure.string.join "" aliases))]
+                               (println "Preparing server for release:" command-args)
                                (clojure command-args))}
          watch-ui-server {:doc "Watch and compile both ui and server code changes CLJS -> JS in src/(ui|server)/**"
                        :requires ([babashka.cli :as cli])
                        :task (let [aliases (or *command-line-args* [])
-                                   command-args (format "-A:dev:shadow-cljs%s watch dev-ui dev-server" (clojure.string.join "" aliases))]
-                               (println "Starting watch dev-ui and dev-server args:" command-args)
+                                   command-args (format "-M:dev:shadow-cljs%s watch ui server" (clojure.string.join "" aliases))]
+                               (println "Starting watch ui and server args:" command-args)
                                (clojure command-args))}
          run-server {:doc "Start Node.js API server process"
                      :task (do
@@ -33,7 +45,7 @@
          watch-server-tests {:doc "watch server tests"
                            :task (do
                                    (println "Watch and compile server code changes tests")
-                                   (clojure "-A:dev:shadow-cljs watch server-tests"))}
+                                   (clojure "-M:dev:shadow-cljs watch server-tests"))}
          run-server-tests {:doc "run server tests"
                            :task (do
                                    (println "Running server tests")
@@ -41,7 +53,7 @@
          compile-run-server-tests {:doc "Compile & run server tests"
                                    :task (do
                                            (println "Compiling server tests")
-                                           (clojure "-A:dev:shadow-cljs compile server-tests")
+                                           (clojure "-M:dev:shadow-cljs compile server-tests")
                                            (println "Running server tests")
                                            (shell "node server/tests/server-tests.js"))}
 
