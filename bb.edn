@@ -8,6 +8,10 @@
                     :task (do
                             (println "Watching SCSS under resources/scss")
                             (shell {:dir "resources/scss"} "npx sass --watch --no-source-map -s compressed main.scss:../public/css/main.css"))}
+         compile-contracts {:doc "Compile smart contracts"
+                            :task (do
+                                    (println "Compiling smart contracts")
+                                    (shell "npx truffle compile"))}
          watch-ui {:doc "Watch and compile ui code changes CLJS -> JS in src/ui/**"
                    :requires ([babashka.cli :as cli])
                    :task (let [aliases (or *command-line-args* [])

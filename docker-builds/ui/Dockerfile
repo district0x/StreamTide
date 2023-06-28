@@ -12,7 +12,7 @@ WORKDIR /build
 RUN yarn install && \
     bb compile-css && \
     bb release-ui && \
-    truffle compile
+    bb compile-contracts
 
 
 FROM nginx:alpine
