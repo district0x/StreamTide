@@ -3,7 +3,6 @@
   (:require
     [bignumber.core :as bn]
     [cljsjs.bignumber]
-    [district.graphql-utils :as gql-utils]
     [district.ui.component.form.input :refer [amount-input pending-button]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
@@ -69,9 +68,7 @@
                                                   :social/verified]]]]]]]]))
 
 (defn round-open? [round]
-  (let [{:keys [:round/start :round/duration]} round
-        start (.getTime (gql-utils/gql-date->date start))]
-  (> (+ start (* 1000 duration)) (shared-utils/now))))
+  (shared-utils/active-round? round (shared-utils/now-secs)))
 
 (defn default-enabled? [donation]
   "returns if a donation is enabled by default.
@@ -250,7 +247,7 @@
 ;                 (assoc m receiver (* divisor amount)))
 ;               {} amounts)))
 
-(defn donations-entries [round-id matching-pool donations-search]
+(defn donations-entries [round-id round donations-search]
   (let [tx-id (str "distribute_" round-id)
         distribute-tx-pending (subscribe [::tx-id-subs/tx-pending? {:streamtide/distribute tx-id}])
         distribute-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/distribute tx-id}])
@@ -260,6 +257,7 @@
                            (filter (fn [d] (and (-> d :donation/sender :user/blacklisted not)
                                                 (-> d :donation/receiver :user/blacklisted not)))))
         donations-by-receiver (group-by :donation/receiver all-donations)
+        matching-pool (:round/matching-pool round)
         matchings (compute-matchings matching-pool donations-by-receiver
                                      @(subscribe [::r-subs/all-multipliers])
                                      @(subscribe [::r-subs/all-donations]))]
@@ -270,18 +268,19 @@
         (doall
           (for [[receiver donations] donations-by-receiver]
             ^{:key (:user/address receiver)} [receiver-entry receiver donations matchings]))])
-     [pending-button {:pending? @distribute-tx-pending
-                      :pending-text "Distributing"
-                      :disabled (or @distribute-tx-pending @distribute-tx-success?)
-                      :class (str "btBasic btBasic-light btDistribute" (when-not @distribute-tx-success? " distributed"))
-                      :on-click (fn [e]
-                                  (.stopPropagation e)
-                                  (dispatch [::r-events/distribute {:send-tx/id tx-id
-                                                                    :round round-id
-                                                                    :matchings matchings}]))}
-      (if @distribute-tx-success? "Distributed" "Distribute")]]))
+     (when (and (not (round-open? round)) (= "0" (:round/distributed round)) (not= "0" (:round/matching-pool round)))
+      [pending-button {:pending? @distribute-tx-pending
+                       :pending-text "Distributing"
+                       :disabled (or @distribute-tx-pending @distribute-tx-success?)
+                       :class (str "btBasic btBasic-light btDistribute" (when-not @distribute-tx-success? " distributed"))
+                       :on-click (fn [e]
+                                   (.stopPropagation e)
+                                   (dispatch [::r-events/distribute {:send-tx/id tx-id
+                                                                     :round round-id
+                                                                     :matchings matchings}]))}
+       (if @distribute-tx-success? "Distributed" "Distribute")])]))
 
-(defn donations [round-id matching-pool]
+(defn donations [round-id round]
   (let [form-data (r/atom {:round round-id
                            :order-key (:key (first donations-order))})]
     (fn []
@@ -304,7 +303,7 @@
 
          (if (or loading? has-more?)
            [spinner/spin]
-           [donations-entries round-id matching-pool donations-search])]))))
+           [donations-entries round-id round donations-search])]))))
 
 
 (defmethod page :route.admin/round []
@@ -370,4 +369,4 @@
                                                                                     :round round}]))}
                      (if @close-round-tx-success? "Round Closed" "Close Round")]]]
                   ))
-              [donations round-id (:round/matching-pool round)]])]]]))))
+              [donations round-id round]])]]]))))
