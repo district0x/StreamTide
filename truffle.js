@@ -16,8 +16,11 @@ let parameters = {
         admins: ["0xaFcF1a2bc71AcF041c93012A2E552e31026dFEAB"]
     },
     "qa" : {
-        multiSig: "TBD",
-        admins: []
+        multiSig: "0x11b23AE13EBACc03Fa0af256fdED729439A45ab5",
+        admins: [
+            "0x11b23AE13EBACc03Fa0af256fdED729439A45ab5",
+            "0xb078844477A5420cB627C1961B30ED33E0126973",
+            "0x0A0A8610F57fE41EC26D5163d1Eb986cE598dc5F"]
     },
     "prod" : {
         multiSig: "TBD",
@@ -45,11 +48,25 @@ module.exports = {
             gasPrice: 6e9,
             skipDryRun: true
         },
+        "alchemy-arbitrum-goerli": {
+            provider: () => new HDWalletProvider(process.env.ARBITRUM_GOERLI_PRIV_KEY, "https://arb-goerli.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY),
+            network_id: 421613,
+            gas: 6e6,
+            gasPrice: 1e9,
+            skipDryRun: true
+        },
         "infura-mainnet": {
             provider: () => new HDWalletProvider(process.env.MAINNET_PRIV_KEY, "https://mainnet.infura.io/v3/" + process.env.INFURA_API_KEY),
             network_id: 1,
             gas: 6e6,
             gasPrice: 9e9,
+            skipDryRun: true
+        },
+        "alchemy-arbitrum-mainnet": {
+            provider: () => new HDWalletProvider(process.env.ARBITRUM_PRIV_KEY, "https://arb-goerli.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY),
+            network_id: 42161,
+            gas: 6e6,
+            gasPrice: 1e9,
             skipDryRun: true
         }
     },
