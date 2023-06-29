@@ -35,6 +35,16 @@ const utils = {
     const data = require(srcPath);
     data.contractName = dstName;
 
+    delete Object.assign(data.ast.exportedSymbols, {[dstName]: data.ast.exportedSymbols[srcName] })[srcName];
+
+    const o = data.ast.nodes.find(node => node.nodeType === 'ContractDefinition'
+        && (node.name === srcName || node.name === srcName))
+
+    if (o){
+      o.name = dstName;
+      o.canonicalName = dstName;
+    }
+
     // Save address when given
     if (network && address) {
       data.networks = {};
