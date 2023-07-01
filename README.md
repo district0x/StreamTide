@@ -64,7 +64,7 @@ We wholeheartedly embrace the exhilarating synergy between creativity and emergi
 
 ### Cultivating Curiosity and Imagination
 
-Nurturing curiosity and imagination lies at the core of our community. At Stream Tide, we strive to foster a childlike wonder and curiosity, encouraging our members to dream big and envision new possibilities. We believe that by embracing curiosity and allowing our imaginations to roam freely, we can challenge the status quo, question assumptions, and transform creative visions into reality. We celebrate the power of imagination and its role in driving innovation and personal growth. 🌟💭🌈
+Nurturing curiosity and imagination lies at the core of our community. At Stream Tide, we strive to foster a childlike wonder and curiosity, encouraging our members to dream big and envision new possibilities. We believe that by embracing curiosity and allowing our imaginations to roam freely, we can challenge the status quo, question assumptions, and transform creative visions into reality. We celebrate the power of imagination and its role in driving innovation and personal growth. 🌟💭
 
 ### Advocating Counterculture, Decentralization, and Open Source
 
@@ -76,7 +76,7 @@ We are strong advocates for free and fair access to education and information. A
 
 ### Diversity and Inclusion
 
-Brace yourselves, because we're about to say something truly daring... *deep breath…* We believe in fostering a vibrant and inclusive community that transcends the narrow confines of ideology and geography. Yes, you heard it right. We're all about embracing a global tapestry of backgrounds, cultures, and perspectives, without limitations imposed by any particular political leaning. By embracing borderless, censorship-resistant open-source models, innovation, creativity, and collective growth will flourish. We can challenge our own beliefs and explore the rich diversity of human experience. So, let's leave closed-mindedness at the door and embark on a journey of open dialogue and genuine understanding. Together, we'll create a community that defies expectations and sparks real change. 🌍🌈🤝
+Brace yourselves, because we're about to say something truly daring... *deep breath…* We believe in fostering a vibrant and inclusive community that transcends the narrow confines of ideology and geography. Yes, you heard it right. We're all about embracing a global tapestry of backgrounds, cultures, and perspectives, without limitations imposed by any particular political leaning. By embracing borderless, censorship-resistant open-source models, innovation, creativity, and collective growth will flourish. We can challenge our own beliefs and explore the rich diversity of human experience. So, let's leave closed-mindedness at the door and embark on a journey of open dialogue and genuine understanding. Together, we'll create a community that defies expectations and sparks real change. 🌍🤝
 
 ### Ethical and Sustainable Practices
 
