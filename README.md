@@ -25,20 +25,6 @@ Our mission is to develop open-source tools and standards that leverage Web3-pow
 
 ## Our Values
 
-# Stream Tide: Empowering Creatives with Open-Source Financial Tools
-
-Welcome to Stream Tide, a revolutionary platform that combines the power of Web3 technology, open-source principles, and donation matching to empower creators worldwide. We believe in reshaping the creative industry by providing open-source financial tools that amplify the impact of patronage support, fostering a vibrant and inclusive community of support. 🌊🌟
-
-## Our Vision
-
-At Stream Tide, our vision is to create a future where every individual in the creative community has the power to thrive and succeed in a platform-agnostic way. We strive to revolutionize the work of artists and culture builders through open-source financial tools, empowering them to reach their full potential and achieve their goals. By leveraging Web3 technology and embracing open-source principles, we aim to build a more inclusive, sustainable, and empowering ecosystem for creatives worldwide. 🌍💡
-
-## Our Mission
-
-Our mission is to develop open-source tools and standards that leverage Web3-powered donation matching to amplify the impact of patronage support. We cultivate a strong sense of community among creative individuals and foster dedicated super fans. Through our open-source tools and frameworks, we enable artists to manage artist-created perks and incentives, strengthening the relationship between creators and their supporters. We embrace Web3 technology to revolutionize economic value exchange and ownership of community-created assets. We advocate for the well-being and rights of individuals on a global scale. 🚀💻🤝
-
-## Our Values
-
 ### Open-Source Empowerment for Creatives
 
 We strongly believe in the power of open-source principles to revolutionize the creative industry. By leveraging Web3 technology, we empower individuals to have control over their data and the ability to monetize it directly, fostering greater financial independence, opportunities, and transparency. We prioritize data ownership and open data markets because we envision a future where creatives worldwide can thrive in a more inclusive and sustainable ecosystem, free from the constraints of third-party intermediaries and with complete control over their own data. 💪💻💰
