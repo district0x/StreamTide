@@ -1,6 +1,11 @@
 # Stream Tide 🌊
 ## Empowering Creatives with Open-Source Financial Tools 
+### TLDR
 
+- **Stream Tide is an open source patronage tool that acts as Fuel for creators, with donation matching to maximize the impact of each contribution 🔌⛽️⚡**
+- **Community-directed capital allocation like this serves as a vehicle to help people reach their goals on the Roads of Web3 and beyond 🚘 🚢**
+- **Web3 and Open Source tools like Stream Tide are the “Future Of Work” we envision 🌅 🌊**
+---
 ### Amplifying Support through Web3-Powered Donation Matching
 At Stream Tide, we understand that standing on the shoulders of giants is a part of innovation. We are deeply inspired by the pioneering work done by projects in the space of quadratic funding, which have established new paradigms for creator support and participation. These projects have not only innovated but have also laid a solid groundwork for others, like us, to build upon.
 
@@ -75,7 +80,7 @@ Brace yourselves, because we're about to say something truly daring... *deep bre
 
 ### Ethical and Sustainable Practices
 
-We uphold ethical and sustainable practices throughout our operations. We prioritize minimizing our environmental impact, supporting fair labor practices, and promoting responsible resource use. By integrating ethical and sustainable practices into our platform, we aim to lead by example and inspire positive change within the creative industry and beyond. ♻️🌍🤲
+At Stream Tide, we are dedicated to upholding ethical and sustainable practices throughout our operations. We recognize the importance of minimizing our environmental impact, supporting fair labor practices, and promoting responsible use of resources. We are committed to adopting sustainable approaches that prioritize the well-being of our planet and the communities we serve. By integrating ethical and sustainable practices into our platform, we aim to lead by example and inspire positive change within the creative industry and beyond. ♻️🌍🤲
 
 ### Community Governance
 
