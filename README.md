@@ -36,7 +36,7 @@ We strongly believe in the power of open-source principles to revolutionize the 
 
 ### Sustainability
 
-At Stream Tide, we are deeply committed to promoting sustainability in the creative industry. We believe that creating an ecosystem where creators have control over their data and can directly monetize their assets leads to greater financial independence and more opportunities. Our unwavering dedication to long-term success is the foundation of our resilient and thriving community in Web3. We recognize that open source is a crucial aspect of sustainability, as it allows models to carry forward even if our organization faces challenges. 🌱🌍🚀
+At Stream Tide, we are deeply committed to promoting sustainability in the creative industry. We believe that creating an ecosystem where creators have control over their data and can directly monetize their assets leads to greater financial independence and more opportunities. Our unwavering dedication to long-term success is the foundation of our resilient and thriving community in Web3. We recognize that open source is a crucial aspect of sustainability, as it allows models to carry forward even if an organization faces challenges. 🌱🌍🚀
 
 ### Collaborative Empowerment for Creative Commons
 
@@ -48,7 +48,7 @@ We value transparency and leverage Web3 technology to create an open-source and 
 
 ### Privacy, Merit, and Inclusive Recognition
 
-We prioritize privacy and merit over identity and data, creating a safe and inclusive environment that fosters individual growth without discrimination based on personal information. We firmly believe in the inherent value of hard work and determination, valuing individuals based on their contributions rather than superficial characteristics such as race, gender, or socioeconomic status. By championing privacy, we ensure control over personal information and protect individuals from the potential misuse or exploitation by data-hungry AI-powered organizations. This approach establishes trust, security, and fairness within our community, empowering individuals to pursue their passions and reach their full potential. 🙌🏽🔒🌟
+We prioritize privacy and merit in everything we do, creating an environment that fosters individual growth without discrimination based on personal information. We firmly believe in the inherent value of hard work and determination, valuing individuals based on their contributions rather than superficial characteristics such as race, gender, geographics or socioeconomic status. By championing privacy, we ensure control over personal information and protect individuals from the potential misuse or exploitation by data-hungry AI-powered organizations. This approach establishes trust, security, and fairness within our community, empowering individuals to pursue their passions and reach their full potential. 🙌🏽🔒🌟
 
 ### Transparent Recognition with Respected Privacy
 
@@ -73,10 +73,6 @@ At Stream Tide, we are ardent supporters of counterculture, decentralization, an
 ### Accessible Education and Reform
 
 We are strong advocates for free and fair access to education and information. At Stream Tide, we strive to break down barriers and promote alternative education models that foster personal growth and skill development. Through grant programs and collaborations, we support initiatives that provide open-source educational resources, empowering our community members to learn, explore, and expand their horizons. We are committed to driving education reform and creating opportunities for all to thrive in the creative industry, regardless of background or traditional educational paths. 📚✊🌟
-
-### Diversity and Inclusion
-
-Brace yourselves, because we're about to say something truly daring... *deep breath…* We believe in fostering a vibrant and inclusive community that transcends the narrow confines of ideology and geography. Yes, you heard it right. We're all about embracing a global tapestry of backgrounds, cultures, and perspectives, without limitations imposed by any particular political leaning. By embracing borderless, censorship-resistant open-source models, innovation, creativity, and collective growth will flourish. We can challenge our own beliefs and explore the rich diversity of human experience. So, let's leave closed-mindedness at the door and embark on a journey of open dialogue and genuine understanding. Together, we'll create a community that defies expectations and sparks real change. 🌍🤝
 
 ### Ethical and Sustainable Practices
 
