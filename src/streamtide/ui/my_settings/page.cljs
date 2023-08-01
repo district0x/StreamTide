@@ -191,7 +191,7 @@
                           :form-values form-values
                           :form-data form-data}]
         [:<>
-         [:div.socialLinks
+         [:div.socialAccounts
           [:h2.titleEdit "Connected accounts"]
           [:p "Connect your social accounts to verify your identity and get the most out of Streamtide."]
           [social-link-edit (merge input-params
@@ -206,7 +206,7 @@
                                    {:id [:socials :eth]
                                     :icon-src "/img/layout/ico_eth.svg"
                                     :verifiable? true})]]
-         [:div.socialLinks
+         [:div.socialAccounts
           [:h2.titleEdit "Social Links"]
           [social-link-edit (merge input-params
                                    {:id [:socials :facebook]

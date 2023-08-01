@@ -16,7 +16,7 @@
     [:img {:src (or src avatar-placeholder)}]]])
 
 (defn social-links [{:keys [:class :socials]}]
-  [:div.socialLinks
+  [:div.socialAccounts
    {:class class}
    (doall (map-indexed
             (fn [idx {:keys [:social/network :social/url]}]
