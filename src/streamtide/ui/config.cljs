@@ -18,7 +18,7 @@
              }
    :router {:html5? true}
    :smart-contracts {:contracts smart-contracts-dev/smart-contracts}
-   :verifiers {:discord {:client-id "1035157814194221108"}}
+   :verifiers {:discord {:client-id "1135876901093781544"}}
    ;:domain "localhost"
    })
 
@@ -27,16 +27,22 @@
              :console? true}
    :graphql {:schema graphql-schema
              :url "https://api.streamtide.qa.district0x.io/graphql"}
+   :router {:html5? true}
    :smart-contracts {:contracts smart-contracts-qa/smart-contracts}
-   :domain "TBD"})
+   :verifiers {:discord {:client-id "1135876901093781544"}}
+   ;:domain "TBD"
+   })
 
 (def production-config
   {:logging {:level :warn
              :console? false}
    :graphql {:schema graphql-schema
              :url "https://api.streamtide.io/graphql"}
+   :router {:html5? true}
    :smart-contracts {:contracts smart-contracts-prod/smart-contracts}
-   :domain "TBD"})
+   :verifiers {:discord {:client-id "1135876901093781544"}}
+   ;:domain "TBD"
+   })
 
 (def config-map
   (condp = (get-environment)
