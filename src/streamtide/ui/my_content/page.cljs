@@ -110,7 +110,7 @@
         [:div.containerContents
         (if (and (empty? all-content)
                  (not loading?))
-          [no-items-found]
+          [no-items-found {:message "No content found"}]
           [infinite-scroll-masonry {:class "yourContents"
                                     :loading? loading?
                                     :has-more? has-more?

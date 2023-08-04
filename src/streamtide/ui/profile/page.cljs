@@ -96,7 +96,7 @@
             has-more? (-> (last @user-content) :search-contents :has-next-page)]
          (if (and (empty? all-content)
                   (not loading?))
-           [no-items-found]
+           [no-items-found {:message "No content found"}]
            [infinite-scroll-masonry {:class "midias"
                                      :loading? loading?
                                      :has-more? has-more?
