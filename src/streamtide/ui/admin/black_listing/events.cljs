@@ -5,11 +5,13 @@
     [district.ui.smart-contracts.queries :as contract-queries]
     [district.ui.web3-accounts.queries :as account-queries]
     [district.ui.web3-tx.events :as tx-events]
-    [re-frame.core :as re-frame]))
+    [re-frame.core :as re-frame]
+    [streamtide.ui.events :refer [wallet-chain-interceptors]]))
 
 (re-frame/reg-event-fx
   ::blacklist
   ; Sends a transaction to blacklist or whitelist a user
+  wallet-chain-interceptors
   (fn [{:keys [db]} [_ {:keys [:user/address :user/blacklisted? :send-tx/id] :as data}]]
     (let [tx-name (str (if blacklisted? "Blacklisting" "Whitelisting") " address " address)
           active-account (account-queries/active-account db)]

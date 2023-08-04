@@ -19,6 +19,8 @@
    :router {:html5? true}
    :smart-contracts {:contracts smart-contracts-dev/smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
+   :web3-chain {:chain-id "1337"
+                :chain-name "Ganache"}
    ;:domain "localhost"
    })
 
@@ -30,6 +32,13 @@
    :router {:html5? true}
    :smart-contracts {:contracts smart-contracts-qa/smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
+   :web3-chain {:chain-id "421613"
+                :rpc-urls ["https://goerli-rollup.arbitrum.io/rpc"]
+                :chain-name "Arbitrum Testnet"
+                :native-currency {:name "AGOR"
+                                  :symbol "AGOR"
+                                  :decimals 18}
+                :block-explorer-urls ["https://testnet.arbiscan.io/"]}
    ;:domain "TBD"
    })
 
@@ -41,6 +50,13 @@
    :router {:html5? true}
    :smart-contracts {:contracts smart-contracts-prod/smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
+   :web3-chain {:chain-id "42161"
+                :rpc-urls ["https://arbitrum-mainnet.infura.io"]
+                :chain-name "Arbitrum One"
+                :native-currency {:name "ETH"
+                                  :symbol "ETH"
+                                  :decimals 18}
+                :block-explorer-urls ["https://explorer.arbitrum.io"]}
    ;:domain "TBD"
    })
 

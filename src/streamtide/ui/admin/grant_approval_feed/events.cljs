@@ -8,12 +8,14 @@
     [district.graphql-utils :as gql-utils]
     [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
-    [re-frame.core :as re-frame]))
+    [re-frame.core :as re-frame]
+    [streamtide.ui.events :refer [wallet-chain-interceptors]]))
 
 (re-frame/reg-event-fx
   ::review-grant
   ; If the grant is approved, this sends a TX to include the user as a patron.
   ; If the grant is rejected, this send a GraphQL mutation request to change the status of a pending grant to rejected
+  wallet-chain-interceptors
   (fn [{:keys [db]} [_ {:keys [:user/addresses :grant/status :send-tx/id] :as data}]]
     (if (= status :grant.status/approved)
       (let [tx-name (str "Approving grant for " (count addresses) " users")

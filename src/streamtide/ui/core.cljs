@@ -18,8 +18,11 @@
             [district.ui.web3-accounts.events :as web3-accounts-events]
             [district.ui.web3-accounts.queries :as web3-accounts-queries]
             [district.ui.web3-accounts]
+            [district.ui.web3-chain]
+            [district.ui.web3-chain.events :as web3-chain-events]
             [district.ui.web3-tx-id]
             [district.ui.web3]
+            [district.ui.web3.events :as web3-events]
             [district.ui.window-size]
             [mount.core :as mount]
             [re-frame.core :as re-frame]
@@ -107,13 +110,23 @@
                        :dispatch-to [::set-graphql-auth]}
                       {:register :on-navigate
                        :events #{::router-events/navigate}
-                       :dispatch-to [::close-mobile-menu]}]}))
+                       :dispatch-to [::close-mobile-menu]}
+                      {:register :web3-created
+                       :events #{::web3-events/web3-created}
+                       :dispatch-to [::st-events/web3-created]}
+                      {:register :web3-creation-failed
+                       :events #{::web3-events/web3-creation-failed}
+                       :dispatch-to [::st-events/web3-creation-failed]}
+                      {:register :chain-changed
+                       :events #{::web3-chain-events/chain-changed}
+                       :dispatch-to [::st-events/web3-chain-changed]}]}))
 
 (defn ^:export init []
   (dev-setup)
   (let [full-config (cljs-utils/merge-in
                       config-map
-                      {:web3-accounts {:eip55? true}
+                      {:web3 {:authorize-on-init? false}
+                       :web3-accounts {:eip55? true}
                        :smart-contracts {:format :truffle-json
                                          :contracts-path "/contracts/build/"}
                        :web3-tx-log {:open-on-tx-hash? true}

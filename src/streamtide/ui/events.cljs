@@ -5,9 +5,13 @@
             [district.ui.notification.events :as notification-events]
             [district.ui.web3-accounts.queries :as account-queries]
             [district.ui.web3.queries :as web3-queries]
+            [district.ui.web3.events :as web3-events]
+            [district.ui.web3-chain.queries :as chain-queries]
+            [district.ui.web3-chain.events :as chain-events]
             [goog.string :as gstring]
             [re-frame.core :as re-frame]
-            [streamtide.shared.utils :as shared-utils]))
+            [streamtide.shared.utils :as shared-utils]
+            [streamtide.ui.config :refer [config-map]]))
 
 (def interceptors [re-frame/trim-v])
 
@@ -29,10 +33,93 @@
       {:db (assoc db :menu-mobile-open? menu-open?)})))
 
 (re-frame/reg-event-fx
+  ::web3-created
+  [interceptors]
+  (fn [_]
+    {:dispatch [::dispatch-pending-event]}))
+
+(re-frame/reg-event-fx
+  ::web3-creation-failed
+  [interceptors]
+  (fn [{:keys [db]} [_ error]]
+    {:dispatch-n
+     [[::notification-events/show "Cannot connect Wallet"]
+      [::logging/error " Cannot connect Wallet" {:error error}]]}))
+
+
+(re-frame/reg-event-fx
+  ::web3-chain-changed
+  [interceptors]
+  (fn [{:keys [db]} [[_ {:keys [:new]}]]]
+    (when (= new (-> config-map :web3-chain :chain-id))
+      {:dispatch [::dispatch-pending-event]})))
+
+
+(def last-wallet-event (atom nil))
+
+(re-frame/reg-event-fx
+  ::dispatch-pending-event
+  [interceptors]
+  (fn [_]
+    (let [{:keys [:event :timestamp]} @last-wallet-event]
+      (when event
+        (reset! last-wallet-event nil)
+        (when (> (+ 30 timestamp) (shared-utils/now-secs))
+          {:dispatch event})))))
+
+(def connect-wallet
+  ;; interceptor to make sure wallet is unlocked and account is connected to proceed.
+  ;; If not connected, it will request the user to unlock wallet and/or connect one of its account.
+  ;; Additionally, it stores the current event, so it resumes it when wallet is connected.
+  (re-frame.core/->interceptor
+    :id :connect-wallet
+    :before (fn [context]
+              (let [db (-> context :coeffects :db)]
+                (if (and (web3-queries/web3 db)
+                         (account-queries/has-active-account? db))
+                  ; if wallet connected, we just follow the normal flow
+                  context
+                  (do
+                    ; stores the interrupted event to resume it later
+                    (reset! last-wallet-event {:event (-> context :coeffects :event)
+                                               :timestamp (shared-utils/now-secs)})
+                    ; request wallet unlock
+                    (re-frame/dispatch [::web3-events/authorize-ethereum-provider])
+                    ; interrupt the event processing
+                    (assoc context :queue #queue [])))))))
+
+
+(def check-chain
+  ;; interceptor to make sure wallet is connected to the proper network.
+  ;; If not in the right network, it will request the user to switch networks.
+  ;; Additionally, it stores the current event, so it resumes it when network is switched.
+  (re-frame.core/->interceptor
+    :id :connect-wallet
+    :before (fn [context]
+              (let [db (-> context :coeffects :db)
+                    chain-id (-> config-map :web3-chain :chain-id)]
+                (if (= chain-id (chain-queries/chain db))
+                  ; if chain is correct, we just follow the normal flow
+                  context
+                  (do
+                    ; stores the interrupted event to resume it later
+                    (reset! last-wallet-event {:event (-> context :coeffects :event)
+                                               :timestamp (shared-utils/now-secs)})
+                    ; request a change of network
+                    (re-frame/dispatch [::chain-events/request-switch-chain
+                                        chain-id
+                                        {:chain-info (:web3-chain config-map)}])
+                    ; interrupt the event processing
+                    (assoc context :queue #queue [])))))))
+
+(def wallet-chain-interceptors [connect-wallet check-chain])
+
+(re-frame/reg-event-fx
   :user/sign-in
   ; To log-in, the user first requests an OTP to the server.
   ; Then it sign a message (containing the OTP) with its wallet and send it to the server.
   ; The server will produce a JWT which is stored in the browser to be sent on each request.
+  [connect-wallet]
   (fn [{:keys [db]} _]
     (let [active-account (account-queries/active-account db)
           query

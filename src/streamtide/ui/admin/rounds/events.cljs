@@ -7,11 +7,13 @@
     [district.ui.web3-accounts.queries :as account-queries]
     [district.ui.web3-tx.events :as tx-events]
     [re-frame.core :as re-frame]
+    [streamtide.ui.events :refer [wallet-chain-interceptors]]
     [streamtide.shared.utils :as shared-utils]))
 
 (re-frame/reg-event-fx
   ::start-round
   ; TX to start a new round
+  wallet-chain-interceptors
   (fn [{:keys [db]} [_ {:keys [:send-tx/id :duration :matching-pool] :as data}]]
     (let [tx-name (str "Starting a new round with duration " duration " seconds")
           active-account (account-queries/active-account db)

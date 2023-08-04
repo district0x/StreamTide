@@ -7,6 +7,7 @@
     [district.ui.web3-accounts.queries :as account-queries]
     [district.ui.web3-tx.events :as tx-events]
     [re-frame.core :as re-frame]
+    [streamtide.ui.events :refer [wallet-chain-interceptors]]
     [taoensso.timbre :as log]))
 
 (def interceptors [re-frame/trim-v])
@@ -31,6 +32,7 @@
 (re-frame/reg-event-fx
   ::distribute
   ; TX to distribute matching pool for last round
+  wallet-chain-interceptors
   (fn [{:keys [db]} [_ {:keys [:send-tx/id :round :matchings] :as data}]]
     (let [tx-name (str "Distribute matching pool for round " round)
           active-account (account-queries/active-account db)
@@ -56,6 +58,7 @@
 (re-frame/reg-event-fx
   ::fill-matching-pool
   ; TX to fill up matching pool
+  wallet-chain-interceptors
   (fn [{:keys [db]} [_ {:keys [:send-tx/id :amount :round] :as data}]]
     (let [tx-name (str "Filling up matching pool with " amount " ETH")
           active-account (account-queries/active-account db)
@@ -78,6 +81,7 @@
 (re-frame/reg-event-fx
   ::close-round
   ; TX to close an ongoing round
+  wallet-chain-interceptors
   (fn [{:keys [db]} [_ {:keys [:send-tx/id :round] :as data}]]
     (let [tx-name "Close round"
           active-account (account-queries/active-account db)]

@@ -10,11 +10,12 @@
     [district.ui.web3-tx.events :as tx-events]
     [re-frame.core :as re-frame]
     [streamtide.shared.utils :as shared-utils]
-    [streamtide.ui.events :as st-events]))
+    [streamtide.ui.events :as st-events :refer [wallet-chain-interceptors]]))
 
 (re-frame/reg-event-fx
   ::send-support
   ; Make transaction to send donations to patrons
+  wallet-chain-interceptors
   (fn [{:keys [db]} [_ {:keys [:donations :send-tx/id] :as data}]]
     (let [tx-name (str "Sending donations to patrons")
           active-account (account-queries/active-account db)
