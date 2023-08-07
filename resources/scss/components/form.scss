@@ -26,6 +26,11 @@
 		padding: 0 22.83px;
 	}
 }
+.textField {
+	textarea {
+		background: $bgSite;
+	}
+}
 .btSearchField {
 	height: 30.25px;
 	width: 30.25px;
