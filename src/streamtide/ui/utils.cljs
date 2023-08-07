@@ -47,3 +47,8 @@
   (if (string/blank? name)
     (truncate-text address)
     (truncate-text name 35)))
+
+(def url-pattern (re-pattern "^(http(s)?:\\/\\/)?[a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-z]{2,6}\\b([-a-zA-Z0-9@:%_\\+.~#?&//=]*)$"))
+
+(defn valid-url? [url]
+  (re-matches url-pattern url))

@@ -184,7 +184,6 @@
 		}
 
 		.input-wrapper {
-			margin-bottom: 40px;
 			label {
 				width: 100%;
 				display: flex;
@@ -210,6 +209,11 @@
 				margin-right: 10px;
 			}
 
+			span.error {
+				color:red;
+				display: inline-block;
+			}
+
 		}
 	}
 	@include media-breakpoint-up(lg) {
@@ -226,7 +230,7 @@
 			}
 			&.add {
 				.content {
-					padding: 44px 42px;
+					padding: 44px 42px 20px;
 				}
 				div.form {
 					display: flex;

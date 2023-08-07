@@ -17,7 +17,7 @@
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.my-content.events :as mc-events]
     [streamtide.ui.my-content.subs :as mc-subs]
-    [streamtide.ui.utils :refer [switch-popup]]))
+    [streamtide.ui.utils :refer [switch-popup valid-url?]]))
 
 
 (def page-size 6)
@@ -135,7 +135,11 @@
                       (show-add-content-popup-fn ev false)
                       (reset! form-data init-form))]
     (fn []
-      (let [loading? (subscribe [::mc-subs/uploading-content?])]
+      (let [loading? (subscribe [::mc-subs/uploading-content?])
+            url (:url @form-data)
+            error-msg (when (and (not (empty? url))
+                                 (not (valid-url? url)))
+                        "URL not valid")]
         [:div {:id "popUpAddContent" :style {"display" (if @add-content-popup-open? "flex" "none")}}
          [:div.bgPopUp {:on-click #(close-popup %)}]
          [:div.popUpContent.add
@@ -165,13 +169,15 @@
                                      {:disabled true}))]]
                [:button.btBasic.btBasic-light
                 {:class (when @loading? "loading")
+                 :disabled (or (empty? url)
+                               (not (valid-url? url)))
                  :on-click #(dispatch [::mc-events/upload-content
                                        (merge @form-data
                                               {:on-success (fn []
                                                              (close-popup nil)
                                                              (dispatch [::mc-events/content-added]))})])}
-                "ADD LINK"]]]
-             ]]]]]))))
+                "ADD LINK"]]
+              [:span.error error-msg]]]]]]]))))
 
 (defmethod page :route.my-content/index []
   (let [active-account (subscribe [::accounts-subs/active-account])
