@@ -21,6 +21,18 @@
         token-request
         (throw (js/Error. "Unexpected token-request status"))))))
 
+(defn- check-roles [user-id]
+  (safe-go
+    (let [discord-config (-> @config :verifiers :discord)
+          {:keys [token guild-id roles]} discord-config
+          roles-request (<? (.get axios (str "https://discord.com/api/v10/guilds/"
+                                             guild-id "/members/" user-id)
+                                  (clj->js {:headers {:Authorization (str "Bot " token)}})))]
+      (if (= (.-status roles-request) 200)
+        (let [user-roles (-> roles-request .-data .-roles)]
+          (not-empty (clojure.set/intersection (set roles) (set user-roles))))
+        (throw (js/Error. "Unexpected roles-request status"))))))
+
 (defn verify-oauth-verifier [{:keys [:code :state]}]
   (safe-go
     (let [token-request (<? (get-token-request code))
@@ -32,7 +44,7 @@
       (let [user-id (-> user-request .-data .-user .-id)
             ;username (-> user-request .-data .-user .-username)
             ]
-        (if user-id
+        (if (and user-id (<? (check-roles user-id)))
           {:valid? true
            :url (str "https://discordapp.com/users/" user-id)}
           {:valid? false})))))
