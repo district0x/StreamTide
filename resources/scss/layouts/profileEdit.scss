@@ -64,6 +64,21 @@
 			color: $blackWhite;
 			margin-bottom: 19.39px;
 		}
+		.verifier-hint {
+			padding-left: 20px;
+			padding-bottom: 7px;
+			font-size: medium;
+			font-style: oblique;
+			font-weight: bold;
+			a {
+				text-decoration: underline;
+				text-decoration-thickness: 2px;
+				color: $lilac;
+				&:hover {
+					color: $textColor;
+				}
+			}
+		}
 		.generalInfo {
 			margin-bottom: 23px;
 			label.inputField {

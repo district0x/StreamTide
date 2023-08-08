@@ -194,14 +194,18 @@
          [:div.socialAccounts
           [:h2.titleEdit "Connected accounts"]
           [:p "Connect your social accounts to verify your identity and get the most out of Streamtide."]
+          [:div.verifier-hint "Verify you have a valid Twitter account"]
           [social-link-edit (merge input-params
                                    {:id [:socials :twitter]
                                     :icon-src "/img/layout/ico_twitter.svg"
                                     :verifiable? true})]
+          [:div.verifier-hint "Verify you have a valid Discord account connected to "
+           [:a {:href "https://discord.com/invite/sS2AWYm" :target :_blank :rel "noopener noreferrer"} "district0x server"]]
           [social-link-edit (merge input-params
                                    {:id [:socials :discord]
                                     :icon-src "/img/layout/ico_discord.svg"
                                     :verifiable? true})]
+          [:div.verifier-hint "Verify your wallet holds some ETH on any of the main networks"]
           [social-link-edit (merge input-params
                                    {:id [:socials :eth]
                                     :icon-src "/img/layout/ico_eth.svg"
