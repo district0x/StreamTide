@@ -99,7 +99,18 @@
 	line-height: 100%;
 	width: 100%;
 	.help-block {
-		display: none;
+		display: block;
+		position: absolute;
+		margin-top: 10px;
+		color: red;
+		font-size: 15px;
+
+		&::before {
+			width: 100%;
+			content: '';
+			display: inline-block;
+			transition: all .2s linear;
+		}
 	}
 }
 

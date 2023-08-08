@@ -9,13 +9,14 @@
     [district.ui.web3-accounts.subs :as accounts-subs]
     [re-frame.core :refer [dispatch subscribe]]
     [reagent.core :as r]
+    [reagent.ratom :refer [reaction]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [no-items-found support-seal]]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [avatar-placeholder]]
     [streamtide.ui.my-settings.events :as ms-events]
     [streamtide.ui.my-settings.subs :as ms-subs]
-    [streamtide.ui.utils :refer [switch-popup]]))
+    [streamtide.ui.utils :refer [switch-popup valid-url?]]))
 
 (def page-size 6)
 
@@ -49,7 +50,7 @@
   [text-input (merge {:value (get-by-path form-values id)}
                      (apply dissoc opts [:form-values]))])
 
-(defn social-link-edit [{:keys [:id :form-data :form-values :icon-src :verifiable?]}]
+(defn social-link-edit [{:keys [:id :form-data :form-values :icon-src :verifiable? :errors]}]
   (let [value-id (conj id :url)
         verified? (get-by-path form-values (conj id :verified))
         network (last id)]
@@ -83,7 +84,8 @@
        (merge {:form-data form-data
                :form-values form-values
                :id value-id
-               :type :url}
+               :type :url
+               :errors errors}
               (when verifiable?
                 {:disabled true}))]]]))
 
@@ -131,13 +133,14 @@
                                         (and (#{"image/png" "image/gif" "image/jpeg" "image/svg+xml"} type)
                                              (< size 1500000)))}])
 
-(defn- grant-info [grant-status show-popup-fn]
+(defn- grant-info [grant-status show-popup-fn errors]
   (let []
   [:div.apply
   [:h2.titleEdit "Apply for a Grant"]
   [:p "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."]
   (case grant-status
-    :grant.status/unrequested [:button.btBasic.btBasic-light.btApply {:on-click #(show-popup-fn % true)} "APPLY FOR A GRANT"]
+    :grant.status/unrequested [:button.btBasic.btBasic-light.btApply {:on-click #(show-popup-fn % true)
+                                                                      :disabled (not-empty (-> @errors :local))} "APPLY FOR A GRANT"]
     :grant.status/requested [:div.requested "Your Grant has been requested and is pending for approval"]
     :grant.status/approved [:div.approved "Your Grant has been approved"]
     :grant.status/rejected [:div.rejected "Your Grant has been rejected"]
@@ -177,7 +180,7 @@
 
 (defn social-links []
   (let [active-account (subscribe [::accounts-subs/active-account])]
-    (fn [{:keys [:form-data]}]
+    (fn [{:keys [:form-data :errors]}]
       (let [user-socials-query (when @active-account (subscribe [::gql/query {:queries [(build-user-socials-query {:user/address @active-account})]}
                                                                  {:refetch-on [::ms-events/verify-social-success]}]))
             loading? (or (nil? user-socials-query) (:graphql/loading? (last @user-socials-query)))
@@ -189,7 +192,8 @@
             form-values (merge-with #(if (map? %2) (merge %1 %2) %2) initial-values @form-data)
             input-params {:read-only loading?
                           :form-values form-values
-                          :form-data form-data}]
+                          :form-data form-data
+                          :errors errors}]
         [:<>
          [:div.socialAccounts
           [:h2.titleEdit "Connected accounts"]
@@ -234,13 +238,30 @@
           (:photo @form-data) (update :photo photo->gql)
           (:bg-photo @form-data) (update :bg-photo photo->gql)))
 
+(defn- some-invalid-url? [url]
+  (and (not-empty url) (not (valid-url? url))))
+
 (defmethod page :route.my-settings/index []
   (let [active-account (subscribe [::accounts-subs/active-account])
         grant-popup-open? (r/atom false)
         show-grant-popup-fn (fn [e show]
                               (when e (.stopPropagation e))
                      (switch-popup grant-popup-open? show))
-        form-data (r/atom {})]
+        form-data (r/atom {})
+        errors (reaction {:local (cond-> {}
+                                         (some-invalid-url? (:url @form-data))
+                                         (assoc :url "URL not valid")
+                                         (some-invalid-url? (:perks @form-data))
+                                         (assoc :perks "URL not valid")
+                                         (some-invalid-url? (-> @form-data :socials :facebook :url))
+                                         (assoc-in [:socials :facebook :url] "URL not valid")
+                                         (some-invalid-url? (-> @form-data :socials :instagram :url))
+                                         (assoc-in [:socials :instagram :url] "URL not valid")
+                                         (some-invalid-url? (-> @form-data :socials :linkedin :url))
+                                         (assoc-in [:socials :linkedin :url] "URL not valid")
+                                         (some-invalid-url? (-> @form-data :socials :pinterest :url))
+                                         (assoc-in [:socials :pinterest :url] "URL not valid")
+                                         )})]
     (fn []
       (let [user-settings (when @active-account (subscribe [::gql/query {:queries [(build-user-settings-query {:user/address @active-account})]}]))
             grant-status-query (when @active-account (subscribe [::gql/query {:queries [(build-grant-status-query {:user/address @active-account})]}
@@ -255,7 +276,8 @@
             form-values (merge-with #(if (map? %2) (merge %1 %2) %2) initial-values @form-data)
             input-params {:read-only loading?
                           :form-values form-values
-                          :form-data form-data}]
+                          :form-data form-data
+                          :errors errors}]
         [app-layout
          [:main.pageSite.pageProfile.pageEditProfile
           {:id "profile"}
@@ -315,21 +337,24 @@
                          :input-type :textarea})]]]
               [social-links input-params]
               [:hr.lineProfileEdit]
-              [grant-info grant-status show-grant-popup-fn]
+              [grant-info grant-status show-grant-popup-fn errors]
               (when (= grant-status :grant.status/approved)
-              [:div.perks
-               [:h2 "Perks Button URL"]
-               [:p "Lorem ipsum dolor sit amet, consectetur adipiscing elit."]
-               [initializable-text-input
-                (merge input-params
-                       {:class "inputField"
-                        :id :perks
-                        :type :url})]])]]]
-           [:div.submitField
+                [:<>
+                 [:div.perks
+                  [:h2 "Perks Button URL"]
+                  [:p "Lorem ipsum dolor sit amet, consectetur adipiscing elit."]
+
+                  [:label.inputField
+                   [:span "URL"]
+                   [initializable-text-input
+                    (merge input-params
+                           {:id :perks
+                            :type :url})]]]])]]]
+             [:div.submitField
             [:hr]
             [:button.btBasic.btBasic-light.btSubmit
              {:type "submit"
-              :disabled (empty? @form-data)
+              :disabled (or (empty? @form-data) (not-empty (-> @errors :local)))
               :on-click #(dispatch [::ms-events/save-settings
                                     {:form-data (clean-form-data form-data form-values initial-values)}])}
              "SAVE CHANGES"]]]]

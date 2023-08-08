@@ -79,7 +79,7 @@
 				}
 			}
 		}
-		.generalInfo {
+		.generalInfo, .perks {
 			margin-bottom: 23px;
 			label.inputField {
 				display: flex;
@@ -99,6 +99,10 @@
 					padding: 0;
 					font-size: 16px;
 					font-weight: $regular;
+				}
+				.help-block {
+					color: red;
+					font-size: 15px;
 				}
 			}
 		}
@@ -173,6 +177,12 @@
 					&.verifiable {
 						background: $disabled;
 					}
+					.help-block {
+						margin-top: 7px;
+						line-height: 0;
+						color: red;
+						font-size: 15px;
+					}
 				}
 				input {
 					width: 100%;
@@ -232,21 +242,6 @@
 				color: red;
 			}
 		}
-		.perks {
-			//display: none;
-			display: block;
-			text-align: center;
-			max-width: 678px;
-			margin: 0 auto;
-			.titleEdit {
-				margin-bottom: 8px;
-			}
-			p {
-				font-size: 16px;
-				line-height: 32px;
-				margin-bottom: 23px;
-			}
-		}
 	}
 	.submitField {
 		background: $bgSubmit;
@@ -273,9 +268,6 @@
 	&.approved {
 		.apply {
 			display: none;
-		}
-		.perks {
-			display: block;
 		}
 		.containerEdit {
 			border-bottom-right-radius: 0;
@@ -419,20 +411,6 @@
 				}
 				.btApply {
 					min-width: 189px;
-				}
-			}
-			.perks {
-				text-align: left;
-				max-width: none;
-				margin: 0;
-				margin-top: 3em;
-
-				.titleEdit {
-					margin-bottom: 12px;
-				}
-				p {
-					font-size: 18px;
-					line-height: 36px;
 				}
 			}
 		}
