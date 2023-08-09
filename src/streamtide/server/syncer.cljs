@@ -116,8 +116,10 @@
                            :donation/amount value
                            :donation/coin (name :eth)
                            :round/id round-id})
-        (db/add-user-content-permission! {:user/source-user sender
-                                          :user/target-user patron-address})))))
+        (let [min-donation (:user/min-donation (db/get-user patron-address))]
+          (when (or (nil? min-donation) (bn/>= (js/BigNumber. value) (js/BigNumber. min-donation)))
+            (db/add-user-content-permission! {:user/source-user sender
+                                              :user/target-user patron-address})))))))
 
 (defn matching-pool-donation-event [_ {:keys [:args]}]
   (let [{:keys [:sender :value :round-id]} args]

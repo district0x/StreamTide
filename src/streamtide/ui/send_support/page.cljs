@@ -2,7 +2,7 @@
   "Page to make donations. Shows the content of card and allow triggering a TX to send donations"
   (:require
     [cljs-time.coerce :as tc]
-    [district.ui.component.form.input :refer [amount-input pending-button]]
+    [district.ui.component.form.input :refer [text-input pending-button get-by-path]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
     [district.ui.graphql.subs :as gql]
@@ -11,6 +11,7 @@
     [district.ui.web3-tx-id.subs :as tx-id-subs]
     [re-frame.core :as re-frame :refer [subscribe dispatch]]
     [reagent.core :as r]
+    [reagent.ratom :refer [reaction]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [nav-anchor no-items-found support-seal]]
     [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
@@ -28,7 +29,8 @@
    {:user/address address}
    [:user/name
     :user/tagline
-    :user/photo]])
+    :user/photo
+    :user/min-donation]])
 
 (defn build-donations-query [{:keys [:user/address]} after]
   [:search-donations
@@ -48,31 +50,45 @@
                                   :user/name
                                   :user/photo]]]]]])
 
-(defn send-support-card [user-address form-data]
-  (let [user-info-query (subscribe [::gql/query {:queries [(build-user-info-query {:user/address user-address})]}])
-        loading? (or (nil? user-info-query) (:graphql/loading? (last @user-info-query)))]
+
+(def default-min-donation "0.005")
+
+(defn send-support-card [user-address form-data errors]
+  (let [user-info-query (subscribe [::gql/query {:queries [(build-user-info-query {:user/address user-address})]}])]
     (fn []
-      (let [user-info (:user @user-info-query)
-            nav (partial nav-anchor {:route :route.profile/index :params {:address user-address}})]
-        [:div.cardSendSupport
-         [nav [user-photo {:src (:user/photo user-info)}]]
-         [:div.content
-          [nav [:h3 (ui-utils/user-or-address (:user/name user-info) user-address)]]
-          [:p.d-none.d-lg-block (:user/tagline user-info)]]
-         [:div.field.field-amount
-          [:span.titleField "Amount"]
-          [amount-input {:id [user-address :amount]
-                         :form-data form-data
-                         :class "inputField"}]]
-         [:div.field.field-currency
-          [:span.titleField "Currency"]
-          [:div.custom-select.selectForm.inputField.simple
-           [:select
-            [:option {:value "eth"} "ETH"]]]]
-         [:button.btClose
-          {:on-click (fn []
-                       (swap! form-data dissoc user-address)
-                       (dispatch [::st-events/remove-from-cart {:user/address user-address}]))}]]))))
+      (let [loading? (or (nil? user-info-query) (:graphql/loading? @user-info-query))]
+        (if loading?
+          [spinner/spin]
+          (let [user-info (:user @user-info-query)
+                nav (partial nav-anchor {:route :route.profile/index :params {:address user-address}})
+                min-donation (ui-utils/from-wei (or (:user/min-donation user-info) "0"))]
+            (when-not (get-in @form-data [user-address :amount])
+              (swap! form-data assoc-in [user-address :amount]
+                     (if (= "0" min-donation) default-min-donation min-donation)))
+            [:div.cardSendSupport
+             [nav [user-photo {:src (:user/photo user-info)}]]
+             [:div.content
+              [nav [:h3 (ui-utils/user-or-address (:user/name user-info) user-address)]]
+              [:p.d-none.d-lg-block (:user/tagline user-info)]]
+             [:div.field.field-amount
+              [:span.titleField "Amount"]
+              [text-input {:id [user-address :amount]
+                           :form-data form-data
+                           :class "inputField"
+                           :errors errors}]
+              (when (and (nil? (get-in @errors [:local user-address :amount]))
+                         (< (js/parseFloat (get-in @form-data [user-address :amount]))
+                            (js/parseFloat min-donation)))
+                [:span.warning "Min amount not matched. This donation will not unlock restricted content"])]
+             [:div.field.field-currency
+              [:span.titleField "Currency"]
+              [:div.custom-select.selectForm.inputField.simple
+               [:select
+                [:option {:value "eth"} "ETH"]]]]
+             [:button.btClose
+              {:on-click (fn []
+                           (swap! form-data dissoc user-address)
+                           (dispatch [::st-events/remove-from-cart {:user/address user-address}]))}]]))))))
 
 (defn donation-entry [{:keys [:donation/id :donation/receiver :donation/amount :donation/date] :as donation}]
   (let [receiver-address (:user/address receiver)
@@ -126,7 +142,14 @@
 
 (defmethod page :route.send-support/index []
   (let [cart (subscribe [::st-subs/cart])
-        form-data (r/atom (into {} (map (fn [[address _]] [address {:amount 0.01}]) @cart)))
+        form-data (r/atom {})
+        errors (reaction {:local
+                          (reduce (fn [aggr [addr {:keys [:amount]}]]
+                                    (if (and amount (or (not (re-matches #"^\d+(\.\d{0,18})?$" amount))
+                                                        (re-matches #"^0+\.?0*$" amount)))
+                                      (assoc-in aggr [addr :amount] "Amount not valid")
+                                      aggr))
+                                  {} @form-data)})
         tx-id (str "donate_" (random-uuid))]
     (fn []
       (let [donate-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/donate tx-id}])
@@ -144,7 +167,7 @@
                 [support-seal]
                 (doall
                   (for [[address _] @cart]
-                    ^{:key address} [send-support-card address form-data]))])
+                    ^{:key address} [send-support-card address form-data errors]))])
                 [:div.buttons
                  [pending-button {:pending? @donate-tx-pending?
                                   :pending-text "CHECKING OUT"

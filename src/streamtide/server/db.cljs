@@ -25,7 +25,8 @@
                          :leader/donation-amount
                          :leader/matching-amount
                          :leader/total-amount
-                         :donation/amount])
+                         :donation/amount
+                         :user/min-donation])
 
 (defn- fix-exp-numbers [results]
   "when storing a big number, they may get converted to exponential notation.
@@ -60,6 +61,7 @@
    [:user/handle :varchar default-nil]
    [:user/url :varchar default-nil]
    [:user/perks :varchar default-nil]
+   [:user/min-donation :unsigned :integer default-nil]
    [:user/blacklisted :tinyint default-false]])
 
 (def social-link-columns

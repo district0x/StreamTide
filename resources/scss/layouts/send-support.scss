@@ -8,6 +8,10 @@
 	}
 	.contentSendSupport {
 		margin-bottom: 22.57px;
+		.spinner-outer {
+			margin-top: 0px;
+			padding-top: 0px;
+		}
 	}
 	.cart {
 		.no-items-found {
@@ -76,6 +80,20 @@
 		}
 		.field-amount {
 			margin-right: 19px;
+			.help-block {
+				margin-top: 7px;
+				line-height: 0;
+				color: red;
+				font-size: 15px;
+			}
+			.warning {
+				display: block;
+				position: absolute;
+				top: 120px;
+				font-size: 15px;
+				padding-left: 87px;
+				color: $textColor;
+			}
 		}
 		.btClose {
 			position: absolute;
@@ -150,6 +168,16 @@
 			}
 		}
 	}
+	@include media-breakpoint-down(sm) {
+		.cardSendSupport {
+			.field-amount {
+				.warning {
+					top: 180px;
+					padding-left: 4px;
+				}
+			}
+		}
+	}
 	@include media-breakpoint-up(md) {
 		.cardSendSupport {
 			height: 166px;
@@ -201,7 +229,7 @@
 		.cardSendSupport {
 			z-index: 5;
 			padding-right: 48px;
-			position: initial;
+			position: relative;
 			.user {
 				width: 116px;
 				height: 116px;

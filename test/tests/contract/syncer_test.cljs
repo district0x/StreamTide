@@ -27,7 +27,7 @@
 (deftest syncer-test
   (testing "Testing syncer"
     (async done
-      (-> (mount/with-args {:web3 {:url "ws://localhost:8549"}
+      (-> (mount/with-args {:web3 {:url "ws://127.0.0.1:9545"}
                             :smart-contracts {:contracts-var #'smart-contracts-dev/smart-contracts
                                               :contracts-build-path "./resources/public/contracts/build"}
                             :db {:path ":memory:"}
@@ -106,17 +106,20 @@
             (<! (wait-event :matching-pool-donation))
             (is (= (:round/matching-pool (first (:items (db/get-rounds {:first 6})))) "3500"))
 
-            (<! (smart-contracts/contract-send :streamtide-fwd :donate [[user]["500"]] {:from user2 :value "500"}))
+            (db/upsert-user-info! {:user/address user
+                                   :user/min-donation "300"})
+
+            (<! (smart-contracts/contract-send :streamtide-fwd :donate [[user]["250"]] {:from user2 :value "250"}))
             (<! (wait-event :donate))
             (let [donations (:items (db/get-donations {:sender user2 :receiver user :first 6}))
                   donation (first donations)
                   round-id (:round/id (first (:items (db/get-rounds {:first 1}))))
                   permissions (db/get-user-content-permissions {:user/source-user user2 :user/target-user user})]
-              (is (= (count permissions) 1))
+              (is (= (count permissions) 0))
               (is (= (count donations) 1))
               (is (= (:donation/sender donation) user2))
               (is (= (:donation/receiver donation) user))
-              (is (= (str (:donation/amount donation)) "500"))
+              (is (= (str (:donation/amount donation)) "250"))
               (is (> (:donation/date donation) 0))
               (is (= (:donation/coin donation) "eth"))
               (is (= (:round/id donation) round-id)))
@@ -126,14 +129,16 @@
               [1001]
               (fn [_ _]
                 (go
-                  (<! (smart-contracts/contract-send :streamtide-fwd :donate [[user]["250"]] {:from user2 :value "250"}))
+                  (<! (smart-contracts/contract-send :streamtide-fwd :donate [[user]["500"]] {:from user2 :value "500"}))
                   (<! (wait-event :donate))
                   (let [donations (:items (db/get-donations {:sender user2 :receiver user :first 6}))
-                        donation (last donations)]
+                        donation (last donations)
+                        permissions (db/get-user-content-permissions {:user/source-user user2 :user/target-user user})]
+                    (is (= (count permissions) 1))
                     (is (= (count donations) 2))
                     (is (= (:donation/sender donation) user2))
                     (is (= (:donation/receiver donation) user))
-                    (is (= (str (:donation/amount donation)) "250"))
+                    (is (= (str (:donation/amount donation)) "500"))
                     (is (> (:donation/date donation) 0))
                     (is (= (:donation/coin donation) "eth"))
                     (is (nil? (:round/id donation))))

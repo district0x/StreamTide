@@ -79,7 +79,7 @@
 				}
 			}
 		}
-		.generalInfo, .perks {
+		.generalInfo, .min-donation, .perks {
 			margin-bottom: 23px;
 			label.inputField {
 				display: flex;
@@ -182,6 +182,8 @@
 						line-height: 0;
 						color: red;
 						font-size: 15px;
+						display: block;
+						font-weight: 700;
 					}
 				}
 				input {
@@ -412,6 +414,9 @@
 				.btApply {
 					min-width: 189px;
 				}
+			}
+			.min-donation {
+				margin-top: 3em;
 			}
 		}
 		.submitField {

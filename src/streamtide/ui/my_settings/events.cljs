@@ -21,6 +21,7 @@
                            :user/handle :$handle
                            :user/url :$url
                            :user/perks :$perks
+                           :user/min-donation :$mindonation
                            ;; TODO for simplicity we are uploading photos as base64
                            ;; TODO consider using as multipart or using a separated (REST?) API
                            :user/photo :$photo
@@ -40,6 +41,8 @@
                           :variable/type :String}
                          {:variable/name :$perks
                           :variable/type :String}
+                         {:variable/name :$mindonation
+                          :variable/type :String}
                          {:variable/name :$photo
                           :variable/type :String}
                          {:variable/name :$bgphoto
@@ -51,8 +54,8 @@
          :dispatch [::gql-events/mutation
                     {:query query
                      :variables (-> form-data
-                                    (select-keys [:name :description :tagline :handle :url :perks :socials :photo :bg-photo])
-                                    (clojure.set/rename-keys {:bg-photo :bgphoto}))
+                                    (select-keys [:name :description :tagline :handle :url :perks :min-donation :socials :photo :bg-photo])
+                                    (clojure.set/rename-keys {:bg-photo :bgphoto :min-donation :mindonation}))
                      :on-success on-success
                      :on-error on-error}]}))))
 

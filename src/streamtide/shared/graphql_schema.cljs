@@ -166,6 +166,7 @@ input UserInput {
     user_photo: String
     user_bgPhoto: String
     user_perks: String
+    user_minDonation: String
     user_socials: [SocialLinkInput!]
 }
 
@@ -182,6 +183,7 @@ type User {
     user_handle: String
     user_url: String
     user_perks: String
+    user_minDonation: String
     user_socials: [SocialLink!]
     user_photo: String
     user_bgPhoto: String

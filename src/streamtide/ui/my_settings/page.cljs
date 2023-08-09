@@ -1,11 +1,13 @@
 (ns streamtide.ui.my-settings.page
   ; Page to edit the user profile
   (:require
+    [cljs-web3-next.core :as web3]
     [clojure.string :as string]
     [district.graphql-utils :as gql-utils]
     [district.ui.component.form.input :refer [text-input get-by-path assoc-by-path file-drag-input checkbox-input radio-group]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.subs :as gql]
+    [district.ui.notification.events :as notification-events]
     [district.ui.web3-accounts.subs :as accounts-subs]
     [re-frame.core :refer [dispatch subscribe]]
     [reagent.core :as r]
@@ -16,7 +18,7 @@
     [streamtide.ui.components.user :refer [avatar-placeholder]]
     [streamtide.ui.my-settings.events :as ms-events]
     [streamtide.ui.my-settings.subs :as ms-subs]
-    [streamtide.ui.utils :refer [switch-popup valid-url?]]))
+    [streamtide.ui.utils :refer [switch-popup valid-url? from-wei]]))
 
 (def page-size 6)
 
@@ -28,6 +30,7 @@
     :user/tagline
     :user/handle
     :user/url
+    :user/min-donation
     :user/perks
     :user/photo
     :user/bg-photo]])
@@ -111,6 +114,9 @@
           []
           socials))
 
+(defn- parse-min-donation [entries]
+  (update entries :min-donation #(if % (from-wei %) "0")))
+
 (defn- photo->gql [photo]
   (-> photo :selected-file :url-data))
 
@@ -173,7 +179,7 @@
                                            :type "submit"
                                            :value "SUBMIT FOR APPROVAL"
                                            :on-click #(dispatch [::ms-events/save-and-request-grant
-                                                                 {:form-data settings-form-data
+                                                                 {:form-data (settings-form-data)
                                                                   :on-success
                                                                   (fn [] (close-popup nil))}])}]]]]]))))
 
@@ -230,13 +236,18 @@
                                     :icon-src "/img/layout/ico_pinterest.svg"})]]]))))
 
 (defn clean-form-data [form-data form-values initial-values]
-  (cond-> form-values
-          true (select-keys (keys (filter (fn [[key val]]
-                                            (or (= key :name)
-                                                (not= (key initial-values) val))) form-values)))
-          (:socials @form-data) (update :socials socials-kw->gql)
-          (:photo @form-data) (update :photo photo->gql)
-          (:bg-photo @form-data) (update :bg-photo photo->gql)))
+  (try
+    (cond-> form-values
+            true (select-keys (keys (filter (fn [[key val]]
+                                              (or (= key :name)
+                                                  (not= (key initial-values) val))) form-values)))
+            (:socials @form-data) (update :socials socials-kw->gql)
+            (:photo @form-data) (update :photo photo->gql)
+            (:bg-photo @form-data) (update :bg-photo photo->gql)
+            (:min-donation @form-data) (update :min-donation #(if (empty? %) "0" (web3/to-wei % :ether))))
+    (catch :default e
+      (dispatch [::notification-events/show "[ERROR] Invalid data"])
+      (throw e))))
 
 (defn- some-invalid-url? [url]
   (and (not-empty url) (not (valid-url? url))))
@@ -249,6 +260,10 @@
                      (switch-popup grant-popup-open? show))
         form-data (r/atom {})
         errors (reaction {:local (cond-> {}
+                                         (and (:min-donation @form-data)
+                                              (not (re-matches #"^\d+(\.\d{0,18})?$" (:min-donation @form-data))))
+                                         (assoc :min-donation "Amount not valid")
+
                                          (some-invalid-url? (:url @form-data))
                                          (assoc :url "URL not valid")
                                          (some-invalid-url? (:perks @form-data))
@@ -271,8 +286,9 @@
             initial-values (when user-settings (-> @user-settings
                                                    :user
                                                    remove-ns
-                                                   (select-keys [:name :description :tagline :handle :url :photo :bg-photo :perks])
-                                                   select-photos))
+                                                   (select-keys [:name :description :tagline :handle :url :photo :bg-photo :perks :min-donation])
+                                                   select-photos
+                                                   parse-min-donation))
             form-values (merge-with #(if (map? %2) (merge %1 %2) %2) initial-values @form-data)
             input-params {:read-only loading?
                           :form-values form-values
@@ -340,6 +356,15 @@
               [grant-info grant-status show-grant-popup-fn errors]
               (when (= grant-status :grant.status/approved)
                 [:<>
+                 [:div.min-donation
+                  [:h2 "Minimum donation amount"]
+                  [:p "Donations smaller to this amount will not unlock your restricted content"]
+
+                  [:label.inputField
+                   [:span "ETH"]
+                   [initializable-text-input
+                    (merge input-params
+                           {:id :min-donation})]]]
                  [:div.perks
                   [:h2 "Perks Button URL"]
                   [:p "Lorem ipsum dolor sit amet, consectetur adipiscing elit."]
@@ -358,4 +383,4 @@
               :on-click #(dispatch [::ms-events/save-settings
                                     {:form-data (clean-form-data form-data form-values initial-values)}])}
              "SAVE CHANGES"]]]]
-         [popup-request-grant grant-popup-open? show-grant-popup-fn (clean-form-data form-data form-values initial-values)]]))))
+         [popup-request-grant grant-popup-open? show-grant-popup-fn #(clean-form-data form-data form-values initial-values)]]))))
