@@ -54,7 +54,7 @@
   [text-input (merge {:value (get-by-path form-values id)}
                      (apply dissoc opts [:form-values]))])
 
-(defn social-link-edit [{:keys [:id :form-data :form-values :icon-src :verifiable? :errors]}]
+(defn social-link-edit [{:keys [:id :form-data :form-values :icon-src :verifiable? :errors :placeholder]}]
   (let [value-id (conj id :url)
         verified? (get-by-path form-values (conj id :verified))
         network (last id)]
@@ -89,7 +89,8 @@
                :form-values form-values
                :id value-id
                :type :url
-               :errors errors}
+               :errors errors
+               :placeholder placeholder}
               (when verifiable?
                 {:disabled true}))]]]))
 
@@ -225,16 +226,20 @@
           [:h2.titleEdit "Social Links"]
           [social-link-edit (merge input-params
                                    {:id [:socials :facebook]
-                                    :icon-src "/img/layout/ico_facebook.svg"})]
+                                    :icon-src "/img/layout/ico_facebook.svg"
+                                    :placeholder "facebook.com/..."})]
           [social-link-edit (merge input-params
                                    {:id [:socials :linkedin]
-                                    :icon-src "/img/layout/ico_linkedin.svg"})]
+                                    :icon-src "/img/layout/ico_linkedin.svg"
+                                    :placeholder "linkedin.com/..."})]
           [social-link-edit (merge input-params
                                    {:id [:socials :instagram]
-                                    :icon-src "/img/layout/ico_instagram.svg"})]
+                                    :icon-src "/img/layout/ico_instagram.svg"
+                                    :placeholder "instagram.com/..."})]
           [social-link-edit (merge input-params
                                    {:id [:socials :pinterest]
-                                    :icon-src "/img/layout/ico_pinterest.svg"})]]]))))
+                                    :icon-src "/img/layout/ico_pinterest.svg"
+                                    :placeholder "pinterest.com/..."})]]]))))
 
 (defn clean-form-data [form-data form-values initial-values]
   (try
