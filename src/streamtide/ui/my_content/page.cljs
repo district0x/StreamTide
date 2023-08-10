@@ -10,6 +10,7 @@
     [district.ui.web3-accounts.subs :as accounts-subs]
     [re-frame.core :refer [dispatch subscribe]]
     [reagent.core :as r]
+    [streamtide.shared.utils :refer [valid-url?]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [no-items-found support-seal nav-anchor]]
     [streamtide.ui.components.infinite-scroll-masonry :refer [infinite-scroll-masonry]]
@@ -17,7 +18,7 @@
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.my-content.events :as mc-events]
     [streamtide.ui.my-content.subs :as mc-subs]
-    [streamtide.ui.utils :refer [switch-popup valid-url?]]))
+    [streamtide.ui.utils :refer [switch-popup]]))
 
 
 (def page-size 6)

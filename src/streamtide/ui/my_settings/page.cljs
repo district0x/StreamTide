@@ -12,13 +12,14 @@
     [re-frame.core :refer [dispatch subscribe]]
     [reagent.core :as r]
     [reagent.ratom :refer [reaction]]
+    [streamtide.shared.utils :refer [valid-url? expected-domain? social-domains]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [no-items-found support-seal]]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [avatar-placeholder]]
     [streamtide.ui.my-settings.events :as ms-events]
     [streamtide.ui.my-settings.subs :as ms-subs]
-    [streamtide.ui.utils :refer [switch-popup valid-url? from-wei]]))
+    [streamtide.ui.utils :refer [switch-popup from-wei]]))
 
 (def page-size 6)
 
@@ -249,8 +250,13 @@
       (dispatch [::notification-events/show "[ERROR] Invalid data"])
       (throw e))))
 
-(defn- some-invalid-url? [url]
-  (and (not-empty url) (not (valid-url? url))))
+(defn- some-invalid-url?
+  ([url]
+   (some-invalid-url? url nil))
+  ([url domains]
+  (and (not-empty url)
+       (if (some? domains) (not (expected-domain? url domains))
+                           (not (valid-url? url))))))
 
 (defmethod page :route.my-settings/index []
   (let [active-account (subscribe [::accounts-subs/active-account])
@@ -268,13 +274,13 @@
                                          (assoc :url "URL not valid")
                                          (some-invalid-url? (:perks @form-data))
                                          (assoc :perks "URL not valid")
-                                         (some-invalid-url? (-> @form-data :socials :facebook :url))
+                                         (some-invalid-url? (-> @form-data :socials :facebook :url) (:facebook social-domains))
                                          (assoc-in [:socials :facebook :url] "URL not valid")
-                                         (some-invalid-url? (-> @form-data :socials :instagram :url))
+                                         (some-invalid-url? (-> @form-data :socials :instagram :url) (:instagram social-domains))
                                          (assoc-in [:socials :instagram :url] "URL not valid")
-                                         (some-invalid-url? (-> @form-data :socials :linkedin :url))
+                                         (some-invalid-url? (-> @form-data :socials :linkedin :url) (:linkedin social-domains))
                                          (assoc-in [:socials :linkedin :url] "URL not valid")
-                                         (some-invalid-url? (-> @form-data :socials :pinterest :url))
+                                         (some-invalid-url? (-> @form-data :socials :pinterest :url) (:pinterest social-domains))
                                          (assoc-in [:socials :pinterest :url] "URL not valid")
                                          )})]
     (fn []

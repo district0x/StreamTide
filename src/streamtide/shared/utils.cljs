@@ -31,3 +31,24 @@
 
 (defn active-round? [round timestamp]
   (>= (+ (:round/start round) (:round/duration round)) timestamp))
+
+
+(def url-pattern (re-pattern "^(https?:\\/\\/)?([a-zA-Z0-9.-]{1,256}\\.[a-z]{2,6})([/?][-a-zA-Z0-9:%_\\+~#&=]*)*$"))
+
+(defn valid-url? [url]
+  (re-matches url-pattern url))
+
+(defn expected-domain? [url domains]
+  (let [domain (nth (re-matches url-pattern url) 2)
+        domain (->> (string/split domain ".")
+                    (take-last 2)
+                    (string/join ".")
+                    (string/lower-case))]
+    (contains? (set domains)
+               domain)))
+
+(def social-domains
+  {:facebook ["facebook.com" "fb.com" "fb.me"]
+   :instagram ["instagram.com"]
+   :linkedin ["linkedin.com"]
+   :pinterest ["pinterest.com"]})
