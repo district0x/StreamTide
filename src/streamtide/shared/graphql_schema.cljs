@@ -34,6 +34,7 @@ type Query {
     searchContents(
         user_address: ID
         onlyPublic: Boolean
+        pinned: Boolean
         orderBy: ContentsOrderBy
         orderDir: OrderDir
         first: Int
@@ -114,6 +115,7 @@ type Mutation {
         content_type: ContentType!
         content_url: String!
         content_public: Boolean
+        content_pinned: Boolean
     ): Boolean
 
     removeContent(
@@ -123,6 +125,11 @@ type Mutation {
     setContentVisibility(
         content_id: ID!
         content_public: Boolean!
+    ): Boolean
+
+    setContentPinned(
+        content_id: ID!
+        content_pinned: Boolean!
     ): Boolean
 
     generateOtp(
@@ -247,6 +254,7 @@ type Content {
     content_user: User!
     content_creationDate: Date
     content_public: Boolean
+    content_pinned: Boolean
     content_type: ContentType!
     content_url: String!
 }

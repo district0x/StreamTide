@@ -62,6 +62,7 @@
    [:user/url :varchar default-nil]
    [:user/perks :varchar default-nil]
    [:user/min-donation :unsigned :integer default-nil]
+   [:user/creation-date :timestamp not-nil]
    [:user/blacklisted :tinyint default-false]])
 
 (def social-link-columns
@@ -84,6 +85,7 @@
   [[:content/id :integer primary-key :autoincrement]
    [:user/address address not-nil]
    [:content/public :tinyint not-nil]
+   [:content/pinned :tinyint not-nil]
    [:content/creation-date :timestamp not-nil]
    [:content/type :varchar not-nil]
    [:content/url :varchar not-nil]
@@ -238,7 +240,7 @@
                :order-by [[:announcement.announcement/id :desc]]}]
     (paged-query query page-size page-start-idx)))
 
-(defn get-contents [current-user {:keys [:user/address :only-public :order-by :order-dir :first :after] :as args}]
+(defn get-contents [current-user {:keys [:user/address :only-public :pinned :order-by :order-dir :first :after] :as args}]
     (let [page-start-idx (when after (js/parseInt after))
           page-size first
           query (cond->
@@ -256,6 +258,7 @@
                    }
                   address (sqlh/merge-where [:= :u.user/address address])
                   only-public (sqlh/merge-where [:= :c.content/public 1])
+                  pinned (sqlh/merge-where [:= :c.content/pinned pinned])
                   order-by (sqlh/merge-order-by [[(get {:contents.order-by/creation-date :c.content/creation-date}
                                                        order-by)
                                                   (or (keyword order-dir) :asc)]]))]
@@ -368,17 +371,19 @@
 (defn upsert-user-info! [args]
   (let [user-info (select-keys args user-column-names)]
     (db-run! {:insert-into :user
-              :values [user-info]
+              :values [(merge {:user/creation-date (shared-utils/now-secs)}
+                              user-info)]
               :upsert {:on-conflict [:user/address]
-                       :do-update-set (keys user-info)}})))
+                       :do-update-set (dissoc (keys user-info) :user/creation-date)}})))
 
 (defn upsert-users-info! [args]
   (log/debug "user-upsert-users-info!" args)
-  (let [user-infos (map #(select-keys % user-column-names) args)]
+  (let [user-infos (map #(merge {:user/creation-date (shared-utils/now-secs)}
+                                (select-keys % user-column-names)) args)]
     (db-run! {:insert-into :user
               :values user-infos
               :upsert {:on-conflict [:user/address]
-                       :do-update-set user-column-names}})))
+                       :do-update-set (dissoc user-column-names :user/creation-date)}})))
 
 (defn upsert-user-socials! [social-links]
   (log/debug "user-social" {:social-links social-links})
@@ -472,6 +477,14 @@
 (defn set-content-visibility! [{:keys [:content/id :content/public :user/address]}]
   (db-run! {:update :content
             :set {:content/public public}
+            :where [:and
+                    [:= :content/id id]
+                    [:= :user/address address]]}))
+
+
+(defn set-content-pinned! [{:keys [:content/id :content/pinned :user/address]}]
+  (db-run! {:update :content
+            :set {:content/pinned pinned}
             :where [:and
                     [:= :content/id id]
                     [:= :user/address address]]}))

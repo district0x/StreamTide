@@ -242,3 +242,10 @@
   (require-not-blacklisted current-user)
 
   (stdb/set-content-visibility! (merge {:user/address current-user} (select-keys args [:content/id :content/public]))))
+
+(defn set-content-pinned! [current-user {:keys [:content/id :content/pinned] :as args}]
+  "Set a content as pinned or not"
+  (require-auth current-user)
+  (require-not-blacklisted current-user)
+
+  (stdb/set-content-pinned! (merge {:user/address current-user} (select-keys args [:content/id :content/pinned]))))

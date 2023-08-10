@@ -98,7 +98,7 @@
                                                      (update :order-by graphql-utils/gql-name->kw)
                                                      ))))
 
-(defn search-contents-query-resolver [_ {:keys [:user/address :only-public :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
+(defn search-contents-query-resolver [_ {:keys [:user/address :only-public :pinned :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
   (log/debug "search contents args" args)
   (try-catch-throw
     (logic/get-contents (user-id current-user) (cond-> args
@@ -208,12 +208,13 @@
     (logic/remove-announcement! (user-id current-user) (select-keys args [:announcement/id]))
     true))
 
-(defn add-content-mutation [_ {:keys [:content/url :content/type :content/public] :as args} {:keys [:current-user]}]
+(defn add-content-mutation [_ {:keys [:content/url :content/type :content/public :content/pinned] :as args} {:keys [:current-user]}]
   (log/debug "add-content-mutation" args)
   (try-catch-throw
     (logic/add-content! (user-id current-user) (cond-> args
-                                                       true (select-keys [:content/url :content/type :content/public])
+                                                       true (select-keys [:content/url :content/type :content/public :content/pinned])
                                                        (not (:content/public args)) (assoc :content/public false)
+                                                       (not (:content/pinned args)) (assoc :content/pinned false)
                                                        (:content/type args) (update :content/type gql-name->db-name)))
     true))
 
@@ -228,6 +229,13 @@
   (try-catch-throw
     (logic/set-content-visibility! (user-id current-user) (select-keys args [:content/id :content/public]))
     true))
+
+(defn set-content-pinned-mutation [_ {:keys [:content/id] :as args} {:keys [:current-user]}]
+  (log/debug "set-content-pinned-mutation" args)
+  (try-catch-throw
+    (logic/set-content-pinned! (user-id current-user) (select-keys args [:content/id :content/pinned]))
+    true))
+
 (defn wrap-as-promise
   [chanl]
   (js/Promise. (fn [resolve _]
@@ -265,6 +273,7 @@
               :add-content add-content-mutation
               :remove-content remove-content-mutation
               :set-content-visibility set-content-visibility-mutation
+              :set-content-pinned set-content-pinned-mutation
               :sign-in sign-in-mutation
               :generate-otp generate-otp-mutation
               :verify-social verify-social-mutation
