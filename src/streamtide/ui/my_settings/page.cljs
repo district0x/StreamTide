@@ -227,19 +227,19 @@
           [social-link-edit (merge input-params
                                    {:id [:socials :facebook]
                                     :icon-src "/img/layout/ico_facebook.svg"
-                                    :placeholder "facebook.com/..."})]
+                                    :placeholder "https://facebook.com/..."})]
           [social-link-edit (merge input-params
                                    {:id [:socials :linkedin]
                                     :icon-src "/img/layout/ico_linkedin.svg"
-                                    :placeholder "linkedin.com/..."})]
+                                    :placeholder "https://linkedin.com/..."})]
           [social-link-edit (merge input-params
                                    {:id [:socials :instagram]
                                     :icon-src "/img/layout/ico_instagram.svg"
-                                    :placeholder "instagram.com/..."})]
+                                    :placeholder "https://instagram.com/..."})]
           [social-link-edit (merge input-params
                                    {:id [:socials :pinterest]
                                     :icon-src "/img/layout/ico_pinterest.svg"
-                                    :placeholder "pinterest.com/..."})]]]))))
+                                    :placeholder "https://pinterest.com/..."})]]]))))
 
 (defn clean-form-data [form-data form-values initial-values]
   (try

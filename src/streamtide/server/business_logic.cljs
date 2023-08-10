@@ -135,7 +135,6 @@
 
 (defn- check-socials [socials]
   (let [invalid-socials (filter (fn [{:keys [:social/url :social/network] :as opts}]
-                                  (print opts)
                                   (and (not-empty url)
                                        (not (shared-utils/expected-domain? url
                                                                       ((keyword network) shared-utils/social-domains))) ))
@@ -219,7 +218,7 @@
 
   (stdb/remove-announcement! (select-keys args [:announcement/id])))
 
-(defn add-content! [current-user {:keys [:content/url :content/type :content/public] :as args}]
+(defn add-content! [current-user {:keys [:content/url :content/type :content/public :content/pinned] :as args}]
   "Adds (a link to) content for the logged in user"
   (require-auth current-user)
   (require-grant-approved current-user)
@@ -227,7 +226,8 @@
 
   (check-content-url url)
 
-  (stdb/add-content! (merge {:user/address current-user} (select-keys args [:content/type :content/url :content/public]))))
+  (stdb/add-content! (merge {:user/address current-user}
+                            (select-keys args [:content/type :content/url :content/public :content/pinned]))))
 
 (defn remove-content! [current-user {:keys [:content/id] :as args}]
   "Removes content of the logged in user"

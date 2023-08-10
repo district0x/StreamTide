@@ -9,8 +9,8 @@
                         <circle id="Oval" cx="16.5789474" cy="16.5789474" r="16.5789474"></circle>
                     </g>
                 </g>
-                <g id="Group-5" transform="translate(11.184667, 12.133991)" fill="#FFFFFF">
-                    <ellipse id="Oval" stroke="#FFFFFF" stroke-width="2" cx="5.3942804" cy="2.67304982" rx="5.3942804" ry="2.67304982"></ellipse>
+                <g id="Group-5" transform="translate(11.184667, 12.133991)" fill="#3b1d56">
+                    <ellipse id="Oval" stroke="#3b1d56" stroke-width="2" cx="5.3942804" cy="2.67304982" rx="5.3942804" ry="2.67304982"></ellipse>
                     <polygon id="Path-6" points="3.58666548 6.01472041 5.47974546 11.1207032 7.20189532 6.01472041"></polygon>
                 </g>
             </g>

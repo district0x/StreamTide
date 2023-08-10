@@ -128,3 +128,40 @@
                    {:error (map :message error)
                     :form-data form-data} ::set-visibility]
                   [::notification-events/show "[ERROR] An error occurs while updating visibility"]]}))
+
+(re-frame/reg-event-fx
+  ::set-pinned
+  ; Send a GraphQL mutation request to change the pinned status of a piece of content
+  (fn [{:keys [db]} [_ {:keys [:content/id :content/pinned :on-error] :as data}]]
+    (let [query
+          {:queries [[:set-content-pinned
+                      {:content/id :$id
+                       :content/pinned :$pinned}]]
+           :variables [{:variable/name :$id
+                        :variable/type :ID!}
+                       {:variable/name :$pinned
+                        :variable/type :Boolean!}]}]
+      {:db (assoc-in db [:setting-pinned id] true)
+       :dispatch [::gql-events/mutation
+                  {:query query
+                   :variables {:id id
+                               :pinned pinned}
+                   :on-success [::set-pinned-success data]
+                   :on-error [::set-pinned-error data]}]})))
+
+(re-frame/reg-event-fx
+  ::set-pinned-success
+  (fn [{:keys [db]} [_ {:keys [:content/id]} result]]
+    {:db (update db :setting-pinned dissoc id)}))
+
+(re-frame/reg-event-fx
+  ::set-pinned-error
+  (fn [{:keys [db]} [_ {:keys [:content/id :on-error] :as form-data} error]]
+    (when on-error
+      (on-error))
+    {:db (update db :setting-pinned dissoc id)
+     :dispatch-n [[::logging/error
+                   "Failed to setting pinned"
+                   {:error (map :message error)
+                    :form-data form-data} ::set-pinned]
+                  [::notification-events/show "[ERROR] An error occurs while pinning content"]]}))

@@ -33,7 +33,7 @@
   (>= (+ (:round/start round) (:round/duration round)) timestamp))
 
 
-(def url-pattern (re-pattern "^(https?:\\/\\/)?([a-zA-Z0-9.-]{1,256}\\.[a-z]{2,6})([/?][-a-zA-Z0-9:%_\\+~#&=]*)*$"))
+(def url-pattern (re-pattern "^(https?:\\/\\/)([a-zA-Z0-9.-]{1,256}\\.[a-z]{2,6})([/?][-a-zA-Z0-9:@%_\\+~#&=.]*)*$"))
 
 (defn valid-url? [url]
   (re-matches url-pattern url))

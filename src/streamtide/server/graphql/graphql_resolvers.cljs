@@ -98,7 +98,7 @@
                                                      (update :order-by graphql-utils/gql-name->kw)
                                                      ))))
 
-(defn search-contents-query-resolver [_ {:keys [:user/address :only-public :pinned :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
+(defn search-contents-query-resolver [_ {:keys [:user/address :only-public :content/pinned :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
   (log/debug "search contents args" args)
   (try-catch-throw
     (logic/get-contents (user-id current-user) (cond-> args

@@ -13,7 +13,7 @@
     [re-frame.core :as re-frame :refer [subscribe dispatch]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [no-items-found support-seal]]
-    [streamtide.ui.components.infinite-scroll-masonry :refer [infinite-scroll-masonry]]
+    [streamtide.ui.components.masonry :refer [infinite-scroll-masonry click-to-load-masonry]]
     [streamtide.ui.components.media-embed :as embed]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [user-photo-profile social-links avatar-placeholder]]
@@ -37,13 +37,14 @@
                     :social/url]]
     [:user/grant [:grant/status]]]])
 
-(defn build-user-content-query [{:keys [:user/address]} after]
+(defn build-user-content-query [{:keys [:user/address :pinned]} after]
   [:search-contents
    (cond-> {:first page-size
             :user/address address
             :order-by :contents.order-by/creation-date
             :order-dir :desc}
-           after (assoc :after after))
+           after (assoc :after after)
+           (some? pinned) (assoc :content/pinned pinned))
    [:total-count
     :end-cursor
     :has-next-page
@@ -65,7 +66,7 @@
      [:div.links
       [:span handle]
       (when (and (not (blank? handle) ) (not (blank? url))) [:span "|"])
-      [:a {:src url :target "_blank" } url ]]
+      [:a {:href url :target "_blank" } url ]]
      [social-links {:socials socials}]]]])
 
 (defn content-card [{:keys [:content/id :content/public :content/type :content/url :content/creation-date]}]
@@ -88,28 +89,53 @@
   (let []
     (fn [user-account]
       (let [active-account @(subscribe [::accounts-subs/active-account])
-            user-content (subscribe [::gql/query {:queries [(build-user-content-query {:user/address user-account} nil)]}
-                                     {:id {:user-content user-account :active-account active-account}}])
-            loading? (:graphql/loading? (last @user-content))
-            all-content (->> @user-content
+            user-content-pinned (subscribe [::gql/query {:queries [(build-user-content-query {:user/address user-account :pinned true} nil)]}
+                                     {:id {:user-content user-account :active-account active-account :pinned true}}])
+            user-content-unpinned (subscribe [::gql/query {:queries [(build-user-content-query {:user/address user-account :pinned false} nil)]}
+                                     {:id {:user-content user-account :active-account active-account :pinned false}}])
+            loading-pinned? (:graphql/loading? (last @user-content-pinned))
+            loading-unpinned? (:graphql/loading? (last @user-content-unpinned))
+            all-content-pinned (->> @user-content-pinned
                           (mapcat (fn [r] (-> r :search-contents :items))))
-            has-more? (-> (last @user-content) :search-contents :has-next-page)]
-         (if (and (empty? all-content)
-                  (not loading?))
+            all-content-unpinned (->> @user-content-unpinned
+                          (mapcat (fn [r] (-> r :search-contents :items))))
+            has-more-pinned? (-> (last @user-content-pinned) :search-contents :has-next-page)
+            has-more-unpinned? (-> (last @user-content-unpinned) :search-contents :has-next-page)]
+         (if (and (empty? all-content-unpinned)
+                  (empty? all-content-pinned)
+                  (not loading-unpinned?)
+                  (not loading-pinned?))
            [no-items-found {:message "No content found"}]
-           [infinite-scroll-masonry {:class "midias"
-                                     :loading? loading?
-                                     :has-more? has-more?
-                                     :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content)))]
+           [:<>
+            [:div.pinned-container
+             {:class (when has-more-pinned? "has-more")}
+             [click-to-load-masonry {:class "midias pinned"
+                                     :loading? loading-pinned?
+                                     :has-more? has-more-pinned?
+                                     :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content-pinned)))]
                                                  (dispatch [::graphql-events/query
-                                                            {:query {:queries [(build-user-content-query {:user/address user-account} end-cursor)]}
-                                                             :id {:user-content user-account :active-account active-account}}]))
-                                     :loading-spinner-delegate (fn [] [:div.spinner-container [spinner/spin]])}
-            (when-not (:graphql/loading? (first @user-content))
-              (doall
-                (for [{:keys [:content/id] :as content} all-content]
-                  ^{:key id}
-                  [content-card content])))])))))
+                                                            {:query {:queries [(build-user-content-query {:user/address user-account :pinned true} end-cursor)]}
+                                                             :id {:user-content user-account :active-account active-account :pinned true}}]))
+                                     :loading-spinner-delegate (fn [] [:div.spinner-container [spinner/spin]])
+                                     :load-more-content [:img]}
+              (when-not (:graphql/loading? (first @user-content-pinned))
+                (doall
+                  (for [{:keys [:content/id] :as content} all-content-pinned]
+                    ^{:key id}
+                    [content-card content])))]]
+            [infinite-scroll-masonry {:class "midias unpinned"
+                                      :loading? loading-unpinned?
+                                      :has-more? has-more-unpinned?
+                                      :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content-unpinned)))]
+                                                  (dispatch [::graphql-events/query
+                                                             {:query {:queries [(build-user-content-query {:user/address user-account :pinned false} end-cursor)]}
+                                                              :id {:user-content user-account :active-account active-account :pinned false}}]))
+                                      :loading-spinner-delegate (fn [] [:div.spinner-container [spinner/spin]])}
+             (when-not (:graphql/loading? (first @user-content-unpinned))
+               (doall
+                 (for [{:keys [:content/id] :as content} all-content-unpinned]
+                   ^{:key id}
+                   [content-card content])))]])))))
 
 (defmethod page :route.profile/index []
   (let [active-account @(subscribe [::accounts-subs/active-account])

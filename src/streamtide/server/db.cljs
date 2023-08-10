@@ -240,7 +240,7 @@
                :order-by [[:announcement.announcement/id :desc]]}]
     (paged-query query page-size page-start-idx)))
 
-(defn get-contents [current-user {:keys [:user/address :only-public :pinned :order-by :order-dir :first :after] :as args}]
+(defn get-contents [current-user {:keys [:user/address :only-public :content/pinned :order-by :order-dir :first :after] :as args}]
     (let [page-start-idx (when after (js/parseInt after))
           page-size first
           query (cond->
@@ -258,7 +258,7 @@
                    }
                   address (sqlh/merge-where [:= :u.user/address address])
                   only-public (sqlh/merge-where [:= :c.content/public 1])
-                  pinned (sqlh/merge-where [:= :c.content/pinned pinned])
+                  (some? pinned) (sqlh/merge-where [:= :c.content/pinned pinned])
                   order-by (sqlh/merge-order-by [[(get {:contents.order-by/creation-date :c.content/creation-date}
                                                        order-by)
                                                   (or (keyword order-dir) :asc)]]))]
@@ -374,7 +374,7 @@
               :values [(merge {:user/creation-date (shared-utils/now-secs)}
                               user-info)]
               :upsert {:on-conflict [:user/address]
-                       :do-update-set (dissoc (keys user-info) :user/creation-date)}})))
+                       :do-update-set (remove #{:user/creation-date} (keys user-info))}})))
 
 (defn upsert-users-info! [args]
   (log/debug "user-upsert-users-info!" args)
@@ -383,7 +383,7 @@
     (db-run! {:insert-into :user
               :values user-infos
               :upsert {:on-conflict [:user/address]
-                       :do-update-set (dissoc user-column-names :user/creation-date)}})))
+                       :do-update-set (remove #{:user/creation-date} user-column-names)}})))
 
 (defn upsert-user-socials! [social-links]
   (log/debug "user-social" {:social-links social-links})

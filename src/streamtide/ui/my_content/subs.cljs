@@ -13,6 +13,11 @@
     (get-in db [:setting-visibility content-id])))
 
 (re-frame/reg-sub
+  ::setting-pinned?
+  (fn [db [_ content-id]]
+    (get-in db [:setting-pinned content-id])))
+
+(re-frame/reg-sub
   ::removing-content?
   (fn [db [_ content-id]]
     (get-in db [:removing-content content-id])))

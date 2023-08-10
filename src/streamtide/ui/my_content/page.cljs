@@ -13,7 +13,7 @@
     [streamtide.shared.utils :refer [valid-url?]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [no-items-found support-seal nav-anchor]]
-    [streamtide.ui.components.infinite-scroll-masonry :refer [infinite-scroll-masonry]]
+    [streamtide.ui.components.masonry :refer [infinite-scroll-masonry]]
     [streamtide.ui.components.media-embed :as embed]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.my-content.events :as mc-events]
@@ -44,13 +44,15 @@
              :content/url
              :content/creation-date]]]])
 
-(defn content-card [{:keys [:content/id :content/type :content/url :content/public]}]
+(defn content-card [{:keys [:content/id :content/type :content/url :content/public :content/pinned]}]
   (let [type (gql-utils/gql-name->kw type)
-        form-data (r/atom {:public public})
+        form-data (r/atom {:public public
+                           :pinned pinned})
         hide (r/atom false)]
     (fn []
       (when-not @hide
         (let [setting-visibility? (subscribe [::mc-subs/setting-visibility? id])
+              setting-pinned? (subscribe [::mc-subs/setting-pinned? id])
               removing? (subscribe [::mc-subs/removing-content? id])
               removed? (subscribe [::mc-subs/removed-content? id])]
         [:div.yourContent
@@ -81,8 +83,14 @@
            [:span.private "For Supporters Only"]
            ]
           [:div.buttons
-           ;[:button.btPin]
-           ;[:hr]
+           [:button.btPin {:class (str (when @setting-pinned? "loading ")
+                                       (when (:pinned @form-data) "selected"))
+                           :on-click (fn []
+                                       (swap! form-data update :pinned not)
+                                       (dispatch [::mc-events/set-pinned {:content/id id
+                                                                          :content/pinned (:pinned @form-data)
+                                                                          :on-error (fn [] (swap! form-data (fn [f]
+                                                                                                             (update f :pinned not))))}]))}]
            [:button.btRemove {:on-click #(dispatch [::mc-events/remove-content {:content/id id
                                                                                 ;:on-success [::ms-events/increase-removed-count removed-content-count]
                                                                                 }])}]]]

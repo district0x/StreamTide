@@ -68,7 +68,13 @@
 			.btPin {
 				background-image: url('../img/layout/icon-pin-content.svg');
 				&.selected {
-					background-image: url('../img/layout/icon-pin-content-hover.svg');
+					background-image: url('../img/layout/icon-pin-content-selected.svg');
+				}
+				&.loading {
+					pointer-events: none;
+					background-color: gray;
+					border-radius: 18px;
+					opacity: 0.6;
 				}
 			}
 			.btRemove {

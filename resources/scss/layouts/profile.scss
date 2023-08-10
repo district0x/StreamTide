@@ -150,6 +150,33 @@
 				}
 			}
 		}
+		.load-more {
+			position: absolute;
+			content: '';
+			bottom: -35px;
+			left: 50%;
+			height: 60px;
+			width: 60px;
+			background-image: url('../img/layout/icon-down-arrow.svg');
+			background-repeat: no-repeat;
+			background-position: center;
+			background-size: contain;
+			transform: translate(-50%);
+			background-color: transparent;
+			&:hover {
+				background-image: url('../img/layout/icon-down-arrow-hover.svg');
+			}
+		}
+		.pinned-container {
+			padding-top: 12px;
+			background: $lilac;
+			margin-bottom: 20px;
+			position: relative;
+			&.has-more {
+				padding-bottom: 20px;
+				margin-bottom: 50px;
+			}
+		}
 	}
 	.not-found {
 		text-align: center;

@@ -34,7 +34,7 @@ type Query {
     searchContents(
         user_address: ID
         onlyPublic: Boolean
-        pinned: Boolean
+        content_pinned: Boolean
         orderBy: ContentsOrderBy
         orderDir: OrderDir
         first: Int
