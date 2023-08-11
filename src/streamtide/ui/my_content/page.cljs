@@ -40,6 +40,7 @@
     :has-next-page
     [:items [:content/id
              :content/public
+             :content/pinned
              :content/type
              :content/url
              :content/creation-date]]]])

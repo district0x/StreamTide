@@ -107,22 +107,23 @@
                   (not loading-pinned?))
            [no-items-found {:message "No content found"}]
            [:<>
-            [:div.pinned-container
-             {:class (when has-more-pinned? "has-more")}
-             [click-to-load-masonry {:class "midias pinned"
-                                     :loading? loading-pinned?
-                                     :has-more? has-more-pinned?
-                                     :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content-pinned)))]
-                                                 (dispatch [::graphql-events/query
-                                                            {:query {:queries [(build-user-content-query {:user/address user-account :pinned true} end-cursor)]}
-                                                             :id {:user-content user-account :active-account active-account :pinned true}}]))
-                                     :loading-spinner-delegate (fn [] [:div.spinner-container [spinner/spin]])
-                                     :load-more-content [:img]}
-              (when-not (:graphql/loading? (first @user-content-pinned))
-                (doall
-                  (for [{:keys [:content/id] :as content} all-content-pinned]
-                    ^{:key id}
-                    [content-card content])))]]
+            (when (not-empty all-content-pinned)
+              [:div.pinned-container
+               {:class (when has-more-pinned? "has-more")}
+               [click-to-load-masonry {:class "midias pinned"
+                                       :loading? loading-pinned?
+                                       :has-more? has-more-pinned?
+                                       :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content-pinned)))]
+                                                   (dispatch [::graphql-events/query
+                                                              {:query {:queries [(build-user-content-query {:user/address user-account :pinned true} end-cursor)]}
+                                                               :id {:user-content user-account :active-account active-account :pinned true}}]))
+                                       :loading-spinner-delegate (fn [] [:div.spinner-container [spinner/spin]])
+                                       :load-more-content [:img]}
+                (when-not (:graphql/loading? (first @user-content-pinned))
+                  (doall
+                    (for [{:keys [:content/id] :as content} all-content-pinned]
+                      ^{:key id}
+                      [content-card content])))]])
             [infinite-scroll-masonry {:class "midias unpinned"
                                       :loading? loading-unpinned?
                                       :has-more? has-more-unpinned?
