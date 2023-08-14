@@ -62,6 +62,7 @@ a {
 	font-weight: $bold;
 	border-radius: 6px;
 	color: $white;
+	cursor: pointer;
 	transition: $trasitionbt;
 	&-dark {
 		background: $purple;

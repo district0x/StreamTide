@@ -166,7 +166,7 @@
                  [:div.btsProfile
                   (when (and (= (-> user-info :user/grant :grant/status gql-utils/gql-name->kw) :grant.status/approved)
                              (not= active-account user-account))
-                    [:a.btBasic.btBasic-light {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
+                    [:button.btBasic.btBasic-light {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
                      "DONATE / SUPPORT"])
                   (when (not (blank? (:user/perks user-info)))
                     [:a.btBasic.btBasic-light {:href (:user/perks user-info) :target "_blank"} "PERKS"])]
