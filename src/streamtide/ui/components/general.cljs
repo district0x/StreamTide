@@ -6,6 +6,9 @@
     [streamtide.ui.subs :as streamtide-subs]))
 
 
+(def discord-invite-link "https://discord.com/invite/sS2AWYm")
+
+
 (defn no-items-found [{:keys [:message :extra-classes] :or {message "No items found"}}]
   "Default list result when there are no items"
   [:div.no-items-found {:class (str/join " " extra-classes)}

@@ -8,7 +8,7 @@
     [re-frame.core :refer [subscribe dispatch]]
     [reagent.core :as r]
     [streamtide.ui.components.announcement :refer [announcement]]
-    [streamtide.ui.components.general :refer [nav-anchor sign-in-button support-seal]]
+    [streamtide.ui.components.general :refer [nav-anchor sign-in-button support-seal discord-invite-link]]
     [streamtide.ui.events :as st-events]
     [streamtide.ui.subs :as st-subs]))
 
@@ -118,4 +118,6 @@
                         {:key (keyword "c" index)}))
                     children)
        ;[footer]
+       [:a.discord-button {:href discord-invite-link :rel "noreferrer noopener"}
+        [:img.discord-image {:src "/img/layout/ico_discord.svg" :alt "Discord"}]]
        [notification/notification]])))

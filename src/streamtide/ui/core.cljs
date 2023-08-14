@@ -26,6 +26,7 @@
             [district.ui.window-size]
             [mount.core :as mount]
             [re-frame.core :as re-frame]
+            [streamtide.shared.graphql-schema :refer [graphql-schema]]
             [streamtide.shared.utils :as shared-utils]
             [streamtide.ui.about.page]
             [streamtide.ui.admin.announcements.page]
@@ -135,9 +136,12 @@
                                         :component-var #'router}
                        :router {:routes routes
                                 :default-route :route/home
-                                :scroll-top? true}
+                                :scroll-top? true
+                                :html5? true}
                        :notification {:default-show-duration 5000
-                                      :default-hide-duration 1000}})]
+                                      :default-hide-duration 1000}
+                       :graphql {:disable-default-middlewares? true
+                                 :schema graphql-schema}})]
     (js/console.log "Entire config:" (clj->js full-config))
     (-> (mount/with-args full-config)
         (mount/start)))

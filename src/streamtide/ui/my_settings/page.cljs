@@ -14,7 +14,7 @@
     [reagent.ratom :refer [reaction]]
     [streamtide.shared.utils :refer [valid-url? expected-domain? social-domains]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
-    [streamtide.ui.components.general :refer [no-items-found support-seal]]
+    [streamtide.ui.components.general :refer [no-items-found support-seal discord-invite-link]]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [avatar-placeholder]]
     [streamtide.ui.my-settings.events :as ms-events]
@@ -212,7 +212,7 @@
                                     :icon-src "/img/layout/ico_twitter.svg"
                                     :verifiable? true})]
           [:div.verifier-hint "Verify you have a valid Discord account connected to "
-           [:a {:href "https://discord.com/invite/sS2AWYm" :target :_blank :rel "noopener noreferrer"} "district0x server"]]
+           [:a {:href discord-invite-link :target :_blank :rel "noopener noreferrer"} "district0x server"]]
           [social-link-edit (merge input-params
                                    {:id [:socials :discord]
                                     :icon-src "/img/layout/ico_discord.svg"
