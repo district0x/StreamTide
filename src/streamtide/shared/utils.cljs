@@ -51,4 +51,5 @@
   {:facebook ["facebook.com" "fb.com" "fb.me"]
    :instagram ["instagram.com"]
    :linkedin ["linkedin.com"]
-   :pinterest ["pinterest.com"]})
+   :pinterest ["pinterest.com"]
+   :patreon ["patreon.com"]})

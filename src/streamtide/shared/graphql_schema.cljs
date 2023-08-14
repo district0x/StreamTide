@@ -343,6 +343,7 @@ enum SocialNetwork {
     instagram
     linkedin
     pinterest
+    patreon
     discord
     eth
 }

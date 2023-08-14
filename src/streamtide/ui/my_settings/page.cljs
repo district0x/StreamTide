@@ -239,7 +239,11 @@
           [social-link-edit (merge input-params
                                    {:id [:socials :pinterest]
                                     :icon-src "/img/layout/ico_pinterest.svg"
-                                    :placeholder "https://pinterest.com/..."})]]]))))
+                                    :placeholder "https://pinterest.com/..."})]
+          [social-link-edit (merge input-params
+                                   {:id [:socials :patreon]
+                                    :icon-src "/img/layout/ico_patreon.svg"
+                                    :placeholder "https://patreon.com/..."})]]]))))
 
 (defn clean-form-data [form-data form-values initial-values]
   (try
@@ -287,7 +291,8 @@
                                          (assoc-in [:socials :linkedin :url] "URL not valid")
                                          (some-invalid-url? (-> @form-data :socials :pinterest :url) (:pinterest social-domains))
                                          (assoc-in [:socials :pinterest :url] "URL not valid")
-                                         )})]
+                                         (some-invalid-url? (-> @form-data :socials :patreon :url) (:patreon social-domains))
+                                         (assoc-in [:socials :patreon :url] "URL not valid"))})]
     (fn []
       (let [user-settings (when @active-account (subscribe [::gql/query {:queries [(build-user-settings-query {:user/address @active-account})]}]))
             grant-status-query (when @active-account (subscribe [::gql/query {:queries [(build-grant-status-query {:user/address @active-account})]}
