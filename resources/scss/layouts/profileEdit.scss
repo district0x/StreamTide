@@ -246,15 +246,24 @@
 		}
 	}
 	.submitField {
-		background: $bgSubmit;
-		padding: 37.57px 20px 60px;
-		text-align: center;
+		position: fixed;
+		bottom: 0px;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 10;
+
+		background: transparent;
+
 		max-width: 1240px;
-		margin: 0 auto;
-		hr {
-			display: none;
-		}
+		width: 100%;
+		border-top-left-radius: 6px;
+		border-top-right-radius: 6px;
 		.btSubmit {
+			border-bottom-left-radius: 0px;
+			border-bottom-right-radius: 0px;
+			border-top-width: 1px;
+			border-top-style: solid;
+			border-color: $bgProfile;
 			width: 100%;
 			margin: 0 auto;
 			height: 65px;
@@ -264,30 +273,6 @@
 			&:disabled {
 				pointer-events: none;
 				background-color: lightgray;
-			}
-		}
-	}
-	&.approved {
-		.apply {
-			display: none;
-		}
-		.containerEdit {
-			border-bottom-right-radius: 0;
-			border-bottom-left-radius: 0;
-		}
-		.submitField {
-			background: $bgProfile;
-			padding: 0 20px 39px;
-			max-width: 1200px;
-			border-bottom-right-radius: 8px;
-			border-bottom-left-radius: 8px;
-			hr {
-				display: block;
-			}
-		}
-		.contentEditProfile {
-			.socialAccounts {
-				margin-bottom: 40px;
 			}
 		}
 	}
@@ -421,29 +406,7 @@
 		}
 		.submitField {
 			background: $bgSite;
-			padding: 29px 20px 0px;
-		}
-		&.approved {
-			.containerEdit {
-				border-bottom-right-radius: 8px;
-				border-bottom-left-radius: 8px;
-			}
-			.submitField {
-				background: $bgSite;
-				padding: 29px 20px 0;
-				max-width: 1240px;
-				hr {
-					display: none;
-				}
-			}
-			.contentEditProfile {
-				.socialAccounts {
-					margin-bottom: 54.44px;
-				}
-			}
-			.lineProfileEdit {
-				display: none;
-			}
+			padding: 0px 20px 0px;
 		}
 	}
 }

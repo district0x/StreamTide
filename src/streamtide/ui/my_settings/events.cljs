@@ -63,12 +63,14 @@
   ::save-settings
   (fn [{:keys [db]} [_ {:keys [:form-data] :as data}]]
     {:dispatch [::do-save-settings {:form-data form-data
-                                    :on-success [::save-settings-success]
+                                    :on-success [::save-settings-success data]
                                     :on-error [::save-settings-error]}]}))
 
 (re-frame/reg-event-fx
   ::save-settings-success
-  (fn [{:keys [db]} [_ result]]
+  (fn [{:keys [db]} [_ {:keys [:on-success]} result]]
+    (when on-success
+      (on-success))
     {:db (dissoc db :uploading-settings)
      :dispatch [::notification-events/show "Settings saved successfully"]}))
 

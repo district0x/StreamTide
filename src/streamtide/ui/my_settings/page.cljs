@@ -323,11 +323,7 @@
               [:div.photoProfile
                [profile-picture-edit {:form-data form-data
                                       :id :photo
-                                      :form-values form-values}]
-               ;[:button.btEdit.btEditPhoto "Edit Photo"]
-               ;[:div.photo
-               ; [:img {:src "/img/sample/profile-fpo.jpg"}]]
-               ]]
+                                      :form-values form-values}]]]
              [:hr]
              [:div.contentEditProfile
               [:div.generalInfo
@@ -386,12 +382,13 @@
                     (merge input-params
                            {:id :perks
                             :type :url})]]]])]]]
-             [:div.submitField
-            [:hr]
+           [:div.submitField
             [:button.btBasic.btBasic-light.btSubmit
              {:type "submit"
-              :disabled (or (empty? @form-data) (not-empty (-> @errors :local)))
+              :disabled (or (empty? @form-data) (not (:touched? (meta @form-data))) (not-empty (-> @errors :local)))
               :on-click #(dispatch [::ms-events/save-settings
-                                    {:form-data (clean-form-data form-data form-values initial-values)}])}
+                                    {:form-data (clean-form-data form-data form-values initial-values)
+                                     :on-success (fn []
+                                                   (reset! form-data (with-meta @form-data {:touched? false})))}])}
              "SAVE CHANGES"]]]]
          [popup-request-grant grant-popup-open? show-grant-popup-fn #(clean-form-data form-data form-values initial-values)]]))))
