@@ -63,12 +63,13 @@
   ::set-graphql-auth
   ; if the current account has an active session, it sets the JWT for GrahpQL
   interceptors
-  (fn [{:keys [:db]}]
+  (fn [{:keys [:db]} [[_ {:keys [:old]}]]]
     (let [{:keys [:user/address :jwt]} (-> db :active-session)
           jwt (when (and (some? address)
                          (= address (web3-accounts-queries/active-account db)))
                 jwt)]
-      {:dispatch [::gql-events/set-authorization-token jwt]})))
+      {:dispatch-n [[::gql-events/set-authorization-token jwt]
+                    (when (not-empty old) [::router-events/navigate :route/home])]})))
 
 (re-frame/reg-event-fx
   ::close-mobile-menu
