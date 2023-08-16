@@ -5,6 +5,7 @@
     [district.ui.component.notification :as notification]
     [district.ui.graphql.subs :as gql]
     [district.ui.router.subs :as router-subs]
+    [district.ui.web3-accounts.subs :as accounts-subs]
     [re-frame.core :refer [subscribe dispatch]]
     [reagent.core :as r]
     [streamtide.ui.components.announcement :refer [announcement]]
@@ -21,7 +22,7 @@
                       :route :route.about/index}
                      {:text  "My Content"
                       :route :route.my-content/index
-                      :require-session? true}
+                      :require-grant? true}
                      {:text  "My Settings"
                       :route :route.my-settings/index
                       :require-session? true}
@@ -32,13 +33,22 @@
 (defn build-get-roles-query []
   [:roles])
 
+(defn build-grant-status-query [{:keys [:user/address]}]
+  [:grant
+   {:user/address address}
+   [:grant/status]])
+
 (defn nav-menu []
   "Navigation menu of the different pages of the website"
   (let [active-page (subscribe [::router-subs/active-page])
-        active-session? (subscribe [::st-subs/active-account-has-session?])]
+        active-session? (subscribe [::st-subs/active-account-has-session?])
+        active-account (subscribe [::accounts-subs/active-account])]
     (fn []
       (let [user-roles-query (when @active-session? (subscribe [::gql/query {:queries [(build-get-roles-query)]}]))
-            user-roles (when user-roles-query (->> @user-roles-query :roles (map gql-utils/gql-name->kw)))]
+            user-roles (when user-roles-query (->> @user-roles-query :roles (map gql-utils/gql-name->kw)))
+            grant-status-query (when (and @active-account @active-session?)
+                                 (subscribe [::gql/query {:queries [(build-grant-status-query {:user/address @active-account})]}]))
+            grant-status (when grant-status-query (-> @grant-status-query :grant :grant/status gql-utils/gql-name->kw))]
         [:ul.contentMenu
          (doall (map-indexed
                   (fn [idx {:keys [:text :route :require-session?]}]
@@ -50,9 +60,11 @@
                                                    disabled (str " disabled"))}
                         text]]))
                   (filter (fn [nav-menu-item]
-                            (let [required-roles (:roles nav-menu-item)]
-                              (or (not required-roles)
-                                  (some (set user-roles) required-roles)))
+                            (let [required-roles (:roles nav-menu-item)
+                                  require-grant? (:require-grant? nav-menu-item)]
+                              (or (and (not required-roles) (not require-grant?))
+                                  (and required-roles (some (set user-roles) required-roles))
+                                  (and require-grant? (= grant-status :grant.status/approved))))
                             ) nav-menu-items)))]))))
 
 (defn header []

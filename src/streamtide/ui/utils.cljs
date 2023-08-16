@@ -5,7 +5,11 @@
             [cljs-web3-next.core :as web3]
             [clojure.string :as string]
             [district.format :as format]
-            [district.graphql-utils :as gql-utils]))
+            [district.ui.router.events :as router-events]
+            [district.ui.web3-accounts.subs :as accounts-subs]
+            [district.graphql-utils :as gql-utils]
+            [re-frame.core :refer [dispatch subscribe]]
+            [streamtide.ui.subs :as st-subs]))
 
 (defn switch-popup [switch-atom show]
   "Switch the atom associated to the visibility of a popup to hide or show it"
@@ -47,3 +51,11 @@
   (if (string/blank? name)
     (truncate-text address)
     (truncate-text name 35)))
+
+(defn go-home []
+  (dispatch [::router-events/navigate :route/home]))
+
+(defn check-session []
+  (let [active-account (subscribe [::accounts-subs/active-account])
+        active-session? (subscribe [::st-subs/active-account-has-session?])]
+  (when (and @active-account (not @active-session?)) (go-home))))

@@ -5,7 +5,8 @@
     [district.ui.router.subs :as router-subs]
     [re-frame.core :refer [subscribe dispatch]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
-    [streamtide.ui.components.general :refer [nav-anchor]]))
+    [streamtide.ui.components.general :refer [nav-anchor]]
+    [streamtide.ui.utils :refer [check-session]]))
 
 
 (def admin-nav-menu-items [{:text "Grant Approval Feeds"
@@ -21,6 +22,7 @@
   "Menu for admin pages"
   (let [active-page (subscribe [::router-subs/active-page])]
     (fn []
+      (check-session)
       [:<>
        [:div.selectAdmin-selected.d-lg-none
         [:select

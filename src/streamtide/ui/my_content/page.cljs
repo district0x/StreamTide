@@ -18,7 +18,7 @@
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.my-content.events :as mc-events]
     [streamtide.ui.my-content.subs :as mc-subs]
-    [streamtide.ui.utils :refer [switch-popup]]))
+    [streamtide.ui.utils :refer [switch-popup check-session]]))
 
 
 (def page-size 6)
@@ -107,6 +107,7 @@
   (let [active-account (subscribe [::accounts-subs/active-account])]
     (when @active-account
     (fn []
+      (check-session)
       (let [user-content (when @active-account (subscribe [::gql/query {:queries [(build-user-content-query {:user/address @active-account} nil)]}
                                                            {:id :user-content
                                                             :refetch-on [::mc-events/content-added ::mc-events/content-removed]}]))

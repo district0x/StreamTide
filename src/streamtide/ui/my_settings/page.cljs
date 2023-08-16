@@ -20,7 +20,7 @@
     [streamtide.ui.components.user :refer [avatar-placeholder]]
     [streamtide.ui.my-settings.events :as ms-events]
     [streamtide.ui.my-settings.subs :as ms-subs]
-    [streamtide.ui.utils :refer [switch-popup from-wei]]
+    [streamtide.ui.utils :refer [switch-popup from-wei check-session]]
     [taoensso.timbre :as log]))
 
 (def page-size 6)
@@ -316,9 +316,7 @@
                                          (-> @form-data :bg-photo :error)
                                          (assoc :bg-photo (-> @form-data :bg-photo :error)))})]
     (fn []
-      (print @form-data)
-      (print (meta @form-data))
-      (print @errors)
+      (check-session)
       (let [user-settings (when @active-account (subscribe [::gql/query {:queries [(build-user-settings-query {:user/address @active-account})]}]))
             grant-status-query (when @active-account (subscribe [::gql/query {:queries [(build-grant-status-query {:user/address @active-account})]}
                                                             {:refetch-on [::ms-events/request-grant-success]}]))
