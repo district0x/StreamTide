@@ -105,8 +105,8 @@
 
 (defn contents []
   (let [active-account (subscribe [::accounts-subs/active-account])]
-    (when @active-account
     (fn []
+    (when @active-account
       (check-session)
       (let [user-content (when @active-account (subscribe [::gql/query {:queries [(build-user-content-query {:user/address @active-account} nil)]}
                                                            {:id :user-content

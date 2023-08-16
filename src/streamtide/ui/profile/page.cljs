@@ -17,7 +17,8 @@
     [streamtide.ui.components.media-embed :as embed]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [user-photo-profile social-links avatar-placeholder]]
-    [streamtide.ui.profile.events :as p-events]))
+    [streamtide.ui.profile.events :as p-events]
+    [streamtide.ui.subs :as st-subs]))
 
 (def page-size 6)
 
@@ -89,10 +90,11 @@
   (let []
     (fn [user-account]
       (let [active-account @(subscribe [::accounts-subs/active-account])
+            active-session? @(subscribe [::st-subs/active-account-has-session?])
             user-content-pinned (subscribe [::gql/query {:queries [(build-user-content-query {:user/address user-account :pinned true} nil)]}
-                                     {:id {:user-content user-account :active-account active-account :pinned true}}])
+                                     {:id {:user-content user-account :active-account active-account :active-session? active-session? :pinned true}}])
             user-content-unpinned (subscribe [::gql/query {:queries [(build-user-content-query {:user/address user-account :pinned false} nil)]}
-                                     {:id {:user-content user-account :active-account active-account :pinned false}}])
+                                     {:id {:user-content user-account :active-account active-account :active-session? active-session? :pinned false}}])
             loading-pinned? (:graphql/loading? (last @user-content-pinned))
             loading-unpinned? (:graphql/loading? (last @user-content-unpinned))
             all-content-pinned (->> @user-content-pinned
@@ -139,11 +141,11 @@
                    [content-card content])))]])))))
 
 (defmethod page :route.profile/index []
-  (let [active-account @(subscribe [::accounts-subs/active-account])
+  (let [active-account (subscribe [::accounts-subs/active-account])
         active-page-sub (re-frame/subscribe [::router-subs/active-page])
         url-account (-> @active-page-sub :params :address)
-        user-account (match [(nil? url-account) (nil? active-account)]
-                            [true _] active-account
+        user-account (match [(nil? url-account) (nil? @active-account)]
+                            [true _] @active-account
                             [false _] url-account
                             [true true] nil)]
     (fn []
@@ -160,12 +162,13 @@
                 [user-header user-info]
                 [:div.contentProfile
                  [support-seal]
-                 [:div.aboutProfile
-                  [:h2 "A Little About Me"]
-                  [:p (:user/description user-info)]]
+                 (when (not (blank? (:user/description user-info)))
+                   [:div.aboutProfile
+                    [:h2 "A Little About Me"]
+                    [:p (:user/description user-info)]])
                  [:div.btsProfile
                   (when (and (= (-> user-info :user/grant :grant/status gql-utils/gql-name->kw) :grant.status/approved)
-                             (not= active-account user-account))
+                             (not= @active-account user-account))
                     [:button.btBasic.btBasic-light {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
                      "SUPPORT THIS CREATOR"])
                   (when (not (blank? (:user/perks user-info)))
