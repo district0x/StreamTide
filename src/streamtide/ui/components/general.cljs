@@ -42,5 +42,4 @@
           [:button.btLogin.btBasic.btBasic-light
            {:class class
             :on-click #(dispatch [:user/sign-in])}
-           (str "WEB LOGIN")])))))
-
+           (str "WEB3 LOGIN")])))))

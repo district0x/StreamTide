@@ -109,7 +109,8 @@
     (when on-success
       (on-success))
     {:db (dissoc db :requesting-grant)
-     :dispatch [::notification-events/show "Grant has been requested"]}))
+     :dispatch [::notification-events/show {:show-duration 15000
+                                            :message "Application received"}]}))
 
 (re-frame/reg-event-fx
   ::request-grant-error
