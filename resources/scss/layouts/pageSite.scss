@@ -27,12 +27,12 @@
 		min-height: calc(100vh - 156px);
 	}
 	@include media-breakpoint-up(lg) {
-		padding: 224.33px 0 70.67px;
+		padding: 140.33px 0 70.67px;
 		.titlePage {
 			font-size: 50px;
 			line-height: 50px;
 			text-align: left;
-			margin-bottom: 46.65px;
+			margin-bottom: 26.65px;
 		}
 	}
 }

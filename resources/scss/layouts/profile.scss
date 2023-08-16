@@ -224,7 +224,7 @@
 		}
 	}
 	@include media-breakpoint-up(lg) {
-		padding-top: 214.29px;
+		padding-top: 140.29px;
 		background-color: $bgSite;
 		.headerProfile {
 			min-height: 415px;
@@ -271,7 +271,7 @@
 		.contentProfile {
 			background-color: $bgCard;
 			border-radius: 15px;
-			padding: 64px 40px;
+			padding: 14px 40px;
 			position: relative;
 			.support {
 				width: 103.88px;
@@ -281,7 +281,7 @@
 				right: -45.51px;
 			}
 			.aboutProfile {
-				margin: 0 auto 45px;
+				margin: 0 auto 25px;
 				h2 {
 					font-size: 20px;
 					line-height: 36px;
@@ -293,7 +293,7 @@
 				}
 			}
 			.btsProfile {
-				margin-bottom: 64px;
+				margin-bottom: 34px;
 				.btBasic {
 					margin-bottom: 24px;
 				}
