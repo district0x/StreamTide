@@ -58,7 +58,8 @@
 (defn header []
   "Common header for all the pages. Shows the navigation menu, login button and so"
   (let [day-night (subscribe [::st-subs/day-night-switch])
-        show-mobile-menu? (subscribe [::st-subs/menu-mobile-switch])]
+        show-mobile-menu? (subscribe [::st-subs/menu-mobile-switch])
+        cart-full? (subscribe [::st-subs/cart-full?])]
     (fn []
   [:header
    {:id "headerSite"
@@ -77,7 +78,8 @@
                                              (dispatch [::st-events/day-night-switch]))}
         [:img {:src "/img/layout/icon-moon.svg" :alt "icon-night"}]
         [:img {:src "/img/layout/icon-sun.svg" :alt "icon-day"}]]
-       [nav-anchor {:class "btCar" :route :route.send-support/index}]
+       [nav-anchor {:class (str "btCar " (when @cart-full? "full"))
+                    :route :route.send-support/index}]
        [:button.btMenu.d-lg-none.js-btMenu {:on-click(fn [e]
                                                         (.stopPropagation e)
                                                         (dispatch [::st-events/menu-mobile-switch]))} "Menu"]

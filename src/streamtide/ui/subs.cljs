@@ -33,3 +33,8 @@
   ::cart
   (fn [db _]
     (get db :cart)))
+
+(re-frame/reg-sub
+  ::cart-full?
+  (fn [db _]
+    (not-empty (get db :cart))))

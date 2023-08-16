@@ -114,6 +114,9 @@
 		@include media-breakpoint-down(xs) {
 			margin-right: 10px;
 		}
+		&.full {
+			background-image: url('../img/layout/icon-cart-full.svg');
+		}
 	}
 	.btMenu {
 		width: 26px;
