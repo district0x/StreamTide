@@ -34,6 +34,16 @@
 				height: 100%;
 				z-index: 10;
 			}
+			.input-group {
+				.help-block {
+					position: absolute;
+					bottom: 0px;
+					left: 50%;
+					transform: translateX(-50%);
+					z-index: 10;
+					font-weight: bold;
+				}
+			}
 		}
 		.photoProfile {
 			.btEdit, .file-input-label {
@@ -46,7 +56,17 @@
 				height: 100%;
 				img {
 					height: 100%;
+					width: 100%;
 					object-fit: cover;
+				}
+			}
+			.input-group {
+				.help-block {
+					margin-top: -10px;
+					z-index: 10;
+					width: 100%;
+					font-weight: bold;
+					text-align: center;
 				}
 			}
 		}
@@ -256,8 +276,8 @@
 
 		max-width: 1240px;
 		width: 100%;
-		border-top-left-radius: 6px;
-		border-top-right-radius: 6px;
+		border-top-left-radius: 60px;
+		border-top-right-radius: 60px;
 		.btSubmit {
 			border-bottom-left-radius: 0px;
 			border-bottom-right-radius: 0px;

@@ -19,9 +19,12 @@
     [streamtide.ui.components.user :refer [avatar-placeholder]]
     [streamtide.ui.my-settings.events :as ms-events]
     [streamtide.ui.my-settings.subs :as ms-subs]
-    [streamtide.ui.utils :refer [switch-popup from-wei]]))
+    [streamtide.ui.utils :refer [switch-popup from-wei]]
+    [taoensso.timbre :as log]))
 
 (def page-size 6)
+
+(def max-filesize 3145728)
 
 (defn build-user-settings-query [{:keys [:user/address]}]
   [:user
@@ -130,16 +133,27 @@
           (:photo entries)
           (update :photo (fn [val] {:selected-file {:url-data val}}))))
 
-(defn- profile-picture-edit [{:keys [:form-data :form-values :id]}]
+(defn- profile-picture-edit [{:keys [:form-data :form-values :id :errors]}]
   [file-drag-input {:form-data form-data
                     :group-class "photo"
                     :id id
                     :img-attributes {:src (or (-> form-values id :selected-file :url-data) avatar-placeholder)}
                     :label nil
                     :accept "image/*"
+                    :errors errors
                     :file-accept-pred (fn [{:keys [name type size] :as props}]
                                         (and (#{"image/png" "image/gif" "image/jpeg" "image/svg+xml"} type)
-                                             (< size 1500000)))}])
+                                             (< size max-filesize)))
+                    :on-file-accepted (fn [{:keys [name type size array-buffer] :as props}]
+                                        (swap! form-data update-in [id] dissoc :error)
+                                        (reset! form-data (with-meta @form-data {:touched? true}))
+                                        (log/info "Accepted file" {:name name :type type :size size} ::file-accepted))
+                    :on-file-rejected (fn [{:keys [name type size] :as props}]
+                                        (swap! form-data assoc id {:error (if (>= size max-filesize)
+                                                                            "File too large (> 3MB)"
+                                                                            "Non .png .jpeg .gif .svg file selected")})
+                                        (reset! form-data (with-meta @form-data {:touched? true}))
+                                        (log/warn "Rejected file" {:name name :type type :size size} ::file-rejected))}])
 
 (defn- grant-info [grant-status show-popup-fn errors]
   (let []
@@ -252,8 +266,10 @@
                                               (or (= key :name)
                                                   (not= (key initial-values) val))) form-values)))
             (:socials @form-data) (update :socials socials-kw->gql)
-            (:photo @form-data) (update :photo photo->gql)
-            (:bg-photo @form-data) (update :bg-photo photo->gql)
+            (and (:photo @form-data) (-> @form-data :photo :error)) (dissoc :photo)
+            (and (:photo @form-data) (-> @form-data :photo :error not)) (update :photo photo->gql)
+            (and (:bg-photo @form-data) (-> @form-data :bg-photo :error)) (dissoc :bg-photo)
+            (and (:bg-photo @form-data) (-> @form-data :bg-photo :error not)) (update :bg-photo photo->gql)
             (:min-donation @form-data) (update :min-donation #(if (empty? %) "0" (web3/to-wei % :ether))))
     (catch :default e
       (dispatch [::notification-events/show "[ERROR] Invalid data"])
@@ -292,8 +308,16 @@
                                          (some-invalid-url? (-> @form-data :socials :pinterest :url) (:pinterest social-domains))
                                          (assoc-in [:socials :pinterest :url] "URL not valid")
                                          (some-invalid-url? (-> @form-data :socials :patreon :url) (:patreon social-domains))
-                                         (assoc-in [:socials :patreon :url] "URL not valid"))})]
+                                         (assoc-in [:socials :patreon :url] "URL not valid")
+
+                                         (-> @form-data :photo :error)
+                                         (assoc :photo (-> @form-data :photo :error))
+                                         (-> @form-data :bg-photo :error)
+                                         (assoc :bg-photo (-> @form-data :bg-photo :error)))})]
     (fn []
+      (print @form-data)
+      (print (meta @form-data))
+      (print @errors)
       (let [user-settings (when @active-account (subscribe [::gql/query {:queries [(build-user-settings-query {:user/address @active-account})]}]))
             grant-status-query (when @active-account (subscribe [::gql/query {:queries [(build-grant-status-query {:user/address @active-account})]}
                                                             {:refetch-on [::ms-events/request-grant-success]}]))
@@ -324,11 +348,13 @@
               [:div.bgProfile
                [profile-picture-edit {:form-data form-data
                                       :id :bg-photo
-                                      :form-values form-values}]]
+                                      :form-values form-values
+                                      :errors errors}]]
               [:div.photoProfile
                [profile-picture-edit {:form-data form-data
                                       :id :photo
-                                      :form-values form-values}]]]
+                                      :form-values form-values
+                                      :errors errors}]]]
              [:hr]
              [:div.contentEditProfile
               [:div.generalInfo
