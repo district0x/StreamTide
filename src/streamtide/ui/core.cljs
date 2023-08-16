@@ -138,7 +138,7 @@
                                 :default-route :route/home
                                 :scroll-top? true
                                 :html5? true}
-                       :notification {:default-show-duration 5000
+                       :notification {:default-show-duration 10000
                                       :default-hide-duration 1000}
                        :graphql {:disable-default-middlewares? true
                                  :schema graphql-schema}})]

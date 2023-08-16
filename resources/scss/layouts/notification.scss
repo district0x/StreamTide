@@ -1,12 +1,13 @@
 .notification {
-  color: white;
-  background-color: $purple;
+  color: $textNotification;
+  background-color: $bgNotification;
   position: fixed;
   bottom: 0;
   right: 30px;
   z-index: 9999;
   display: flex;
   align-items: center;
+  font-weight: bold;
   justify-content: center;
   padding: 10px 20px;
   background-size: 100% auto;
@@ -35,7 +36,7 @@
   }
 
   .notification-message {
-    font-size: 15px;
+    font-size: 17px;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
