@@ -8,6 +8,7 @@
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.subs :as gql]
     [district.ui.notification.events :as notification-events]
+    [district.ui.router.events :as router-events]
     [district.ui.web3-accounts.subs :as accounts-subs]
     [re-frame.core :refer [dispatch subscribe]]
     [reagent.core :as r]
@@ -420,6 +421,8 @@
               :on-click #(dispatch [::ms-events/save-settings
                                     {:form-data (clean-form-data form-data form-values initial-values)
                                      :on-success (fn []
-                                                   (reset! form-data (with-meta @form-data {:touched? false})))}])}
+                                                   (reset! form-data (with-meta @form-data {:touched? false}))
+                                                   (dispatch [::router-events/navigate :route.profile/index
+                                                              {:address @active-account}]))}])}
              "SAVE CHANGES"]]]]
          [popup-request-grant grant-popup-open? show-grant-popup-fn #(clean-form-data form-data form-values initial-values)]]))))
