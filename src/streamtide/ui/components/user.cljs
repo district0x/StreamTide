@@ -21,6 +21,6 @@
    (doall (map-indexed
             (fn [idx {:keys [:social/network :social/url]}]
               [:a {:key (str idx) :href url :target "_blank"}
-               [:img {:class "normal" :src (str "/img/layout/social-" network ".svg")}]
-               [:img {:class "hover" :src (str "/img/layout/social-" network "-hover.svg")}]])
+               [:img {:class "normal" :src (str "/img/layout/social-ico-" network ".svg")}]
+               [:img {:class "hover" :src (str "/img/layout/social-ico-" network "-hover.svg")}]])
             socials))])
