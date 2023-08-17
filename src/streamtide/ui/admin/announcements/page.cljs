@@ -1,7 +1,7 @@
 (ns streamtide.ui.admin.announcements.page
   "Page to manage the announcements which appear in the top of the page"
   (:require
-    [district.ui.component.form.input :refer [textarea-input]]
+    [district.ui.component.form.input :refer [text-input]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.subs :as gql]
     [re-frame.core :refer [subscribe dispatch]]
@@ -58,9 +58,10 @@
           [:span.titleCel.col-user "Add Announcement"]
           [:div.form.formAnnouncement
            [:div.textField
-            [textarea-input {:id :announcement
-                             :form-data form-data
-                             :disabled @adding?}]]
+            [text-input {:id :announcement
+                         :form-data form-data
+                         :disabled @adding?
+                         :maxlength 180}]]
            [:input.btBasic.btBasic-light
             {:type "submit"
              :value "POST"

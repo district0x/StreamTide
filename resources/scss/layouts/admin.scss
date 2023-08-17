@@ -14,7 +14,6 @@
 		margin-bottom: 20px;
 	}
 	.containerAdmin {
-		margin-top: -60px;
 		h3 {
 			font-size: 20px;;
 		}
@@ -249,10 +248,14 @@
 			border-radius: 7px;
 			overflow: hidden;
 			box-shadow: 0px 0px 0px 3px #a478f9;
-			height: 353px;
+			height: 36px;
 			margin: 0 auto 21px;
 			.input-group {
 				height: 100%;
+				input {
+					height: 100%;
+					width: 100%;
+				}
 			}
 		}
 		.btBasic {
@@ -453,6 +456,7 @@
 		}
 		.containerAdmin {
 			width: calc(100% - 241px);
+			margin-top: -60px;
 		}
 		.contentApprovalFeed {
 			margin-bottom: 64px;
@@ -697,7 +701,6 @@
 				padding: 24px 20px 21px;
 			}
 			.textField {
-				height: 241px;
 				margin-bottom: 19px;
 			}
 			.btBasic {
