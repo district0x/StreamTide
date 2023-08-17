@@ -365,23 +365,30 @@
                   (merge input-params
                     {:id :name})]]
                 [:label.inputField
+                 {:title "Summarize here what you do"}
                  [:span "Tagline"]
                  [initializable-text-input
                   (merge input-params
-                         {:id :tagline})]]]
+                         {:id :tagline
+                          :placeholder "Supporting People - not Platforms"})]]]
                [:div.block
                 [:label.inputField
+                 {:title "Your username in social networks"}
                  [:span "Handle"]
                  [initializable-text-input
                   (merge input-params
-                         {:id :handle})]]
+                         {:id :handle
+                          :placeholder "@username"})]]
                 [:label.inputField
+                 {:title "Enter your personal or project website"}
                  [:span "URL"]
                  [initializable-text-input
                   (merge input-params
                          {:id :url
-                          :type :url})]]]]
+                          :type :url
+                          :placeholder "https://your-website.io"})]]]]
               [:div.biography
+               {:title "Write something about you"}
                [:h2.titleEdit "Biography"]
                [:div.textField
                 [initializable-text-input
