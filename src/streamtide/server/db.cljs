@@ -217,7 +217,7 @@
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))
 
-(defn get-users [{:keys [:user/name :user/address :user/blacklisted :order-by :order-dir :first :after] :as args}]
+(defn get-users [{:keys [:user/name :user/address :user/blacklisted :search-term :order-by :order-dir :first :after] :as args}]
   (let [page-start-idx (when after (js/parseInt after))
         page-size first
         query (cond->
@@ -226,8 +226,12 @@
                 (some? blacklisted) (sqlh/merge-where [:= :user/blacklisted blacklisted])
                 name (sqlh/merge-where [:like :user.user/name (str "%" name "%")])
                 address (sqlh/merge-where [:like :user.user/address (str "%" address "%")])
+                search-term (sqlh/merge-where [:or
+                                               [:like :user.user/name (str "%" search-term "%")]
+                                               [:like :user.user/address (str "%" search-term "%")]])
                 order-by (sqlh/merge-order-by [[(get {:users.order-by/address [:user.user/address [:collate :nocase]]
-                                                      :users.order-by/username [:user.user/name [:collate :nocase]]}
+                                                      :users.order-by/username [:user.user/name [:collate :nocase]]
+                                                      :users.order-by/creation-date :user.user/creation-date}
                                                      order-by)
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))

@@ -14,9 +14,12 @@
     [streamtide.ui.components.general :refer [nav-anchor no-items-found]]
     [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
     [streamtide.ui.components.spinner :as spinner]
-    [streamtide.ui.components.user :refer [user-photo social-links]]))
+    [streamtide.ui.components.user :refer [user-photo social-links]]
+    [streamtide.ui.utils :as ui-utils]))
 
-(defn content-approval-entry [{:keys [:user/address :user/photo :user/name :user/socials]} form-data]
+(defn content-approval-entry [{:keys [:user/address :user/photo :user/name :user/socials]}
+                              {:keys [:grant/request-date]}
+                              form-data]
   (let [reviewing? @(subscribe [::gaf-subs/reviewing?])
         decision? @(subscribe [::gaf-subs/decision? address])
         nav (partial nav-anchor {:route :route.profile/index :params {:address address}})]
@@ -26,6 +29,9 @@
       [nav [user-photo {:src photo :class "lb"}]]
       [nav [:h3 name]]]
      [social-links {:socials socials :class "cel"}]
+     [:div.cel.date
+      [:h4.d-lg-none "Request Date"]
+      [:span (ui-utils/format-graphql-time request-date)]]
      [:div.cel.buttons
        [checkbox-input (merge {:form-data form-data
                                :id address}
@@ -45,6 +51,7 @@
       :end-cursor
       :has-next-page
       [:items [:grant/status
+               :grant/request-date
                [:grant/user [:user/address
                              :user/name
                              :user/photo
@@ -73,8 +80,8 @@
                                                 :id query-params}]))}
        (when-not (:graphql/loading? (first @grants-search))
          (doall
-           (for [{:keys [:grant/user]} all-grants]
-             ^{:key (:user/address user)} [content-approval-entry user form-data])))])))
+           (for [{:keys [:grant/user] :as grant} all-grants]
+             ^{:key (:user/address user)} [content-approval-entry user grant form-data])))])))
 
 
 (defmethod page :route.admin/grant-approval-feed []
@@ -106,6 +113,8 @@
            [:span.titleCel.col-user "User Profile"]]
           [:div.cel.cel-socials
            [:span.titleCel.col-socials "Socials"]]
+          [:div.cel.cel-date
+           [:span.titleCel.col-date "Request Date"]]
           [:div.cel.cel-buttons
            [:span.titleCel.col-buttons "Select"]]]
           [grants-entries query-params grants-search form-data]]))))

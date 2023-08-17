@@ -162,16 +162,6 @@
 		overflow: hidden;
 		background: $bgCard;
 		padding: 17.65px 21.5px 25px;
-		.formSearchList {
-			.cel {
-				width: 100%;
-				margin-bottom: 17.83px;
-				display: block;
-				&:last-child {
-					margin-bottom: 21.33px;
-				}
-			}
-		}
 		.titleCel {
 			font-size: 16px;
 			line-height: 22px;
@@ -208,7 +198,6 @@
 			//margin-bottom: 0;
 		}
 		.name {
-			margin-bottom: 9.26px;
 			h3 {
 				font-size: 16px;
 				line-height: 22px;
@@ -216,14 +205,26 @@
 			}
 		}
 		.eth {
-			margin-bottom: 21.58px;
 			word-break: break-all;
 			span {
 				font-size: 16px;
 				line-height: 26px;
 			}
 		}
+		.grant-status {
+			display: flex;
+			.d-lg-none {
+				margin-right: 15px;
+			}
+		}
+		.creation-date {
+			display: flex;
+			.d-lg-none {
+				margin-right: 15px;
+			}
+		}
 		.button {
+			margin-top: 21.58px;
 			.btBasic {
 				width: 100%;
 				height: 40px;
@@ -468,15 +469,23 @@
 				line-height: 25px;
 			}
 			.cel {
-				width: calc(33.33% - 8.66px);
+				//width: calc(25% - 8.66px);
 				text-align: center;
 			}
 			.cel-data {
+				width: 30%;
 				max-width: calc(100% - 527px);
 				text-align: left;
 			}
 			.cel-socials {
 				max-width: 240px;
+				width: 30%;
+			}
+			.cel-date {
+				width: 20%;
+			}
+			.cel-buttons {
+				width: 10%;
 			}
 		}
 		.contentApproval {
@@ -487,9 +496,10 @@
 			align-items: center;
 			justify-content: space-between;
 			.cel {
-				width: calc(33.33% - 8.66px);
+				//width: calc(25% - 8.66px);
 			}
 			.data {
+				width: 30%;
 				margin-bottom: 0;
 				justify-content: flex-start;
 				max-width: calc(100% - 527px);
@@ -505,6 +515,7 @@
 				}
 			}
 			.socialAccounts {
+				width: 30%;
 				margin-bottom: 0;
 				max-width: 240px;
 				justify-content: center;
@@ -520,7 +531,12 @@
 					}
 				}
 			}
+			.date {
+				width: 20%;
+				text-align: center;
+			}
 			.buttons {
+				width: 10%;
 				.input-group {
 					justify-content: center;
 				}
@@ -600,50 +616,31 @@
 			padding: 0;
 			.contentHeader {
 				.cel-data {
-					width: calc(31% + 12px);
+					width: 26%;
 				}
 				.cel-eth {
-					width: calc(69% - 12px);
+					width: 20%;
 				}
-			}
-			.formSearchList {
-				width: 100%;
-				border-radius: 6px;
-				position: relative;
-				overflow: hidden;
-				background: $bgCard;
-				padding: 25px 28px 21.75px 25px;
-				display: flex;
-				align-items: center;
-				/* 27 959 906 */
-				.cel {
-					margin-bottom: 0;
-					&:last-child {
-						margin-bottom: 0;
-					}
+				.cel-grant-status {
+					width: 20%;
 				}
-				.cel-data {
-					width: calc(31% - 9px);
-					margin-right: 12px;
+				.cel-creation-date {
+					width: 18%;
 				}
-				.cel-eth {
-					width: calc(53% - 9px);
-					margin-right: 15px;
+				.titleCel {
+					font-size: 20px;
+					line-height: 25px;
 				}
-				.btBasic {
-					width: calc(16% - 9px);
-					height: 66.5px;
-					line-height: 66.5px;
+				.inputField {
+					height: 67px;
+					line-height: 61px;
+					font-size: 20px;
 				}
-			}
-			.titleCel {
-				font-size: 20px;
-				line-height: 25px;
 			}
 			.inputField {
-				height: 67px;
-				line-height: 61px;
-				font-size: 20px;
+				height: 56px;
+				line-height: 50px;
+				//font-size: 20px;
 			}
 		}
 		.contentBlackListing {
@@ -655,7 +652,7 @@
 			padding: 25px 28px 21.75px 25px;
 			margin-bottom: 11px;
 			.name {
-				width: calc(31% - 9px);
+				width: calc(26% - 20px);
 				margin: 0 12px 0 0;
 				h3 {
 					font-size: 20px;
@@ -663,14 +660,21 @@
 				}
 			}
 			.eth {
-				width: calc(53% - 9px);
+				width: 20%;
 				margin: 0 15px 0 0;
 				span {
 					font-size: 18px;
 				}
 			}
+			.grant-status {
+				width: 20%;
+			}
+			.creation-date {
+				width: 18%;
+			}
 			.button {
-				width: calc(16% - 9px);
+				margin-top: 0px;
+				width: calc(16% - 6px);
 
 				.btBasic:disabled {
 					pointer-events: none;

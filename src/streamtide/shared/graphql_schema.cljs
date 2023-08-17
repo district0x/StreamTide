@@ -12,6 +12,7 @@ type Query {
         user_name: String
         user_address: String
         user_blacklisted: Boolean
+        searchTerm: String
         orderBy: UsersOrderBy
         orderDir: OrderDir
         first: Int
@@ -196,6 +197,7 @@ type User {
     user_bgPhoto: String
     user_grant: Grant
     user_blacklisted: Boolean
+    user_creationDate: Date
 }
 
 type SocialLink {
@@ -364,6 +366,7 @@ enum GrantsOrderBy {
 enum UsersOrderBy {
     users_orderBy_username
     users_orderBy_address
+    users_orderBy_creationDate
 }
 
 enum BlacklistedOrderBy {
