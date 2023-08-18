@@ -3,8 +3,9 @@ name: docker_build
 on:
   push:
     branches:
+      - main
       - master
-
+      
 permissions:
   contents: read
 

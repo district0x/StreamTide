@@ -11,7 +11,7 @@ jobs:
          aws_secret_access_key: $AWS_SECRET_ACCESS_KEY
      # Secondary container for ganache dev testnet
      - image: trufflesuite/ganache-cli:latest
-       command: [ -d, -m district0x, -p 8549, -l 8000000 ]
+       command: [ -d, -m district0x, -p 8545, -l 8000000 ]
    steps:
      - checkout
      - restore_cache:
