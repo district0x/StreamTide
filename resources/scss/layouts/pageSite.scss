@@ -57,6 +57,10 @@
 	}
 }
 
+.announcement-gap {
+	height: 36px;
+}
+
 @include media-breakpoint-down(md) {
 	.discord-button {
 		width: 40px;

@@ -126,6 +126,8 @@
       [:div.app-container {:id "app-container"
                            :class (str "theme-" @day-night " " @day-night)}
        [header]
+       (when (announcement)
+         [:div.announcement-gap])
        (map-indexed (fn [index item]
                       (with-meta
                         (if (= 0 index) (update item 1 update :class str " closeFooter") item) ; TODO remove this when restoring the footer
