@@ -10,7 +10,8 @@ COPY  . /build/
 WORKDIR /build
 
 RUN yarn install && \
-    bb release-server
+    bb release-server && \
+    bb compile-contracts
 
 ENTRYPOINT ["node", "server/streamtide_server.js"]
 
