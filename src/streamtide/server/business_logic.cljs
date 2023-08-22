@@ -136,8 +136,8 @@
 (defn- check-socials [socials]
   (let [invalid-socials (filter (fn [{:keys [:social/url :social/network] :as opts}]
                                   (and (not-empty url)
-                                       (not (shared-utils/expected-domain? url
-                                                                      ((keyword network) shared-utils/social-domains))) ))
+                                       (not (shared-utils/expected-root-domain? url
+                                                                                ((keyword network) shared-utils/social-domains))) ))
                                 socials)]
     (when (not-empty invalid-socials) (throw (str "invalid social links: "
                                          (map (fn [{:keys [:social/url :social/network]}]

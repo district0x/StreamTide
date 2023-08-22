@@ -1,5 +1,6 @@
 #popUpGrant,
-#popUpAddContent {
+#popUpAddContent,
+#popUpSafeLink {
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -80,7 +81,7 @@
 			display: none;
 		}
 	}
-	.popUpContent, .popUpGrant {
+	.popUpContent, .popUpGrant, .popUpSafeLink {
 		width: calc(100% - 42px);
 		max-width: 490px;
 		margin: 0 auto;
@@ -214,6 +215,57 @@
 				display: inline-block;
 			}
 
+		}
+	}
+	.popUpSafeLink {
+		.content {
+			padding: 20px 20px 2px;
+		}
+		.input-group {
+			display: none;
+		}
+		p {
+			margin-bottom: 0px;
+		}
+		pre {
+			background-color: #e3e3e3;
+			font-size: 10pt;
+			line-height: 15pt;
+			font-family: Consolas,monospace;
+		}
+		.form {
+			margin-top: 15px;
+		}
+		.visit {
+			margin-bottom: 5px;
+		}
+		.checkField {
+			align-items: flex-start;
+		}
+		.cancel {
+			color: black;
+			background-color: lightgrey;
+			&:hover {
+				background-color: $yellow;
+			}
+		}
+		.text {
+			.domain {
+				font-weight: bold;
+				word-break: break-word;
+			}
+		}
+		.footnote {
+			font-size: 9pt;
+			margin-top: 2px;
+			a {
+				text-decoration: underline;
+				text-decoration-thickness: 2px;
+				color: #a478f9;
+				&:hover {
+					color: #3b1d56;
+				}
+			}
 		}
 	}
 	@include media-breakpoint-up(lg) {

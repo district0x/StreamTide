@@ -13,7 +13,7 @@
     [re-frame.core :refer [dispatch subscribe]]
     [reagent.core :as r]
     [reagent.ratom :refer [reaction]]
-    [streamtide.shared.utils :refer [valid-url? expected-domain? social-domains]]
+    [streamtide.shared.utils :refer [valid-url? expected-root-domain? social-domains]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [no-items-found support-seal discord-invite-link]]
     [streamtide.ui.components.spinner :as spinner]
@@ -281,7 +281,7 @@
    (some-invalid-url? url nil))
   ([url domains]
   (and (not-empty url)
-       (if (some? domains) (not (expected-domain? url domains))
+       (if (some? domains) (not (expected-root-domain? url domains))
                            (not (valid-url? url))))))
 
 (defmethod page :route.my-settings/index []

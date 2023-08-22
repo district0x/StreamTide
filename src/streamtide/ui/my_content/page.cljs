@@ -97,10 +97,10 @@
                                                                                 }])}]]]
          [:div.content
           (case type
-            :content-type/image [embed/embed-image url]
-            :content-type/video [embed/embed-video url]
-            :content-type/audio [embed/embed-audio url]
-            :content-type/other [embed/embed-other url]
+            :content-type/image [embed/embed-image url {:disable-safe? true}]
+            :content-type/video [embed/embed-video url {:disable-safe? true}]
+            :content-type/audio [embed/embed-audio url {:disable-safe? true}]
+            :content-type/other [embed/embed-other url {:disable-safe? true}]
             :default "")]])))))
 
 (defn contents []

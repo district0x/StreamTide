@@ -38,3 +38,8 @@
   ::cart-full?
   (fn [db _]
     (not-empty (get db :cart))))
+
+(re-frame/reg-sub
+  ::trust-domain?
+  (fn [db [_ domain]]
+    (get-in db [:trust-domains domain])))

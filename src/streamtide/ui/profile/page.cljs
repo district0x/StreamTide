@@ -67,12 +67,12 @@
      [:div.links
       [:span handle]
       (when (and (not (blank? handle) ) (not (blank? url))) [:span "|"])
-      [:a {:href url :target "_blank" } url ]]
+      [embed/safe-external-link url]]
      [social-links {:socials socials}]]]])
 
 (defn content-card [{:keys [:content/id :content/public :content/type :content/url :content/creation-date]}]
   (let [type (gql-utils/gql-name->kw type)]
-    [:div.midia
+    [:div.media
      {:class (case type
                :content-type/image "photo"
                :content-type/video "video"
@@ -112,7 +112,7 @@
             (when (not-empty all-content-pinned)
               [:div.pinned-container
                {:class (when has-more-pinned? "has-more")}
-               [click-to-load-masonry {:class "midias pinned"
+               [click-to-load-masonry {:class "medias pinned"
                                        :loading? loading-pinned?
                                        :has-more? has-more-pinned?
                                        :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content-pinned)))]
@@ -126,7 +126,7 @@
                     (for [{:keys [:content/id] :as content} all-content-pinned]
                       ^{:key id}
                       [content-card content])))]])
-            [infinite-scroll-masonry {:class "midias unpinned"
+            [infinite-scroll-masonry {:class "medias unpinned"
                                       :loading? loading-unpinned?
                                       :has-more? has-more-unpinned?
                                       :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content-unpinned)))]
@@ -174,4 +174,5 @@
                   (when (not (blank? (:user/perks user-info)))
                     [:a.btBasic.btBasic-light {:href (:user/perks user-info) :target "_blank"} "PERKS"])]
                  [contents user-account]]]
-               [:div.not-found "User Not Found"])]]])))))
+               [:div.not-found "User Not Found"])]]
+           [embed/safe-link-popup user-account]])))))

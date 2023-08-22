@@ -3,7 +3,14 @@
   It uses some regex to identify the website and re-format the url to embed the media (image/video) in the current page"
   (:require
     [clojure.string :as string]
-    [streamtide.ui.config :as config]))
+    [district.ui.component.form.input :refer [checkbox-input]]
+    [reagent.core :as r]
+    [re-frame.core :refer [dispatch subscribe]]
+    [streamtide.ui.components.general :refer [discord-invite-link]]
+    [streamtide.ui.config :as config]
+    [streamtide.ui.events :as st-events]
+    [streamtide.ui.subs :as st-subs]
+    [streamtide.shared.utils :as shared-utils]))
 
 (def supported-video-exts #{"mp4", "webm", "ogg"})
 (def supported-image-exts #{"jpg", "jpeg", "apng", "png", "avif", "gif", "jfif", "pjpeg", "pjp", "svg", "webp"})
@@ -92,6 +99,63 @@
 (defn- supported-audio-ext? [ext]
   (contains? supported-audio-exts ext))
 
+(def current-url (r/atom nil))
+(def show-popup? (r/atom false))
+
+(defn safe-link-popup []
+  (let [form-data (r/atom {})
+        close-popup (fn [e]
+                      (when e
+                        (.stopPropagation e))
+                      (reset! show-popup? false)
+                      (reset! form-data {}))]
+    (reset! show-popup? false)
+    (fn []
+      (let [checked? (:trust-domain @form-data)
+            domain (when @current-url (shared-utils/url->domain @current-url))]
+        [:div {:id "popUpSafeLink" :style {"display" (if @show-popup? "flex" "none")}}
+         [:div.bgPopUp {:on-click #(close-popup %)}]
+         [:div.popUpSafeLink
+          [:button.btClose {:on-click #(close-popup %)} "Close" ]
+          [:div.content
+           [:h3 "Open external website"]
+           [:p "This link will take you to"]
+           [:pre @current-url]
+           [:p "Are you sure you want to go there?"]
+           [:div.form
+            [:label.checkField.simple
+             [checkbox-input {:id :trust-domain
+                              :form-data form-data}]
+             [:span.checkmark {:class (when checked? "checked")}]
+             [:span.text "Always trust domain "
+              [:span.domain domain]]]
+            [:a.btBasic.btBasic-light.visit
+             {:href @current-url
+              :target "_blank"
+              :rel "noopener noreferrer"
+              :on-click (fn []
+                          (close-popup nil)
+                          (when checked?
+                            (dispatch [::st-events/trust-domain {:domain domain}])))} "Visit Site"]
+            [:button.btBasic.cancel {:on-click #(close-popup %)} "Cancel"]]
+           [:p.footnote "Found suspicious link? Please report it to our "
+            [:a {:href discord-invite-link :target :_blank :rel "noreferrer noopener"} "Discord server"]]]]]))))
+
+(defn safe-external-link [url {:keys [:disable-safe?]}]
+  (let [domain (shared-utils/url->domain url)
+        trust-domain? (subscribe [::st-subs/trust-domain? domain])]
+    (fn []
+      [:a.external-link
+       (merge {:href   url
+               :target "_blank"
+               :rel    "noopener noreferrer"}
+              (when (and (not disable-safe?) (not @trust-domain?))
+                {:on-click (fn [e]
+                             (.preventDefault e)
+                             (reset! current-url url)
+                             (reset! show-popup? true))}))
+       url])))
+
 (defn embed-url [url type]
   "If the URL is from a popular site, it embedded it directly in the page"
   (let [{:keys [:regex :replacement :iframe-params :component :replacement-target]} (first (filter (and
@@ -111,7 +175,7 @@
             :allowFullScreen true}
            iframe-params)]))))
 
-(defn embed-video [url]
+(defn embed-video [url safe-link-opts]
   "Embed an external video in the current page"
   (if-let [src (embed-url url :video)]
     src
@@ -120,29 +184,28 @@
         [:video {:controls true}
          [:source {:src url :type (str "video/" ext)}]
          "Your browser does not support the video tag."]
-        [:a {:href url :target "_blank"} url]))))
+        [safe-external-link url safe-link-opts]))))
 
-(defn embed-image [url]
+(defn embed-image [url safe-link-opts]
   "Embed an external image in the current page"
   (if-let [src (embed-url url :image)]
     src
     (let [ext (file-ext url)]
       (if (supported-image-ext? ext)
         [:img {:src url}]
-        [:a {:href url :target "_blank"} url]))))
+        [safe-external-link url safe-link-opts]))))
 
-(defn embed-audio [url]
+(defn embed-audio [url safe-link-opts]
   "Embed an external audio in the current page"
   (if-let [src (embed-url url :audio)]
     src
     (let [ext (file-ext url)]
       (if (supported-audio-ext? ext)
         [:audio {:controls "1" :src url}]
-        [:a {:href url :target "_blank"} url]))))
+        [safe-external-link url safe-link-opts]))))
 
-(defn embed-other [url]
+(defn embed-other [url safe-link-opts]
   "Embed an external URL in the current page"
   (if-let [src (embed-url url :other)]
     src
-    ; TODO show a warning before opening an external link
-    [:a {:href url :target "_blank"} url]))
+    [safe-external-link url safe-link-opts]))

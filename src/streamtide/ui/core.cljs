@@ -97,6 +97,7 @@
         (assoc :day-night-switch (:day-night-switch store))
         (assoc :active-session (check-session (:active-session store)))
         (assoc :cart (:cart store))
+        (assoc :trust-domains (:trust-domains store))
         (assoc :multipliers (:multipliers store))
         (assoc :donations (:donations store)))))
 

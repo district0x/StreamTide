@@ -38,12 +38,19 @@
 (defn valid-url? [url]
   (re-matches url-pattern url))
 
-(defn expected-domain? [url domains]
-  (let [domain (nth (re-matches url-pattern url) 2)
+(defn url->domain [url]
+  (when url
+    (let [domain (string/lower-case (or (nth (re-matches url-pattern url) 2) ""))]
+      (if
+        (string/starts-with? domain "www.")
+        (subs domain 4)
+        domain))))
+
+(defn expected-root-domain? [url domains]
+  (let [domain (url->domain url)
         domain (->> (string/split domain ".")
                     (take-last 2)
-                    (string/join ".")
-                    (string/lower-case))]
+                    (string/join "."))]
     (contains? (set domains)
                domain)))
 

@@ -321,6 +321,7 @@
 		.checkmark {
 			height: 28.26px;
 			width: 28.26px;
+			min-width: 28.26px;
 			border-radius: 7px;
 			border: 3px solid $lilac;
 			margin-right: 17.39px;
@@ -373,6 +374,23 @@
 			input:checked ~ .checkmark:after {
 				left: 2.28px;
 			}
+		}
+	}
+}
+.medias {
+	a.external-link {
+		border-radius: 8px;
+		border: solid 1px $purple;
+		box-shadow: 2px 2px 1px rgba(0, 0, 0, 0.2);
+		padding: 8px 12px;
+		display: inline-block;
+		width: 100%;
+		word-break: break-word;
+	}
+
+	.unpinned {
+		a.external-link {
+			border-color: $textColor;
 		}
 	}
 }

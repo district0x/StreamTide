@@ -225,6 +225,14 @@
      :store (dissoc store :cart)}))
 
 (re-frame/reg-event-fx
+  ::trust-domain
+  ; Stores a domain to trust
+  [(re-frame/inject-cofx :store)]
+  (fn [{:keys [db store]} [_ {:keys [:domain] :as data}]]
+    {:db (assoc-in db [:trust-domains domain] true)
+     :store (assoc-in store [:trust-domains domain] true)}))
+
+(re-frame/reg-event-fx
   ::dispatch-n
   (fn [_ [_ evs & args]]
     {:dispatch-n
