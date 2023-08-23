@@ -59,3 +59,8 @@
   (let [active-account (subscribe [::accounts-subs/active-account])
         active-session? (subscribe [::st-subs/active-account-has-session?])]
   (when (and @active-account (not @active-session?)) (go-home))))
+
+(defn build-grant-status-query [{:keys [:user/address]}]
+  [:grant
+   {:user/address address}
+   [:grant/status]])

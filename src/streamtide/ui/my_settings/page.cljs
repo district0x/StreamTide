@@ -20,7 +20,7 @@
     [streamtide.ui.components.user :refer [avatar-placeholder]]
     [streamtide.ui.my-settings.events :as ms-events]
     [streamtide.ui.my-settings.subs :as ms-subs]
-    [streamtide.ui.utils :refer [switch-popup from-wei check-session]]
+    [streamtide.ui.utils :refer [switch-popup from-wei check-session build-grant-status-query]]
     [taoensso.timbre :as log]))
 
 (def page-size 6)
@@ -46,12 +46,6 @@
    [[:user/socials [:social/network
                     :social/url
                     :social/verified]]]])
-
-(defn build-grant-status-query [{:keys [:user/address]}]
-  [:grant
-   {:user/address address}
-   [:grant/status]])
-
 
 (defn initializable-text-input
   [{:keys [:form-values :id] :as opts}]

@@ -18,15 +18,10 @@
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.my-content.events :as mc-events]
     [streamtide.ui.my-content.subs :as mc-subs]
-    [streamtide.ui.utils :refer [switch-popup check-session]]))
+    [streamtide.ui.utils :refer [switch-popup check-session build-grant-status-query]]))
 
 
 (def page-size 6)
-
-(defn build-grant-status-query [{:keys [:user/address]}]
-  [:grant
-   {:user/address address}
-   [:grant/status]])
 
 (defn build-user-content-query [{:keys [:user/address]} after]
   [:search-contents

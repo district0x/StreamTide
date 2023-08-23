@@ -61,7 +61,7 @@
             [text-input {:id :announcement
                          :form-data form-data
                          :disabled @adding?
-                         :maxlength 180}]]
+                         :maxLength 180}]]
            [:input.btBasic.btBasic-light
             {:type "submit"
              :value "POST"
