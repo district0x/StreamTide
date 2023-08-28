@@ -64,3 +64,10 @@
   [:grant
    {:user/address address}
    [:grant/status]])
+
+
+(defn build-tx-opts [opts]
+  (merge
+    {:maxPriorityFeePerGas nil
+     :maxFeePerGas nil}
+    opts))

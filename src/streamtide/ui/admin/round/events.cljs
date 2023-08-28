@@ -8,6 +8,7 @@
     [district.ui.web3-tx.events :as tx-events]
     [re-frame.core :as re-frame]
     [streamtide.ui.events :refer [wallet-chain-interceptors]]
+    [streamtide.ui.utils :refer [build-tx-opts]]
     [taoensso.timbre :as log]))
 
 (def interceptors [re-frame/trim-v])
@@ -43,7 +44,7 @@
       {:dispatch [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
                                        :fn :distribute
                                        :args [receivers amounts]
-                                       :tx-opts {:from active-account}
+                                       :tx-opts (build-tx-opts {:from active-account})
                                        :tx-id {:streamtide/distribute id}
                                        :tx-log {:name tx-name
                                                 :related-href {:name :route.admin/round
@@ -65,7 +66,7 @@
           amount-wei (-> amount str (web3/to-wei :ether))]
       {:dispatch [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
                                        :args []
-                                       :tx-opts {:from active-account :value amount-wei}
+                                       :tx-opts (build-tx-opts {:from active-account :value amount-wei})
                                        :tx-id {:streamtide/fill-matching-pool id}
                                        :tx-log {:name tx-name
                                                 :related-href {:name :route.admin/round
@@ -88,7 +89,7 @@
       {:dispatch [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
                                        :fn :close-round
                                        :args []
-                                       :tx-opts {:from active-account}
+                                       :tx-opts (build-tx-opts {:from active-account})
                                        :tx-id {:streamtide/close-round id}
                                        :tx-log {:name tx-name
                                                 :related-href {:name :route.admin/round

@@ -10,7 +10,8 @@
     [district.ui.web3-tx.events :as tx-events]
     [re-frame.core :as re-frame]
     [streamtide.shared.utils :as shared-utils]
-    [streamtide.ui.events :as st-events :refer [wallet-chain-interceptors]]))
+    [streamtide.ui.events :as st-events :refer [wallet-chain-interceptors]]
+    [streamtide.ui.utils :refer [build-tx-opts]]))
 
 (re-frame/reg-event-fx
   ::send-support
@@ -33,7 +34,7 @@
                    [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
                                          :fn :donate
                                          :args [receivers amounts]
-                                         :tx-opts {:from active-account :value total-amount-wei}
+                                         :tx-opts (build-tx-opts {:from active-account :value total-amount-wei})
                                          :tx-id {:streamtide/donate id}
                                          :tx-log {:name tx-name
                                                   :related-href {:name :route.send-support/index}}

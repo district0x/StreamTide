@@ -6,7 +6,8 @@
     [district.ui.web3-accounts.queries :as account-queries]
     [district.ui.web3-tx.events :as tx-events]
     [re-frame.core :as re-frame]
-    [streamtide.ui.events :refer [wallet-chain-interceptors]]))
+    [streamtide.ui.events :refer [wallet-chain-interceptors]]
+    [streamtide.ui.utils :refer [build-tx-opts]]))
 
 (re-frame/reg-event-fx
   ::blacklist
@@ -18,7 +19,7 @@
       {:dispatch [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
                                        :fn (if blacklisted? :add-blacklisted :remove-blacklisted)
                                        :args [address]
-                                       :tx-opts {:from active-account}
+                                       :tx-opts (build-tx-opts {:from active-account})
                                        :tx-id {:streamtide/blacklist id}
                                        :tx-log {:name tx-name
                                                 :related-href {:name :route.admin/black-listing}}

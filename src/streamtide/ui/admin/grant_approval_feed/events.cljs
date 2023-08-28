@@ -9,7 +9,8 @@
     [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
     [re-frame.core :as re-frame]
-    [streamtide.ui.events :refer [wallet-chain-interceptors]]))
+    [streamtide.ui.events :refer [wallet-chain-interceptors]]
+    [streamtide.ui.utils :refer [build-tx-opts]]))
 
 (re-frame/reg-event-fx
   ::review-grant
@@ -24,7 +25,7 @@
          :dispatch [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
                                          :fn :add-patrons
                                          :args [addresses]
-                                         :tx-opts {:from active-account}
+                                         :tx-opts (build-tx-opts {:from active-account})
                                          :tx-id {:streamtide/add-patron id}
                                          :tx-log {:name tx-name
                                                   :related-href {:name :route.admin/grant-approval-feed}}

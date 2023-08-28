@@ -132,6 +132,7 @@
                        :web3-accounts {:eip55? true}
                        :smart-contracts {:format :truffle-json
                                          :contracts-path "/contracts/build/"}
+                       :web3-tx {:disable-loading-recommended-gas-prices? true}
                        :web3-tx-log {:open-on-tx-hash? true}
                        :reagent-render {:id "app"
                                         :component-var #'router}
