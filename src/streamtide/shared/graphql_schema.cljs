@@ -163,6 +163,10 @@ type Mutation {
     generateTwitterOauthUrl(
         callback: String!
     ): String!
+
+    addPushSubscription(
+        subscription: String!
+    ): Boolean
 }
 
 input UserInput {

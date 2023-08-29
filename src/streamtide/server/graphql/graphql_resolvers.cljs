@@ -9,6 +9,7 @@
             [district.shared.error-handling :refer [try-catch-throw]]
             [streamtide.server.business-logic :as logic]
             [streamtide.server.graphql.authorization :as authorization]
+            [streamtide.shared.utils :as shared-utils]
             [taoensso.timbre :as log]))
 
 (def enum graphql-utils/kw->gql-name)
@@ -292,6 +293,12 @@
   (try-catch-throw
     (logic/generate-twitter-oauth-url (user-id current-user) args)))
 
+(defn add-push-subscription-mutation [_ {:keys [:subscription] :as args} {:keys [:current-user]}]
+  (log/debug "add-push-subscription args" args)
+  (try-catch-throw
+    (logic/add-push-subscription (user-id current-user) (shared-utils/json-parse subscription))
+    true))
+
 ;; Map GraphQL types to the functions handling them
 (def resolvers-map
   {:Query {:user user-query-resolver
@@ -318,7 +325,8 @@
               :sign-in sign-in-mutation
               :generate-otp generate-otp-mutation
               :verify-social verify-social-mutation
-              :generate-twitter-oauth-url generate-twitter-oauth-url-mutation}
+              :generate-twitter-oauth-url generate-twitter-oauth-url-mutation
+              :add-push-subscription add-push-subscription-mutation}
    :User {:user/socials user->socials-resolver
           :user/perks user->perks-resolver
           :user/grant user->grant-resolver

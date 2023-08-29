@@ -77,6 +77,27 @@
    [:user/perks :varchar default-nil]
    [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
+(def notifications-category-columns
+  [[:user/address address not-nil]
+   [:notification/category :varchar not-nil]
+   [(sql/call :primary-key :user/address)]
+   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+
+(def notifications-type-columns
+  [[:user/address address not-nil]
+   [:notification/type :varchar not-nil]
+   [:notification/user-id :varchar]
+   [:notification/enable :tinyint]
+   [(sql/call :primary-key :user/address :notification/type)]
+   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+
+(def notifications-type-many-columns
+  [[:notification/id :integer primary-key :autoincrement]
+   [:user/address address not-nil]
+   [:notification/type :varchar not-nil]
+   [:notification/user-id :varchar]
+   [(sql/call :unique :user/address :notification/type :notification/user-id)]])
+
 (def grant-columns
   [[:user/address address not-nil]
    [:grant/status :smallint not-nil]
@@ -160,6 +181,9 @@
 (def user-column-names (filter keyword? (map first user-columns)))
 (def social-link-column-names (filter keyword? (map first social-link-columns)))
 (def perks-column-names (filter keyword? (map first perks-columns)))
+(def notifications-category-column-names (filter keyword? (map first notifications-category-columns)))
+(def notifications-type-column-names (filter keyword? (map first notifications-type-columns)))
+(def notifications-type-many-column-names (filter keyword? (map first notifications-type-many-columns)))
 (def grant-column-names (filter keyword? (map first grant-columns)))
 (def content-column-names (filter keyword? (map first content-columns)))
 (def donation-column-names (filter keyword? (map first donation-columns)))
@@ -218,6 +242,38 @@
                    ]
                    [:= :u.user/blacklisted false]]}))
 
+
+(defn get-notification-categories [{:keys [:user/address :notification/category]}]
+  (db-all (cond-> {:select [:*]
+                   :from [:notification-category]
+                   :where [:= :user/address address]}
+                  category (sqlh/merge-where [:= :notification/category category]))))
+
+(defn get-notification-types [{:keys [:user/address :notification/type :notification/enable :notification/user-id]}]
+  (db-all (cond-> {:select [:*]
+                   :from [:notification-type]
+                   :where [:= :user/address address]}
+                  type (sqlh/merge-where [:= :notification/type type])
+                  enable (sqlh/merge-where [:= :notification/enable enable])
+                  user-id (sqlh/merge-where [:= :notification/user-id user-id]))))
+
+(defn get-notification-types-many [{:keys [:user/address :notification/type :notification/user-id]}]
+  (db-all (cond-> {:select [:*]
+                   :from [:notification-type-many]
+                   :where [:= :user/address address]}
+                  type (sqlh/merge-where [:= :notification/type type])
+                  user-id (sqlh/merge-where [:= :notification/user-id user-id]))))
+
+(defn get-notification-receivers [category]
+  (db-all {:select [:*]
+           :from [[:notification-category :nc]]
+           :left-join [[:notification-type :nt]
+                       [:= :nc.user/address :nt.user/address]
+                       [:notification-type-many :ntm]
+                       [:= :nt.user/address :ntm.user/address]]
+           :where [:and
+                   [:= :nc.notification/category category]
+                   [:= :nt.notification/enable true]]}))
 
 (defn get-grant [user-address]
   (db-get {:select [:*]
@@ -478,6 +534,42 @@
     (db-run! {:delete-from :perks
               :where [:= :user/address address]})))
 
+(defn add-to-notification-category! [{:keys [:user/address :notification/category] :as args}]
+  (log/debug "add-to-notification-category!" args)
+  (db-run! {:insert-into :notification-category
+            :values [(select-keys args notifications-category-column-names)]
+            :upsert {:on-conflict [:user/address :notification/category]
+                     :do-nothing []}}))
+
+(defn remove-from-notification-category! [{:keys [:user/address :notification/category] :as args}]
+  (log/debug "remove-from-notification-category!" args)
+  (when address
+    (db-run! (cond-> {:delete-from :notification-category
+                      :where [:= :user/address address]}
+                     category (sqlh/merge-where [:= :notification/category category])))))
+
+(defn upsert-notification-type! [{:keys [:user/address :notification/type :notification/enable :notification/user-id] :as args}]
+  (log/debug "upsert-notification-type!" args)
+  (db-run! {:insert-into :notification-type
+            :values [(select-keys args notifications-type-column-names)]
+            :upsert {:on-conflict [:user/address :notification/type]
+                     :do-update-set (keys args)}}))
+
+(defn add-notification-type-many! [{:keys [:user/address :notification/type :notification/user-id] :as args}]
+  (log/debug "add-notification-type-many!" args)
+  (db-run! {:insert-into :notification-type-many
+            :values [(select-keys args notifications-type-many-column-names)]
+            :upsert {:on-conflict [:user/address :notification/type :notification/user-id]
+                     :do-nothing []}}))
+
+(defn remove-notification-type-many! [{:keys [:user/address :notification/type :notification/id] :as args}]
+  (log/debug "remove-notification-type-many!" args)
+  (when (or (and address type) id)
+    (db-run! (cond-> {:delete-from :notification-type-many}
+                     address (sqlh/merge-where [:= :user/address address])
+                     type (sqlh/merge-where [:= :notification/type type])
+                     id (sqlh/merge-where [:= :notification/id id])))))
+
 (defn upsert-grants! [{:keys [:user/addresses :grant/status :grant/decision-date] :as args}]
   "Insert new grants for given users or update them if the users already requested a grant"
   (log/debug "insert-grants" args)
@@ -622,6 +714,15 @@
 
   (db-run! (-> (psqlh/create-table :perks :if-not-exists)
                (psqlh/with-columns perks-columns)))
+
+  (db-run! (-> (psqlh/create-table :notification-category :if-not-exists)
+               (psqlh/with-columns notifications-category-columns)))
+
+  (db-run! (-> (psqlh/create-table :notification-type :if-not-exists)
+               (psqlh/with-columns notifications-type-columns)))
+
+  (db-run! (-> (psqlh/create-table :notification-type-many :if-not-exists)
+               (psqlh/with-columns notifications-type-many-columns)))
 
   (db-run! (-> (psqlh/create-table :grant :if-not-exists)
                (psqlh/with-columns grant-columns)))

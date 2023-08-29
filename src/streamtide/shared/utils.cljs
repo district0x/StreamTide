@@ -60,3 +60,9 @@
    :linkedin ["linkedin.com"]
    :pinterest ["pinterest.com"]
    :patreon ["patreon.com"]})
+
+(defn json-parse [text]
+  (js/JSON.parse text))
+
+(defn json-stringify [json]
+  (js/JSON.stringify json))

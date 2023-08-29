@@ -9,11 +9,13 @@
             [district.shared.error-handling :refer [try-catch-throw]]
             [fs]
             [streamtide.server.db :as stdb]
+            [streamtide.server.notifiers.notifiers :as notifiers]
             [streamtide.server.verifiers.twitter-verifier :as twitter]
             [streamtide.server.verifiers.discord-verifier]
             [streamtide.server.verifiers.eth-verifier]
             [streamtide.server.verifiers.twitter-verifier :as twitter]
             [streamtide.server.verifiers.verifiers :as verifiers]
+            [streamtide.server.notifiers.web-push-notifier :as push-notifier]
             [streamtide.shared.utils :as shared-utils]))
 
 (def path (nodejs/require "path"))
@@ -131,6 +133,13 @@
 
   (twitter/generate-twitter-oauth-url args))
 
+(defn add-push-subscription [current-user subscription]
+  "Stores push subscription details for a given user"
+  (require-auth current-user)
+  (require-not-blacklisted current-user)
+
+  (push-notifier/add-push-subscription current-user subscription))
+
 (defn- upload-photo [url-data user-addr photo-type config]
   (let [matcher (re-matches #"data:image/(\w+);base64,(.+)" url-data)
         filetype (get matcher 1)
@@ -244,7 +253,11 @@
   (require-auth current-user)
   (require-admin current-user)
 
-  (stdb/add-announcement! (select-keys args [:announcement/text])))
+  (stdb/add-announcement! (select-keys args [:announcement/text]))
+
+  (notifiers/notify-category {:category :announcement
+                              :title "New Announcement"
+                              :body text}))
 
 (defn remove-announcement! [current-user {:keys [:announcement/id] :as args}]
   "Removes an existing announcement"
