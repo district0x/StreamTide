@@ -151,28 +151,30 @@
     (fn []
       (when user-account
         (let [user-info-query (subscribe [::gql/query {:queries [(build-user-info-query {:user/address user-account})]}])
-              loading? (or (nil? user-info-query) (:graphql/loading? (last @user-info-query)))
+              loading? (or (nil? user-info-query) (:graphql/loading? @user-info-query))
               user-info (:user @user-info-query)]
           [app-layout
            [:main.pageSite.pageProfile
             {:id "profile"}
-            [:div.container
-             (if (and user-info (not (:user/blacklisted user-info)))
-               [:<>
-                [user-header user-info]
-                [:div.contentProfile
-                 [support-seal]
-                 (when (not (blank? (:user/description user-info)))
-                   [:div.aboutProfile
-                    [:h2 "A Little About Me"]
-                    [:p (:user/description user-info)]])
-                 [:div.btsProfile
-                  (when (and (= (-> user-info :user/grant :grant/status gql-utils/gql-name->kw) :grant.status/approved)
-                             (not= @active-account user-account))
-                    [:button.btBasic.btBasic-light {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
-                     "SUPPORT THIS CREATOR"])
-                  (when (not (blank? (:user/perks user-info)))
-                    [:a.btBasic.btBasic-light {:href (:user/perks user-info) :target "_blank"} "PERKS"])]
-                 [contents user-account]]]
-               [:div.not-found "User Not Found"])]]
+            (if loading?
+              [spinner/spin]
+              [:div.container
+               (if (and user-info (not (:user/blacklisted user-info)))
+                 [:<>
+                  [user-header user-info]
+                  [:div.contentProfile
+                   [support-seal]
+                   (when (not (blank? (:user/description user-info)))
+                     [:div.aboutProfile
+                      [:h2 "A Little About Me"]
+                      [:p (:user/description user-info)]])
+                   [:div.btsProfile
+                    (when (and (= (-> user-info :user/grant :grant/status gql-utils/gql-name->kw) :grant.status/approved)
+                               (not= @active-account user-account))
+                      [:button.btBasic.btBasic-light {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
+                       "SUPPORT THIS CREATOR"])
+                    (when (not (blank? (:user/perks user-info)))
+                      [:a.btBasic.btBasic-light {:href (:user/perks user-info) :target "_blank"} "PERKS"])]
+                   [contents user-account]]]
+                 [:div.not-found "User Not Found"])])]
            [embed/safe-link-popup user-account]])))))
