@@ -80,7 +80,7 @@
 (defn patrons-added-event [_ {:keys [:args]}]
   (let [{:keys [:addresses :timestamp]} args]
     (safe-go
-      (db/upsert-users-info! (map (fn [address] {:user/address address}) addresses))
+      (db/ensure-users-exist! addresses)
       (db/upsert-grants! {:user/addresses addresses
                           :grant/status (name :grant.status/approved)
                           :grant/decision-date timestamp}))))

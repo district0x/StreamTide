@@ -380,14 +380,16 @@
               :upsert {:on-conflict [:user/address]
                        :do-update-set (remove #{:user/creation-date} (keys user-info))}})))
 
-(defn upsert-users-info! [args]
-  (log/debug "user-upsert-users-info!" args)
-  (let [user-infos (map #(merge {:user/creation-date (shared-utils/now-secs)}
-                                (select-keys % user-column-names)) args)]
+(defn ensure-users-exist! [addresses]
+  (log/debug "ensure-users-exist!" addresses)
+  (let [user-infos (map (fn [address]
+                          {:user/address address
+                           :user/creation-date (shared-utils/now-secs)})
+                        addresses)]
     (db-run! {:insert-into :user
               :values user-infos
               :upsert {:on-conflict [:user/address]
-                       :do-update-set (remove #{:user/creation-date} user-column-names)}})))
+                       :do-nothing []}})))
 
 (defn upsert-user-socials! [social-links]
   (log/debug "user-social" {:social-links social-links})
