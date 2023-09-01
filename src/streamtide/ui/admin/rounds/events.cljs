@@ -27,8 +27,14 @@
                                        :tx-log {:name tx-name
                                                 :related-href {:name :route.admin/rounds}}
                                        :on-tx-success-n [[::logging/info (str tx-name " tx success") ::start-round]
-                                                        [::notification-events/show (str "New round successfully started")]]
+                                                         [::notification-events/show (str "New round successfully started")]
+                                                         [::round-started]]
                                        :on-tx-error [::logging/error (str tx-name " tx error")
                                                      {:user {:id active-account}
                                                       :duration duration}
                                                      ::start-round]}]})))
+
+(re-frame/reg-event-fx
+  ::round-started
+  ; Event triggered when a round is started. This is an empty event just aimed for subscription
+  (constantly nil))

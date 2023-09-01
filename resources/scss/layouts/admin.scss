@@ -387,7 +387,7 @@
 		margin-bottom: 14px;
 		background: $bgCard;
 		&.active {
-			background: green;
+			background: $bgActiveRound;
 		}
 	}
 	@include media-breakpoint-down(xs) {

@@ -195,6 +195,15 @@
         receivers-multipliers (into {} (map (fn [receiver]
                                               [(:user/address receiver)
                                                (matching-factor receiver multipliers)]) (keys donations-by-receiver)))
+        ; in case there are not any receiver with the max multiplier (1), the multipliers are then incremented proportionally
+        ; so the whole matching pool is distributed.
+        max-multiplier (apply max (vals receivers-multipliers))
+        receivers-multipliers (if (= max-multiplier 1)
+                                receivers-multipliers
+                                (let [factor (/ 1 max-multiplier)]
+                                  (reduce-kv (fn [m k v]
+                                               (assoc m k (* factor v))
+                                               ) {} receivers-multipliers)))
         ; for convenience, builds a list of unique defined multipliers, e.g, [0.33 0.66 1]
         multipliers-vals (sort (distinct (vals receivers-multipliers)))
         ; gets the sum of the receivers aggregated amounts, group by multipliers.
@@ -220,7 +229,8 @@
                                                          acc (new-bn 0)]
                                                     (let [multiplier (first multipliers)]
                                                       (if multiplier
-                                                        (let [divisor (bn// matching-pool (get summed-by-multiplier multiplier))]
+                                                        (let [sum (get summed-by-multiplier multiplier)
+                                                              divisor (if (bn/= sum (new-bn 0)) sum (bn// matching-pool sum))]
                                                           (recur (next multipliers) multiplier
                                                                  (bn/+ acc (bn/* amount (bn/* (- multiplier prev_mult) divisor)))))
                                                         (bn/fixed (.integerValue acc js/BigNumber.ROUND_FLOOR)))))))
@@ -235,14 +245,14 @@
 ;                               (:user/address receiver)
 ;                               (-> (reduce (fn [acc donation]
 ;                                             (if (donation-enabled? donation donations-enabled)
-;                                               (+ acc (js/Math.sqrt (:donation/amount donation)))
+;                                               (bn/+ acc (bn/sqrt (new-bn (:donation/amount donation))))
 ;                                               acc))
-;                                           0 donations)
-;                                   (* (matching-factor receiver multipliers))
-;                                   (js/Math.pow 2))))
+;                                           (new-bn 0) donations)
+;                                   (bn/* (new-bn (matching-factor receiver multipliers)))
+;                                   (bn/pow 2))))
 ;                           {} donations-by-receiver)
-;        summed (reduce + (vals amounts))
-;        divisor (/ matching-pool summed)]
+;        summed (reduce bn/+ (vals amounts))
+;        divisor (if (bn/= (new-bn 0) summed) summed (/ (new-bn matching-pool) summed))]
 ;    (reduce-kv (fn [m receiver amount]
 ;                 (assoc m receiver (* divisor amount)))
 ;               {} amounts)))
@@ -313,7 +323,8 @@
         tx-id-mp (str "match-pool_" (random-uuid))
         tx-id-cr (str "close-round_" (random-uuid))]
     (fn []
-      (let [round-info-query (subscribe [::gql/query {:queries [(build-round-info-query {:round/id round-id})]}])
+      (let [round-info-query (subscribe [::gql/query {:queries [(build-round-info-query {:round/id round-id})]}
+                                         {:refetch-on [::r-events/round-closed]}])
             loading? (:graphql/loading? @round-info-query)
             round (:round @round-info-query)
             {:keys [:round/start :round/duration :round/matching-pool :round/distributed]} round]

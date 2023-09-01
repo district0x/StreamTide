@@ -95,8 +95,14 @@
                                                 :related-href {:name :route.admin/round
                                                                :params {:round round}}}
                                        :on-tx-success-n [[::logging/info (str tx-name " tx success") ::close-round]
-                                                         [::notification-events/show "Round successfully closed"]]
+                                                         [::notification-events/show "Round successfully closed"]
+                                                         [::round-closed]]
                                        :on-tx-error [::logging/error (str tx-name " tx error")
                                                      {:user {:id active-account}
                                                       :round round}
                                                      ::close-round]}]})))
+
+(re-frame/reg-event-fx
+  ::round-closed
+  ; Event triggered when a round is closed. This is an empty event just aimed for subscription
+  (constantly nil))

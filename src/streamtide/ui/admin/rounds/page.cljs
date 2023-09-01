@@ -46,8 +46,8 @@
       [:h4.d-lg-none "Start Date"]
       [nav [:span (ui-utils/format-graphql-time start)]]]
      [:div.cel.duration
-      [:h4.d-lg-none "Duration"]
-      [nav [:span duration]]]
+      [:h4.d-lg-none "End Date"]
+      [nav [:span (ui-utils/format-graphql-time (+ start duration))]]]
      [:div.cel.matching-pool
       [:h4.d-lg-none "Matching Pool"]
       [nav [:span (ui-utils/format-price matching-pool)]]]
@@ -58,7 +58,10 @@
 
 (defn round-entries [rounds-search]
   (let [all-rounds (->> @rounds-search
-                       (mapcat (fn [r] (-> r :search-rounds :items))))
+                       (mapcat (fn [r] (-> r :search-rounds :items)))
+                        distinct
+                        (sort-by #(:round/id %))
+                        reverse)
         loading? (:graphql/loading? (last @rounds-search))
         has-more? (-> (last @rounds-search) :search-rounds :has-next-page)]
     (if (and (empty? all-rounds)
@@ -90,7 +93,8 @@
         tx-id (str "start-round_" (random-uuid))]
     (fn []
       (let [rounds-search (subscribe [::gql/query {:queries [(build-rounds-query nil)]}
-                                     {:id :rounds}])
+                                      {:id :rounds
+                                       :refetch-on [::r-events/round-started]}])
             last-active? (-> @rounds-search first :search-rounds :items first (shared-utils/active-round? (shared-utils/now-secs)))
             start-round-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/start-round tx-id}])
             start-round-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/start-round tx-id}])]
@@ -134,7 +138,7 @@
            [:div.cel.cel-date
             [:span.titleCel.col-eth "Start Date"]]
            [:div.cel.cel-duration
-            [:span.titleCel.col-eth "Duration"]]
+            [:span.titleCel.col-eth "End Date"]]
            [:div.cel.cel-matching
             [:span.titleCel.col-eth "Matching Pool"]]
            [:div.cel.cel-distributed
