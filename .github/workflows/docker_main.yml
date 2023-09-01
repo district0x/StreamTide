@@ -48,4 +48,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           file: docker-builds/${{ matrix.image }}/Dockerfile
           push: true
-          tags: ${{ secrets.ECR_REGISTRY }}/streamtide:qa-${{ matrix.image }}
+          tags: ${{ secrets.ECR_REGISTRY }}/streamtide-${{ matrix.image }}:latest-qa
