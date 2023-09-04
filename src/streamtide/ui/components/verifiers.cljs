@@ -6,6 +6,7 @@
     [district.ui.notification.events :as notification-events]
     [re-frame.core :refer [subscribe dispatch] :as re-frame]
     [streamtide.shared.utils :as shared-utils]
+    [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.config :refer [config-map]]))
 
 (defmulti verify (fn [data]
@@ -108,7 +109,10 @@
                                   (let [msg-data (-> msg .-data (js->clj :keywordize-keys true))]
                                     (if (:code msg-data)
                                       (dispatch [::verify-code data msg-data])
-                                      (when (:on-error data) (dispatch (conj (:on-error data) (:error msg-data)))))))))))
+                                      (when (:on-error data)
+                                        (dispatch (conj (:on-error data) [{:message
+                                                                           (str (:error msg-data)
+                                                                                ". " (:error_description msg-data))}]))))))))))
 
 (re-frame/reg-event-fx
   ::verify-code
@@ -118,7 +122,9 @@
     (let [query
           {:queries [[:verify-social
                       {:code :$code
-                       :state :$state}]]
+                       :state :$state}
+                      [:is-valid
+                       :message]]]
            :variables [{:variable/name :$code
                         :variable/type :String}
                        {:variable/name :$state
@@ -132,16 +138,16 @@
 
 (re-frame/reg-event-fx
   ::verify-code-success
-  (fn [{:keys [db]} [_ {:keys [:on-success :on-error]} result]]
-    (if (:verify-social result)
+  (fn [{:keys [db]} [_ {:keys [:on-success :on-error]} {:keys [:verify-social] :as result}]]
+    (if (:is-valid verify-social)
       {:dispatch on-success}
-      {:dispatch (conj on-error {:error "Invalid oauth verifier"})})))
+      {:dispatch (conj on-error [{:message (:message verify-social)}])})))
 
 (re-frame/reg-event-fx
   ::verify-code-error
   (fn [{:keys [db]} [_ {:keys [:on-error] :as data} error]]
     {:dispatch-n [(when on-error on-error)
-                  [::notification-events/show "[ERROR] An error occurs while verifying oauth verifier"]
+                  [::error-notification/show-error "An error occurs while verifying oauth verifier" error]
                   [::logging/error
                    "Failed to verify oauth verifier"
                    {:error (map :message error)

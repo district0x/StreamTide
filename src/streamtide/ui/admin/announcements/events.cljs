@@ -3,7 +3,8 @@
     [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
     [district.ui.notification.events :as notification-events]
-    [re-frame.core :as re-frame]))
+    [re-frame.core :as re-frame]
+    [streamtide.ui.components.error-notification :as error-notification]))
 
 (re-frame/reg-event-fx
   ::add-announcement
@@ -32,7 +33,7 @@
   ::add-announcement-error
   (fn [{:keys [db]} [_ error]]
     {:db (dissoc db :adding-announcement?)
-     :dispatch-n [[::notification-events/show "[ERROR] An error occurs while adding an announcement"]
+     :dispatch-n [[::error-notification/show-error "An error occurs while adding an announcement" error]
                   [::logging/error
                    "Failed to add announcement"
                    {:error (map :message error)} ::add-announcement]]}))
@@ -63,7 +64,7 @@
   ::remove-announcement-error
   (fn [{:keys [db]} [_ {:keys [:announcement/id]} error]]
     {:db (update db :removing-announcement? dissoc id)
-     :dispatch-n [[::notification-events/show "[ERROR] An error occurs while removing an announcement"]
+     :dispatch-n [[::error-notification/show-error "An error occurs while removing an announcement" error]
                   [::logging/error
                    "Failed to remove announcement"
                    {:error (map :message error)} ::remove-announcement]]}))

@@ -1,8 +1,10 @@
 (ns streamtide.server.verifiers.discord-verifier
   (:require
     [cljs.nodejs :as nodejs]
+    [cljs.core.async :refer [<!]]
     [district.server.config :refer [config]]
-    [district.shared.async-helpers :refer [<? safe-go]]))
+    [district.shared.async-helpers :refer [<? safe-go]]
+    [streamtide.server.verifiers.verifiers :as verifiers]))
 
 (defonce axios (nodejs/require "axios"))
 
@@ -21,17 +23,24 @@
         token-request
         (throw (js/Error. "Unexpected token-request status"))))))
 
-(defn- check-roles [user-id]
+(defn- get-user-roles [user-id]
   (safe-go
     (let [discord-config (-> @config :verifiers :discord)
-          {:keys [token guild-id roles]} discord-config
-          roles-request (<? (.get axios (str "https://discord.com/api/v10/guilds/"
-                                             guild-id "/members/" user-id)
-                                  (clj->js {:headers {:Authorization (str "Bot " token)}})))]
-      (if (= (.-status roles-request) 200)
-        (let [user-roles (-> roles-request .-data .-roles)]
-          (not-empty (clojure.set/intersection (set roles) (set user-roles))))
-        (throw (js/Error. "Unexpected roles-request status"))))))
+          {:keys [token guild-id]} discord-config
+          roles-request (.get axios (str "https://discord.com/api/v10/guilds/"
+                                         guild-id "/members/" user-id)
+                              (clj->js {:headers {:Authorization (str "Bot " token)}}))]
+      (<! (-> roles-request
+              (.then (fn [result]
+                       (let [user-roles (-> result .-data .-roles)]
+                         (if user-roles user-roles []))))
+              (.catch (fn [error]
+                        (if (= 10013 (-> error .-response .-data .-code)) nil
+                        (throw error)))))))))
+
+(defn- check-roles [user-roles]
+  (let [roles (-> @config :verifiers :discord :roles)]
+    (not-empty (clojure.set/intersection (set roles) (set user-roles)))))
 
 (defn verify-oauth-verifier [{:keys [:code :state]}]
   (safe-go
@@ -43,8 +52,23 @@
         (throw (js/Error. "Unexpected user-request status")))
       (let [user-id (-> user-request .-data .-user .-id)
             ;username (-> user-request .-data .-user .-username)
-            ]
-        (if (and user-id (<? (check-roles user-id)))
+            user-roles (when user-id (<? (get-user-roles user-id)))]
+        (cond
+          (not user-id)
+          {:valid? false
+           :message "Cannot get user info. Is bot authorized?"}
+
+          (nil? user-roles)
+          {:valid? false
+           :message "The user do not belong to district0x server"}
+
+          (check-roles user-roles)
           {:valid? true
            :url (str "https://discordapp.com/users/" user-id)}
-          {:valid? false})))))
+
+          :else
+          {:valid? false
+           :message "User do not belong to any of the expected roles"})))))
+
+(defmethod verifiers/verify :discord [_ args]
+  (verify-oauth-verifier args))

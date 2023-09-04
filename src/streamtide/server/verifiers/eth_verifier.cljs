@@ -4,7 +4,8 @@
     [cljs-web3-next.eth :as web3-eth]
     [cljs-web3-next.utils :as web3-utils]
     [district.server.config :refer [config]]
-    [district.shared.async-helpers :refer [<? safe-go]]))
+    [district.shared.async-helpers :refer [<? safe-go]]
+    [streamtide.server.verifiers.verifiers :as verifiers]))
 
 
 (defn- verify-balance [{:keys [:web3 :min-balance] :as args} user-address]
@@ -22,8 +23,13 @@
   (let [verifier-config (-> @config :verifiers :eth)]
     (safe-go
       (loop [chain-configs verifier-config]
-        (when chain-configs
+        (if chain-configs
           (let [verifier (<? (verify-balance (second (first chain-configs)) user-address))]
             (if (:valid? verifier)
               verifier
-              (recur (next chain-configs)))))))))
+              (recur (next chain-configs))))
+          {:valid? false
+           :message "users do not hold enough credit"})))))
+
+(defmethod verifiers/verify :eth [_ {:keys [:user/address] :as args}]
+  (verify address))

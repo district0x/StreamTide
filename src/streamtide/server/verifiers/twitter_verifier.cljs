@@ -3,6 +3,7 @@
     [cljs.nodejs :as nodejs]
     [district.server.config :refer [config]]
     [district.shared.async-helpers :refer [<? safe-go]]
+    [streamtide.server.verifiers.verifiers :as verifiers]
     [streamtide.shared.utils :as shared-utils]))
 
 (defonce twitter-sdk (nodejs/require "twitter-api-sdk"))
@@ -37,7 +38,8 @@
           (if user
             {:valid? true
              :url (str "https://twitter.com/" (-> user (js->clj :keywordize-keys true) :data :username))}
-            {:valid? false})))
+            {:valid? false
+             :message "Cannot found user"})))
       (throw (js/Error. "Auth client invalid or expired")))))
 
 (defn generate-twitter-oauth-url [{:keys [:callback] :as args}]
@@ -47,3 +49,6 @@
     (js/setTimeout #(delete-client client-uuid) CLIENT-TIMEOUT)
     (.generateAuthURL auth-client #js {:state client-uuid
                                        :code_challenge_method "s256"})))
+
+(defmethod verifiers/verify :twitter [_ args]
+  (verify-oauth-verifier args))

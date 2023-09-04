@@ -4,6 +4,7 @@
     [district.ui.logging.events :as logging]
     [district.ui.notification.events :as notification-events]
     [re-frame.core :as re-frame]
+    [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.components.verifiers :as verifiers]))
 
 (re-frame/reg-event-fx
@@ -78,7 +79,7 @@
   ::save-settings-error
   (fn [{:keys [db]} [_ error]]
     {:db (dissoc db :uploading-settings)
-     :dispatch-n [[::notification-events/show "[ERROR] An error occurs while trying to save settings"]
+     :dispatch-n [[::error-notification/show-error "An error occurs while trying to save settings" error]
                   [::logging/error
                    "Failed to save settings"
                    {:error (map :message error)} ::save-settings]]}))
@@ -116,7 +117,7 @@
   ::request-grant-error
   (fn [{:keys [db]} [_ error]]
     {:db (dissoc db :requesting-grant)
-     :dispatch-n [[::notification-events/show "[ERROR] An error occurs while requesting grant"]
+     :dispatch-n [[::error-notification/show-error "An error occurs while requesting grant" error]
                   [::logging/error
                    "Failed to request grant"
                    {:error (map :message error)} ::request-grant]]}))
@@ -144,7 +145,7 @@
     (when on-error
       (on-error))
     {:db (update db :verifying-social dissoc network)
-     :dispatch-n [[::notification-events/show "[ERROR] An error occurs while verifying your social account"]
+     :dispatch-n [[::error-notification/show-error "An error occurs while verifying your social account" error]
                   [::logging/error
                    "Failed to verify social"
                    {:error error

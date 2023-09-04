@@ -4,7 +4,8 @@
     [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
     [district.ui.notification.events :as notification-events]
-    [re-frame.core :as re-frame]))
+    [re-frame.core :as re-frame]
+    [streamtide.ui.components.error-notification :as error-notification]))
 
 
 (re-frame/reg-event-fx
@@ -45,7 +46,7 @@
                    "Failed to upload content"
                    {:error (map :message error)
                     :form-data form-data} ::upload-content]
-                  [::notification-events/show "[ERROR] An error occurs while adding content"]]}))
+                  [::error-notification/show-error "An error occurs while adding content" error]]}))
 
 (re-frame/reg-event-fx
   ::remove-content
@@ -80,7 +81,7 @@
                    "Failed to remove content"
                    {:error (map :message error)
                     :form-data form-data} ::remove-content]
-                  [::notification-events/show "[ERROR] An error occurs while removing content"]]}))
+                  [::error-notification/show-error "An error occurs while removing content" error]]}))
 
 (re-frame/reg-event-fx
   ::content-added
@@ -127,7 +128,7 @@
                    "Failed to setting visibility"
                    {:error (map :message error)
                     :form-data form-data} ::set-visibility]
-                  [::notification-events/show "[ERROR] An error occurs while updating visibility"]]}))
+                  [::error-notification/show-error "An error occurs while updating visibility" error]]}))
 
 (re-frame/reg-event-fx
   ::set-pinned
@@ -164,4 +165,4 @@
                    "Failed to setting pinned"
                    {:error (map :message error)
                     :form-data form-data} ::set-pinned]
-                  [::notification-events/show "[ERROR] An error occurs while pinning content"]]}))
+                  [::error-notification/show-error "An error occurs while pinning content" error]]}))

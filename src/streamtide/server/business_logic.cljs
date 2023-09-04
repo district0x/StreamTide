@@ -2,13 +2,15 @@
   "Layer implementing the server business logic.
   This is an intermediate layer between the GraphQL endpoint (or any other API which may come in the future)
   and the database functionality to enforce authorization and to enrich or validate input data."
-  (:require [cljs.core.async :refer [go <!]]
-            [cljs.nodejs :as nodejs]
+  (:require [cljs.nodejs :as nodejs]
             [clojure.string :as string]
-            [district.shared.async-helpers :refer [safe-go]]
+            [district.shared.async-helpers :refer [safe-go <?]]
             [district.shared.error-handling :refer [try-catch-throw]]
             [fs]
             [streamtide.server.db :as stdb]
+            [streamtide.server.verifiers.twitter-verifier :as twitter]
+            [streamtide.server.verifiers.discord-verifier]
+            [streamtide.server.verifiers.eth-verifier]
             [streamtide.server.verifiers.twitter-verifier :as twitter]
             [streamtide.server.verifiers.verifiers :as verifiers]
             [streamtide.shared.utils :as shared-utils]))
@@ -101,16 +103,16 @@
 
   (safe-go
     (let [network (shared-utils/uuid->network state)
-          {:keys [:valid? :url]} (<! (verifiers/verify network (merge args
-                                                                      {:user/address current-user})))]
+          {:keys [:valid? :url :message] :as validation-result}
+          (<? (verifiers/verify network (merge args {:user/address current-user})))]
       (when valid?
-        (stdb/remove-user-socials! {:social/url url})  ; removes social network from any other users
-        (stdb/upsert-user-info! {:user/address current-user})
-        (stdb/upsert-user-socials! [{:user/address current-user
-                                     :social/network (name network)
-                                     :social/url url
-                                     :social/verified true}]))
-      valid?)))
+          (stdb/remove-user-socials! {:social/url url})  ; removes social network from any other users
+          (stdb/upsert-user-info! {:user/address current-user})
+          (stdb/upsert-user-socials! [{:user/address current-user
+                                       :social/network (name network)
+                                       :social/url url
+                                       :social/verified true}]))
+        validation-result)))
 
 (defn generate-twitter-oauth-url [current-user args]
   "Requests a twitter oauth URL"

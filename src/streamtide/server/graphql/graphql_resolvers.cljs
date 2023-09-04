@@ -4,7 +4,7 @@
   delegates the GraphQL calls to the business logic layer."
   (:require [cljs.core.async :refer [<!]]
             [district.graphql-utils :as graphql-utils]
-            [district.shared.async-helpers :refer [safe-go]]
+            [district.shared.async-helpers :refer [safe-go <?]]
             [district.shared.error-handling :refer [try-catch-throw]]
             [streamtide.server.business-logic :as logic]
             [streamtide.server.graphql.authorization :as authorization]
@@ -244,7 +244,16 @@
 (defn verify-social-mutation [_ {:keys [:code :state] :as args} {:keys [:current-user]}]
   (log/debug "verify-social args" args)
   (try-catch-throw
-    (wrap-as-promise (logic/verify-social! (user-id current-user) args))))
+    (wrap-as-promise (safe-go
+                       (try
+                         (let [{:keys [:valid? :url :message]}
+                               (<? (logic/verify-social! (user-id current-user) args))]
+                           {:is-valid valid?
+                            :url url
+                            :message message})
+                         (catch :default _
+                           {:is-valid false
+                            :message "Internal Error"}))))))
 
 (defn generate-twitter-oauth-url-mutation [_ {:keys [:callback] :as args} {:keys [:current-user]}]
   (log/debug "request-twitter-oauth args" args)

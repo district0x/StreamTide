@@ -158,7 +158,7 @@ type Mutation {
     verifySocial(
         code: String
         state: String!
-    ): Boolean
+    ): ValidationResult
 
     generateTwitterOauthUrl(
         callback: String!
@@ -328,6 +328,12 @@ type RoundList {
     totalCount: Int
     endCursor: String
     hasNextPage: Boolean
+}
+
+type ValidationResult {
+    isValid: Boolean!
+    url: String
+    message: String
 }
 
 enum ContentType {

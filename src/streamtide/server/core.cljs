@@ -60,6 +60,15 @@
                                                                          :gql-name->kw graphql-utils/gql-name->kw})
                                       :field-resolver (graph-utils/build-default-field-resolver graphql-utils/gql-name->kw)
                                       :path           "/graphql"
+                                      :formatError (fn [formatted-error _raw-error]
+                                                     (if (= "prod" (get-environment))
+                                                       (clj->js (merge {:location (.-location formatted-error)
+                                                                        :path (.-path formatted-error)}
+                                                                       (if (= (-> formatted-error .-extensions .-code)
+                                                                              "INTERNAL_SERVER_ERROR")
+                                                                         {:message "Internal Server Error"}
+                                                                         {:message (.-message formatted-error)})))
+                                                       formatted-error))
                                       :context-fn     user-context-fn
                                       :graphiql       false}
                             :avatar-images {:fs-path "resources/public/img/avatar/"

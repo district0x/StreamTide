@@ -10,6 +10,7 @@
             [district.ui.web3-chain.events :as chain-events]
             [goog.string :as gstring]
             [re-frame.core :as re-frame]
+            [streamtide.ui.components.error-notification :as error-notification]
             [streamtide.shared.utils :as shared-utils]
             [streamtide.ui.config :refer [config-map]]))
 
@@ -132,7 +133,7 @@
                    :variables {:address active-account}
                    :on-success [:user/request-signature]
                    :on-error [::dispatch-n
-                              [[::notification-events/show "[ERROR] An error occurs while requesting OTP to the server"]
+                              [[::error-notification/show-error "An error occurs while requesting OTP to the server"]
                                [::logging/error " Error Requesting OTP to the server."]]]}]})))
 
 (re-frame/reg-event-fx
@@ -148,7 +149,7 @@
         :from active-account
         :on-success [:user/-authenticate {:data-str data-str}]
         :on-error [::dispatch-n
-                   [[::notification-events/show "[ERROR] Error signing with current account"]
+                   [[::error-notification/show-error "Error signing with current account"]
                     [::logging/error "Error Signing with Active Ethereum Account."]]]}})))
 
 (re-frame/reg-event-fx
@@ -187,7 +188,7 @@
 (re-frame/reg-event-fx
   :authentication-error
   (fn [_ [_ error]]
-    {:dispatch-n [[::notification-events/show "[ERROR] An error occurs while authenticating"]
+    {:dispatch-n [[::error-notification/show-error "An error occurs while authenticating" error]
                   [::logging/error "Failed to authenticate" {:error error}]]}))
 
 (re-frame/reg-event-fx

@@ -15,6 +15,7 @@
     [reagent.ratom :refer [reaction]]
     [streamtide.shared.utils :refer [valid-url? expected-root-domain? social-domains]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
+    [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.components.general :refer [no-items-found support-seal discord-invite-link]]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [avatar-placeholder]]
@@ -267,7 +268,7 @@
             (and (:bg-photo @form-data) (-> @form-data :bg-photo :error not)) (update :bg-photo photo->gql)
             (:min-donation @form-data) (update :min-donation #(if (empty? %) "0" (web3/to-wei % :ether))))
     (catch :default e
-      (dispatch [::notification-events/show "[ERROR] Invalid data"])
+      (dispatch [::error-notification/show-error "Invalid data" e])
       (throw e))))
 
 (defn- some-invalid-url?

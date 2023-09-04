@@ -9,6 +9,7 @@
     [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
     [re-frame.core :as re-frame]
+    [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.events :refer [wallet-chain-interceptors]]
     [streamtide.ui.utils :refer [build-tx-opts]]))
 
@@ -68,7 +69,7 @@
   ::review-grant-error
   (fn [{:keys [db]} [_ {:keys [:user/addresses]} error]]
     {:db (dissoc db :reviewing-grants?)
-     :dispatch-n [[::notification-events/show "[ERROR] An error occurs while reviewing grants"]
+     :dispatch-n [[::error-notification/show-error "An error occurs while reviewing grants" error]
                   [::logging/error
                    (str "Failed to modify grant status for users " addresses)
                    {:error (map :message error)} ::review-grant]]}))
