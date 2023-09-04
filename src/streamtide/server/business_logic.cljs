@@ -3,6 +3,7 @@
   This is an intermediate layer between the GraphQL endpoint (or any other API which may come in the future)
   and the database functionality to enforce authorization and to enrich or validate input data."
   (:require [cljs.nodejs :as nodejs]
+            [clojure.string :as str]
             [clojure.string :as string]
             [district.shared.async-helpers :refer [safe-go <?]]
             [district.shared.error-handling :refer [try-catch-throw]]
@@ -54,6 +55,10 @@
 (defn get-user-socials [_current-user address]
   "Gets the social links of a user from its address"
   (stdb/get-user-socials address))
+
+(defn get-user-perks [current-user args]
+  "Gets the social links of a user from its address"
+  (stdb/get-user-perks current-user args))
 
 (defn get-grant [_current-user user-address]
   "Gets the grant info of a given user"
@@ -159,7 +164,7 @@
             (not (shared-utils/valid-url? url)))
     (throw (str "invalid URL: " url))))
 
-(defn update-user-info! [current-user {:keys [:user/socials :user/photo :user/bg-photo] :as args} config]
+(defn update-user-info! [current-user {:keys [:user/socials :user/perks :user/photo :user/bg-photo] :as args} config]
   "Sets the user info"
   (require-auth current-user)
   (require-not-blacklisted current-user)
@@ -180,7 +185,11 @@
                                                                                #{:twitter :discord :eth}
                                                                                (keyword (:social/network %))))
                                                                       to-update))))
-        (when (seq to-delete) (stdb/remove-user-socials! {:user/address current-user :social/networks (map :social/network to-delete)}))))))
+        (when (seq to-delete) (stdb/remove-user-socials! {:user/address current-user :social/networks (map :social/network to-delete)}))))
+    (when perks
+      (if (str/blank? perks)
+        (stdb/remove-user-perks! {:user/address current-user})
+        (stdb/upsert-user-perks! {:user/address current-user :user/perks perks})))))
 
 (defn validate-sign-in [current-user]
   "Validates a user can sign in. That is, if not blacklisted"

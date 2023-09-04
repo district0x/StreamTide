@@ -28,17 +28,22 @@
       (when-not (empty? user)
         user))))
 
-(defn user->socials-resolver [{:keys [:user/address] :as user} {:keys [:current-user]}]
+(defn user->socials-resolver [{:keys [:user/address] :as user} _ {:keys [:current-user]} ]
   (log/debug "user->socials-resolver args" user)
   (try-catch-throw
     (logic/get-user-socials (user-id current-user) address)))
 
-(defn user->grant-resolver [{:keys [:user/address] :as user} {:keys [:current-user]}]
+(defn user->perks-resolver [{:keys [:user/address] :as user} _ {:keys [:current-user]}]
+  (log/debug "user->perks-resolver args" user)
+  (try-catch-throw
+    (:user/perks (logic/get-user-perks (user-id current-user) {:user/address address}))))
+
+(defn user->grant-resolver [{:keys [:user/address] :as user} _ {:keys [:current-user]}]
   (log/debug "user->grant-resolver args" user)
   (try-catch-throw
     (logic/get-grant (user-id current-user) address)))
 
-(defn user->blacklisted-resolver [{:keys [:user/address] :as user} {:keys [:current-user]}]
+(defn user->blacklisted-resolver [{:keys [:user/address] :as user} _ {:keys [:current-user]}]
   (log/debug "user->blacklisted-resolver args" user)
   (if (contains? user :user/blacklisted)
     (:user/blacklisted user)
@@ -288,6 +293,7 @@
               :verify-social verify-social-mutation
               :generate-twitter-oauth-url generate-twitter-oauth-url-mutation}
    :User {:user/socials user->socials-resolver
+          :user/perks user->perks-resolver
           :user/grant user->grant-resolver
           :user/blacklisted user->blacklisted-resolver}
    :Grant {:grant/user grant->user-resolver

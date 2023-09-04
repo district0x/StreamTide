@@ -60,7 +60,6 @@
    [:user/tagline :varchar default-nil]
    [:user/handle :varchar default-nil]
    [:user/url :varchar default-nil]
-   [:user/perks :varchar default-nil]
    [:user/min-donation :unsigned :integer default-nil]
    [:user/creation-date :timestamp not-nil]
    [:user/blacklisted :tinyint default-false]])
@@ -71,6 +70,11 @@
    [:social/url :varchar not-nil]
    [:social/verified :tinyint]
    [(sql/call :primary-key :user/address :social/network)]
+   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+
+(def perks-columns
+  [[:user/address address primary-key not-nil]
+   [:user/perks :varchar default-nil]
    [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
 (def grant-columns
@@ -149,6 +153,7 @@
 
 (def user-column-names (filter keyword? (map first user-columns)))
 (def social-link-column-names (filter keyword? (map first social-link-columns)))
+(def perks-column-names (filter keyword? (map first perks-columns)))
 (def grant-column-names (filter keyword? (map first grant-columns)))
 (def content-column-names (filter keyword? (map first content-columns)))
 (def donation-column-names (filter keyword? (map first donation-columns)))
@@ -192,6 +197,21 @@
                            :from [:social-link]
                            :where [:= user-address :social-link.user/address]})]
     sql-query))
+
+(defn get-user-perks [current-user {:keys [:user/address]}]
+  (print current-user)
+  (db-get {:select [:p.*]
+           :from [[:perks :p]]
+           :join [[:user :u] [:= :p.user/address :u.user/address]]
+           :where [:and
+                   [:= :p.user/address address]
+                   [:or
+                    [:= :p.user/address current-user] ; ... or is the owner
+                    [:exists {:select [1] :from [[:user-roles :ur]] :where [:and [:= :ur.user/address current-user] [:= :ur.role/role "admin"]]}] ; ... or is an admin
+                    [:in address {:select [:ucp.user/target-user] :from [[:user-content-permissions :ucp]] :where [:= :ucp.user/source-user current-user]}] ; ... or has explicit permission to it]
+                   ]
+                   [:= :u.user/blacklisted false]]}))
+
 
 (defn get-grant [user-address]
   (db-get {:select [:*]
@@ -406,6 +426,19 @@
                      networks (sqlh/merge-where [:in :social/network networks])
                      url (sqlh/merge-where [:= :social/url url])))))
 
+(defn upsert-user-perks! [{:keys [:user/address :user/perks] :as args}]
+  (log/debug "upsert-user-perks!" args)
+  (db-run! {:insert-into :perks
+            :values [(select-keys args perks-column-names)]
+            :upsert {:on-conflict [:user/address]
+                     :do-update-set (keys (select-keys args perks-column-names))}}))
+
+(defn remove-user-perks! [{:keys [:user/address] :as args}]
+  (log/debug "remove-user-perks" args)
+  (when (not-empty (select-keys args [:user/address]))
+    (db-run! {:delete-from :perks
+              :where [:= :user/address address]})))
+
 (defn upsert-grants! [{:keys [:user/addresses :grant/status :grant/decision-date] :as args}]
   "Insert new grants for given users or update them if the users already requested a grant"
   (log/debug "insert-grants" args)
@@ -538,6 +571,9 @@
 
   (db-run! (-> (psqlh/create-table :social-link :if-not-exists)
                (psqlh/with-columns social-link-columns)))
+
+  (db-run! (-> (psqlh/create-table :perks :if-not-exists)
+               (psqlh/with-columns perks-columns)))
 
   (db-run! (-> (psqlh/create-table :grant :if-not-exists)
                (psqlh/with-columns grant-columns)))
