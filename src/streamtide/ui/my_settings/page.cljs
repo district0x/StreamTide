@@ -78,7 +78,7 @@
       (when-not (string/blank? (:url (get-by-path form-values id)))
         [:button.btRemove
          {:on-click (fn []
-                      (swap! form-data assoc-by-path value-id ""))}
+                      (swap! form-data #(assoc-by-path (with-meta % {:touched? true}) value-id "")))}
          "REMOVE"])]
      [:label.editField
       (when verifiable? {:class "verifiable"})
