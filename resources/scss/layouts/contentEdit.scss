@@ -42,6 +42,12 @@
 			audio, video {
 				width: 100%;
 			}
+			.medias {
+				a.external-link {
+					border-top-left-radius: 0;
+					border-top-right-radius: 0;
+				}
+			}
 		}
 		.header {
 			background: $headerContent;

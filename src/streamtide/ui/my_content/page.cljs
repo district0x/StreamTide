@@ -90,7 +90,7 @@
            [:button.btRemove {:on-click #(dispatch [::mc-events/remove-content {:content/id id
                                                                                 ;:on-success [::ms-events/increase-removed-count removed-content-count]
                                                                                 }])}]]]
-         [:div.content
+         [:div.content.medias
           (case type
             :content-type/image [embed/embed-image url {:disable-safe? true}]
             :content-type/video [embed/embed-video url {:disable-safe? true}]

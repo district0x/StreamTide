@@ -141,20 +141,21 @@
            [:p.footnote "Found suspicious link? Please report it to our "
             [:a {:href discord-invite-link :target :_blank :rel "noreferrer noopener"} "Discord server"]]]]]))))
 
-(defn safe-external-link [url {:keys [:disable-safe?]}]
+(defn safe-external-link [url {:keys [:disable-safe? :class :text]}]
   (let [domain (shared-utils/url->domain url)
         trust-domain? (subscribe [::st-subs/trust-domain? domain])]
     (fn []
       [:a.external-link
        (merge {:href   url
                :target "_blank"
-               :rel    "noopener noreferrer"}
+               :rel    "noopener noreferrer"
+               :class class}
               (when (and (not disable-safe?) (not @trust-domain?))
                 {:on-click (fn [e]
                              (.preventDefault e)
                              (reset! current-url url)
                              (reset! show-popup? true))}))
-       url])))
+       (if text text url)])))
 
 (defn embed-url [url type]
   "If the URL is from a popular site, it embedded it directly in the page"

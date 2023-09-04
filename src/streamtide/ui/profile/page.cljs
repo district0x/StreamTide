@@ -22,21 +22,21 @@
 
 (def page-size 6)
 
-(defn build-user-info-query [{:keys [:user/address]}]
+(defn build-user-info-query [{:keys [:user/address :active-session]}]
   [:user
    {:user/address address}
-   [:user/name
-    :user/description
-    :user/tagline
-    :user/handle
-    :user/url
-    :user/perks
-    :user/photo
-    :user/bg-photo
-    :user/blacklisted
-    [:user/socials [:social/network
-                    :social/url]]
-    [:user/grant [:grant/status]]]])
+   (cond-> [:user/name
+            :user/description
+            :user/tagline
+            :user/handle
+            :user/url
+            :user/photo
+            :user/bg-photo
+            :user/blacklisted
+            [:user/socials [:social/network
+                            :social/url]]
+            [:user/grant [:grant/status]]]
+           active-session (conj :user/perks))])
 
 (defn build-user-content-query [{:keys [:user/address :pinned]} after]
   [:search-contents
@@ -150,9 +150,11 @@
                             [true true] nil)]
     (fn []
       (when user-account
-        (let [user-info-query (subscribe [::gql/query {:queries [(build-user-info-query {:user/address user-account})]}])
-              loading? (or (nil? user-info-query) (:graphql/loading? @user-info-query))
-              user-info (:user @user-info-query)]
+        (let [active-session (subscribe [::st-subs/active-session])
+              user-info-query (subscribe [::gql/query {:queries [(build-user-info-query {:user/address user-account :active-session @active-session})]}
+                                          {:id {:user-content user-account :active-account @active-account :active-session @active-session}}])
+              loading? (or (nil? user-info-query) (:graphql/loading? (last @user-info-query)))
+              user-info (:user (last @user-info-query))]
           [app-layout
            [:main.pageSite.pageProfile
             {:id "profile"}
@@ -174,7 +176,7 @@
                       [:button.btBasic.btBasic-light {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
                        "SUPPORT THIS CREATOR"])
                     (when (not (blank? (:user/perks user-info)))
-                      [:a.btBasic.btBasic-light {:href (:user/perks user-info) :target "_blank"} "PERKS"])]
+                      [embed/safe-external-link (:user/perks user-info) {:class "btBasic btBasic-light" :text "PERKS"} ])]
                    [contents user-account]]]
                  [:div.not-found "User Not Found"])])]
            [embed/safe-link-popup user-account]])))))
