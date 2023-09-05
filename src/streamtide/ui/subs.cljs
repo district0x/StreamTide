@@ -7,8 +7,8 @@
   ::day-night-switch
   (fn [db _]
     (if (:day-night-switch db)
-      "day"
-      "night")))
+      "night"
+      "day")))
 
 (re-frame/reg-sub
   ::menu-mobile-switch
