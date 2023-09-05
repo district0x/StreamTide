@@ -56,12 +56,12 @@
              :content/url
              :content/creation-date]]]])
 
-(defn user-header [{:keys [:user/socials :user/handle :user/url :user/tagline :user/name :user/photo :user/bg-photo] :as user-info}]
+(defn user-header [{:keys [:user/socials :user/handle :user/url :user/tagline :user/name :user/photo :user/bg-photo :user/unlocked] :as user-info}]
   [:div.headerProfile
    [:div.bgProfile
     [:img {:src bg-photo}]]
    [:div.contentHeaderProfile
-    [user-photo-profile {:src photo}]
+    [user-photo-profile (merge {:src photo} (when unlocked {:class "star"}))]
     [:div.dataProfile
      [:h1 name]
      [:p tagline]

@@ -13,7 +13,8 @@
     [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
     [streamtide.ui.components.search :refer [search-tools]]
     [streamtide.ui.components.spinner :as spinner]
-    [streamtide.ui.components.user :refer [user-photo avatar-placeholder]]))
+    [streamtide.ui.components.user :refer [user-photo avatar-placeholder]]
+    [streamtide.ui.subs :as st-subs]))
 
 (def page-size 6)
 
@@ -38,16 +39,18 @@
                              :user/name
                              :user/description
                              :user/photo
-                             :user/bg-photo]]]]]]))
+                             :user/bg-photo
+                             :user/unlocked]]]]]]))
 
 
-(defn grant-card [{:keys [:user/address :user/photo :user/bg-photo :user/name :user/description :star?]}]
+(defn grant-card [{:keys [:user/address :user/photo :user/bg-photo :user/name :user/description :user/unlocked]}]
   [:li.card {:key address}
    [nav-anchor {:route :route.profile/index :params {:address address}}
     [:div.thumb
+     {:class (when unlocked "star")}
      [:img {:src (or photo avatar-placeholder)}]]
     [:div.content
-     (when bg-photo [user-photo (merge {:src bg-photo} (when star? {:class "star"}))])
+     (when bg-photo [user-photo {:src bg-photo}])
      [:h3 name]
      [:p (format/truncate description 180)]]]])
 
@@ -56,7 +59,9 @@
   (let [all-grants (->> @grants-search
                         (mapcat (fn [r] (-> r :search-grants :items))))
         loading? (:graphql/loading? (last @grants-search))
-        has-more? (-> (last @grants-search) :search-grants :has-next-page)]
+        has-more? (-> (last @grants-search) :search-grants :has-next-page)
+        active-session (subscribe [::st-subs/active-session])
+        active-account-has-session? (subscribe [::st-subs/active-account-has-session?])]
     (if (and (empty? all-grants)
              (not loading?))
       [no-items-found]
@@ -71,7 +76,8 @@
                         :load-fn #(let [{:keys [:end-cursor]} (:search-grants (last @grants-search))]
                                     (dispatch [::graphql-events/query
                                                {:query {:queries [(build-grants-query @form-data end-cursor)]}
-                                                :id @form-data}]))}
+                                                :id (merge @form-data {:active-session @active-session
+                                                                       :active-account-has-session? @active-account-has-session?})}]))}
        (when-not (:graphql/loading? (first @grants-search))
           (doall
            (for [{:keys [:grant/user]} all-grants]
@@ -82,8 +88,11 @@
   (let [form-data (r/atom {:search-term ""
                            :order-key (:key (first grants-order))})]
     (fn []
-      (let [grants-search (subscribe [::gql/query {:queries [(build-grants-query @form-data nil)]}
-                                     {:id @form-data}])]
+      (let [active-session (subscribe [::st-subs/active-session])
+            active-account-has-session? (subscribe [::st-subs/active-account-has-session?])
+            grants-search (subscribe [::gql/query {:queries [(build-grants-query @form-data nil)]}
+                                     {:id (merge @form-data {:active-session @active-session
+                                                             :active-account-has-session? @active-account-has-session?})}])]
         [app-layout
          [:main.pageSite
           {:id "grants"}

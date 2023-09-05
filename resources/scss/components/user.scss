@@ -59,3 +59,55 @@
 		}
 	}
 }
+.thumb {
+	&.star {
+		&::after {
+			content: '';
+			height: 28px;
+			width: 29.56px;
+			display: block;
+			background: url('../img/layout/icon-star.svg') no-repeat center;
+			background-size: contain;
+			position: absolute;
+			top: 6px;
+			right: 6px;
+			z-index: 10;
+		}
+	}
+}
+.photo {
+	&.star {
+		&::after {
+			content: '';
+			height: 18px;
+			width: 19px;
+			display: block;
+			background: url('../img/layout/icon-star.svg') no-repeat center;
+			background-size: contain;
+			position: absolute;
+			top: -2px;
+			right: -3px;
+			z-index: 10;
+		}
+	}
+	@include media-breakpoint-up(md) {
+		&.star {
+			&::after {
+				height: 22px;
+				width: 24.56px;
+				top: 9px;
+				right: 7px;
+			}
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		&.star {
+			&::after {
+				height: 28px;
+				width: 29.56px;
+				top: 18px;
+				right: 18px;
+			}
+		}
+	}
+}

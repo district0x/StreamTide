@@ -13,6 +13,7 @@
     [streamtide.ui.components.search :refer [search-tools]]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [user-photo]]
+    [streamtide.ui.subs :as st-subs]
     [streamtide.ui.utils :as ui-utils]))
 
 (def page-size 6)
@@ -42,7 +43,8 @@
                :leader/total-amount
                [:leader/receiver [:user/address
                                   :user/name
-                                  :user/photo]]]]]]))
+                                  :user/photo
+                                  :user/unlocked]]]]]]))
 
 (defn build-rounds-query []
   [:search-rounds
@@ -52,7 +54,7 @@
 (defn leaderboard-entry [{:keys [:leader/receiver :leader/donation-amount :leader/matching-amount :leader/total-amount]}]
   (let [nav (partial nav-anchor {:route :route.profile/index :params {:address (:user/address receiver)}})]
     [:div.leaderboard
-     [nav [user-photo {:class "lb" :src (:user/photo receiver)}]]
+     [nav [user-photo {:class (str "lb" (when (:user/unlocked receiver) " star")) :src (:user/photo receiver)}]]
      [:div.data
       [nav [:h3 (:user/name receiver)]]]
      [:ul.score
@@ -67,7 +69,9 @@
        [:span (ui-utils/format-price total-amount)]]]]))
 
 (defn leaderboard-entries [form-data leaders-search]
-  (let [all-leaders (->> @leaders-search
+  (let [active-session (subscribe [::st-subs/active-session])
+        active-account-has-session? (subscribe [::st-subs/active-account-has-session?])
+        all-leaders (->> @leaders-search
                            (mapcat (fn [r] (-> r :search-leaders :items))))
         loading? (:graphql/loading? (last @leaders-search))
         has-more? (-> (last @leaders-search) :search-leaders :has-next-page)]
@@ -84,7 +88,8 @@
                         :load-fn #(let [{:keys [:end-cursor]} (:search-leaders (last @leaders-search))]
                                     (dispatch [::graphql-events/query
                                                {:query {:queries [(build-leaders-query @form-data end-cursor)]}
-                                                :id @form-data}]))}
+                                                :id (merge @form-data {:active-session @active-session
+                                                                       :active-account-has-session? @active-account-has-session?})}]))}
        (when-not (:graphql/loading? (first @leaders-search))
          (doall
            (for [leader all-leaders]
@@ -95,8 +100,11 @@
                            :order-key (:key (first leaders-order))
                            :round "overall"})]
     (fn []
-      (let [leaders-search (subscribe [::gql/query {:queries [(build-leaders-query @form-data nil)]}
-                                         {:id @form-data}])
+      (let [active-session (subscribe [::st-subs/active-session])
+            active-account-has-session? (subscribe [::st-subs/active-account-has-session?])
+            leaders-search (subscribe [::gql/query {:queries [(build-leaders-query @form-data nil)]}
+                                         {:id (merge @form-data {:active-session @active-session
+                                                                 :active-account-has-session? @active-account-has-session?})}])
             rounds-search (subscribe [::gql/query {:queries [(build-rounds-query)]}])
             rounds (into [{:key "overall" :value "All rounds"}] (map (fn [round]
                           (let [round-id (:round/id round)]

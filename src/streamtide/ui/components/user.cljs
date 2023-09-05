@@ -9,10 +9,11 @@
    [:div.photo
     [:img {:src (or src avatar-placeholder)}]]])
 
-(defn user-photo-profile [{:keys [:src]} & children]
+(defn user-photo-profile [{:keys [:src :class]} & children]
   [:div.photoProfile
    children
    [:div.photo
+    {:class class}
     [:img {:src (or src avatar-placeholder)}]]])
 
 (defn social-links [{:keys [:class :socials]}]
