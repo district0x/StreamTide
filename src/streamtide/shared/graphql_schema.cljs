@@ -198,6 +198,8 @@ type User {
     user_grant: Grant
     user_blacklisted: Boolean
     user_creationDate: Date
+    user_hasPrivateContent: Boolean
+    user_unlocked: Boolean
 }
 
 type SocialLink {

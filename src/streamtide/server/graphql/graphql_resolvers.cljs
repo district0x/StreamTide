@@ -50,6 +50,16 @@
     (try-catch-throw
       (logic/blacklisted? (user-id current-user) address))))
 
+(defn user->has-private-content-resolver [{:keys [:user/address] :as user} _ {:keys [:current-user]}]
+  (log/debug "user->has-private-content-resolver args" user)
+  (try-catch-throw
+    (logic/has-private-content? (user-id current-user) address)))
+
+(defn user->unlocked-resolver [{:keys [:user/address] :as user} _ {:keys [:current-user]}]
+  (log/debug "user->unlocked-resolver args" user)
+  (try-catch-throw
+    (logic/unlocked? (user-id current-user) address)))
+
 (defn grant->user-resolver [{:keys [:grant/user] :as user-grant}]
   (log/debug "grant->user-resolver args" user-grant)
   user-grant)
@@ -295,7 +305,9 @@
    :User {:user/socials user->socials-resolver
           :user/perks user->perks-resolver
           :user/grant user->grant-resolver
-          :user/blacklisted user->blacklisted-resolver}
+          :user/blacklisted user->blacklisted-resolver
+          :user/has-private-content user->has-private-content-resolver
+          :user/unlocked user->unlocked-resolver}
    :Grant {:grant/user grant->user-resolver
            :grant/status grant->status-resolver}
    :Content {:content/user content->user-resolver

@@ -215,6 +215,16 @@
   "Checks if a user is currently blacklisted"
   (stdb/blacklisted? {:user/address user-address}))
 
+(defn has-private-content? [_current-user user-address]
+  "Checks if a user is currently blacklisted"
+  (stdb/has-private-content? {:user/address user-address}))
+
+(defn unlocked? [current-user user-address]
+  "Checks if a user is currently blacklisted"
+  (if current-user
+    (stdb/has-permission? {:user/source-user current-user :user/target-user user-address})
+    false))
+
 (defn add-announcement! [current-user {:keys [:announcement/text] :as args}]
   "Adds an announcement to show to all users"
   (require-auth current-user)

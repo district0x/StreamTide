@@ -33,10 +33,11 @@
             :user/photo
             :user/bg-photo
             :user/blacklisted
+            :user/has-private-content
             [:user/socials [:social/network
                             :social/url]]
             [:user/grant [:grant/status]]]
-           active-session (conj :user/perks))])
+           active-session (conj :user/perks :user/unlocked))])
 
 (defn build-user-content-query [{:keys [:user/address :pinned]} after]
   [:search-contents
@@ -86,9 +87,9 @@
        :content-type/other [embed/embed-other url]
        :default "")]))
 
-(defn contents [user-account]
+(defn contents []
   (let []
-    (fn [user-account]
+    (fn [user-account user-info]
       (let [active-account @(subscribe [::accounts-subs/active-account])
             active-session? @(subscribe [::st-subs/active-account-has-session?])
             user-content-pinned (subscribe [::gql/query {:queries [(build-user-content-query {:user/address user-account :pinned true} nil)]}
@@ -102,11 +103,13 @@
             all-content-unpinned (->> @user-content-unpinned
                           (mapcat (fn [r] (-> r :search-contents :items))))
             has-more-pinned? (-> (last @user-content-pinned) :search-contents :has-next-page)
-            has-more-unpinned? (-> (last @user-content-unpinned) :search-contents :has-next-page)]
+            has-more-unpinned? (-> (last @user-content-unpinned) :search-contents :has-next-page)
+            hidden-content? (and (:user/has-private-content user-info) (not (:user/unlocked user-info)))]
          (if (and (empty? all-content-unpinned)
                   (empty? all-content-pinned)
                   (not loading-unpinned?)
-                  (not loading-pinned?))
+                  (not loading-pinned?)
+                  (not hidden-content?))
            [no-items-found {:message "No content found"}]
            [:<>
             (when (not-empty all-content-pinned)
@@ -126,6 +129,10 @@
                     (for [{:keys [:content/id] :as content} all-content-pinned]
                       ^{:key id}
                       [content-card content])))]])
+            (when hidden-content?
+              [:span.additional-content
+               {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
+               "Unlock additional content supporting this creator"])
             [infinite-scroll-masonry {:class "medias unpinned"
                                       :loading? loading-unpinned?
                                       :has-more? has-more-unpinned?
@@ -177,6 +184,6 @@
                        "SUPPORT THIS CREATOR"])
                     (when (not (blank? (:user/perks user-info)))
                       [embed/safe-external-link (:user/perks user-info) {:class "btBasic btBasic-light" :text "PERKS"} ])]
-                   [contents user-account]]]
+                   [contents user-account user-info]]]
                  [:div.not-found "User Not Found"])])]
            [embed/safe-link-popup user-account]])))))

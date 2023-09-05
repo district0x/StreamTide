@@ -199,7 +199,6 @@
     sql-query))
 
 (defn get-user-perks [current-user {:keys [:user/address]}]
-  (print current-user)
   (db-get {:select [:p.*]
            :from [[:perks :p]]
            :join [[:user :u] [:= :p.user/address :u.user/address]]
@@ -377,6 +376,27 @@
              :from [[:user-content-permissions :ucp]]}
             source-user (sqlh/merge-where [:= :ucp.user/source-user source-user])
             target-user (sqlh/merge-where [:= :ucp.user/target-user target-user]))))
+
+(defn has-private-content? [{:keys [:user/address]}]
+  (not (empty? (db-get {:select [1]
+           :from [[:content :c]]
+           :where [:and
+                   [:= :c.user/address address]
+                   [:= :c.content/public false]]
+           :limit 1}))))
+
+(defn has-permission? [{:keys [:user/source-user :user/target-user]}]
+  (not (empty? (db-get {:select [1]
+           :from [[:user :u]]
+           :where [:and
+                   [:= :u.user/address target-user]
+                   [:or
+                    [:= :u.user/address source-user] ; ... or is the owner
+                    [:exists {:select [1] :from [[:user-roles :ur]] :where [:and [:= :ur.user/address source-user] [:= :ur.role/role "admin"]]}] ; ... or is an admin
+                    [:in target-user {:select [:ucp.user/target-user] :from [[:user-content-permissions :ucp]] :where [:= :ucp.user/source-user source-user]}] ; ... or has explicit permission to it
+                    ]
+                   [:= :u.user/blacklisted false]]
+           :limit 1}))))
 
 (defn get-roles [user-address]
   (db-all {:select [:user-roles.role/role]
