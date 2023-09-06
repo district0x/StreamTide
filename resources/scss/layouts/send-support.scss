@@ -70,6 +70,9 @@
 				line-height: 38px;
 				padding: 0 17px;
 				font-size: 13px;
+				&.disabled {
+					background: $disabled;
+				}
 			}
 			.select-selected {
 				padding: 0 40px 0 17px;

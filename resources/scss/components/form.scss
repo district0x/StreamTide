@@ -27,7 +27,7 @@
 	}
 }
 .textField {
-	textarea {
+	textarea, input {
 		background: $bgSite;
 	}
 }
@@ -42,19 +42,43 @@
 	text-indent: -999em;
 }
 
-
-.selectForm {
-//	align-items: center;
-//	display: flex;
-	.input-group {
-		height: 100%;
-		select {
+.selectForm.custom-select {
+	padding: 0;
+	line-height: 50px;
+	letter-spacing: 1.25px;
+	font-weight: 700;
+	height: 56px;
+	.options {
 			height: 100%;
-			width: 100%;
-			z-index: 1;
-			position: relative;
+		.select__control{
+			height: 100%;
+			line-height: 100%;
+			background-color: $bgSite;
+			border: 3px solid $lilac;
+			border-radius: 7px;
+			box-shadow: none;
+			-webkit-transition: all 0s;
+			transition: all 0s;
 		}
-		&.options::after {
+		font-size: 14px;
+		.select__value-container {
+			font-weight: normal;
+			padding: 2px 22px;
+		}
+		.select__single-value,.select__option {
+			color: $blackWhite;
+			background-color: $bgSite;
+			&.select__option--is-focused {
+				background-color: $bgCard;
+			}
+		}
+		.select__menu {
+			border: 3px solid #a478f9;
+			border-radius: 7px;
+			background-color: $bgSite;
+		}
+		&::after {
+			pointer-events: none;
 			position: absolute;
 			content: "";
 			top: 50%;
@@ -174,69 +198,6 @@
 		}
 	}
 
-}
-
-/* Style items (options): */
-.select-items,
-.selectAdmin-items {
-	position: absolute;
-	top: calc(100% + 11.59px);
-	left: -3px;
-	z-index: 99;
-	width: calc(100% + 6px);
-	height: 196px;
-	border: 3px solid $lilac;
-	border-radius: 7px;
-	overflow: auto;
-	background-color: $bgSite;
-	/* style the items (options), including the selected item: */
-	div,
-	a {
-		width: 100%;
-		height: 46px;
-		line-height: 46px;
-		color: $blackWhite;
-		font-size: 12px;
-		letter-spacing: 1.25px;
-		font-weight: $bold;
-		padding: 0 18.83px;
-		cursor: pointer;
-		background-color: $bgSite;
-		display: block;
-		&:hover,
-		&.same-as-selected {
-			background-color: $bgCard;
-		}
-	}
-	/* Hide the items when the select box is closed: */
-	&.select-hide {
-		display: none;
-	}
-
-	/* width */
-	&::-webkit-scrollbar {
-		width: 10px;
-	}
-
-	/* Track */
-	&::-webkit-scrollbar-track {
-		background: rgba($lilac, 0.2);
-		border-radius: 3.5px;
-	}
-
-	/* Handle */
-	&::-webkit-scrollbar-thumb {
-		background: $lilac;
-		border-radius: 3.5px;
-	}
-
-	/* Handle on hover */
-	&::-webkit-scrollbar-thumb:hover {
-		background: $textColor;
-	}
-}
-.selectAdmin-items {
-	height: auto;
 }
 
 

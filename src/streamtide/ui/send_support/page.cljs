@@ -82,9 +82,8 @@
                 [:span.warning "Min amount not matched. This donation will not unlock restricted content"])]
              [:div.field.field-currency
               [:span.titleField "Currency"]
-              [:div.custom-select.selectForm.inputField.simple
-               [:select
-                [:option {:value "eth"} "ETH"]]]]
+              [:div.inputField.simple.disabled
+               [:span "ETH"]]]
              [:button.btClose
               {:on-click (fn []
                            (swap! form-data dissoc user-address)

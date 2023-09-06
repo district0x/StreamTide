@@ -1,8 +1,9 @@
 (ns streamtide.ui.components.search
   (:require
     [clojure.string :as str]
-    [district.ui.component.form.input :refer [text-input select-input]]
-    [reagent.core :as r]))
+    [district.ui.component.form.input :refer [text-input]]
+    [reagent.core :as r]
+    [streamtide.ui.components.custom-select :refer [select]]))
 
 (defn search-tools [{:keys [:form-data :search-id]} & others]
   "display a search form"
@@ -33,14 +34,12 @@
           :on-click #(let [input (get @search-input-form-data search-id)]
                         (swap! form-data assoc search-id input)
                         (when on-search-change (on-search-change input)))}]]
-       [:div.custom-select.selectForm.inputField
-        ;; TODO use custom select for prettifying
-        [select-input {:form-data form-data
-                       :id :order-key
-                       :group-class :options
-                       :value js/undefined
-                       :options select-options
-                       :on-change on-select-change}]]
+       [:div.custom-select.selectForm
+        [select {:form-data form-data
+                 :id :order-key
+                 :options select-options
+                 :class "options"
+                 :on-change on-select-change}]]
        (map-indexed (fn [index item]
                       (with-meta item {:key (keyword "c" index)}))
                     others)])))

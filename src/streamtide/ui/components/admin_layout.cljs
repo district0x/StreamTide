@@ -6,7 +6,8 @@
     [re-frame.core :refer [subscribe dispatch]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [nav-anchor]]
-    [streamtide.ui.utils :refer [check-session]]))
+    [streamtide.ui.utils :refer [check-session]]
+    [streamtide.ui.components.custom-select :refer [react-select]]))
 
 
 (def admin-nav-menu-items [{:text "Grant Approval Feeds"
@@ -24,20 +25,22 @@
     (fn []
       (check-session)
       [:<>
-       [:div.selectAdmin-selected.d-lg-none
-        [:select
-         {:on-change (fn [item]
-                       (let [val (-> item .-target .-value)]
+       [:div.custom-select.selectForm.d-lg-none
+        (let [options (doall (map
+                               (fn [{:keys [:text :route]}]
+                                 {:value (str (symbol route))
+                                  :label text})
+                               admin-nav-menu-items))]
+        [react-select
+         {:class "options"
+          :on-change (fn [selected-entry]
+                       (let [val (.-value selected-entry)]
                          (dispatch [::router-events/navigate (keyword val)])))
-          :value (-> @(subscribe [::router-subs/active-page]) :name symbol str)}
-         (doall (map-indexed
-                  (fn [idx {:keys [:text :route]}]
-                    [:option
-                     {:key (str idx)
-                      :value (str (symbol route))}
-                     text])
-                  admin-nav-menu-items))]]
-       [:div.selectAdmin-items.select-hide
+          :value (let [value (-> @(subscribe [::router-subs/active-page]) :name symbol str)
+                       label (:label (first (filter #(= value (:value %)) options)))]
+                   {:value value :label label})
+          :options options}])]
+       [:div.admin-items.select-hide.inputField
         (doall (map-indexed
                  (fn [idx {:keys [:text :route]}]
                    [nav-anchor (merge {:key (str idx) :route route}
@@ -56,7 +59,7 @@
          [:div.container
           [:h2.titlePage "Admin"]]]
         [:div.contentAdmin.container
-         [:div.menuAdmin.inputField.simple
+         [:div.menuAdmin
           [admin-nav-menu]]
          [:div.containerAdmin
           (map-indexed (fn [index item]

@@ -18,9 +18,9 @@
 
 (def page-size 6)
 
-(def grants-order [{:key "decision-date/desc" :value "Newest"}
-                   {:key "decision-date/asc" :value "Oldest"}
-                   {:key "username/asc" :value "Username"}])
+(def grants-order [{:value "decision-date/desc" :label "Newest"}
+                   {:value "decision-date/asc" :label "Oldest"}
+                   {:value "username/asc" :label "Username"}])
 
 (defn build-grants-query [{:keys [:search-term :order-key]} after]
   (let [[order-by order-dir] ((juxt namespace name) (keyword order-key))]
@@ -86,7 +86,7 @@
 
 (defmethod page :route.grants/index []
   (let [form-data (r/atom {:search-term ""
-                           :order-key (:key (first grants-order))})]
+                           :order-key (:value (first grants-order))})]
     (fn []
       (let [active-session (subscribe [::st-subs/active-session])
             active-account-has-session? (subscribe [::st-subs/active-account-has-session?])

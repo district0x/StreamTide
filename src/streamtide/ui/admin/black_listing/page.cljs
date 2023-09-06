@@ -3,7 +3,7 @@
   It shows a list of all users where and admin can blacklist or whitelist them"
   (:require
     [district.graphql-utils :as gql-utils]
-    [district.ui.component.form.input :refer [text-input pending-button select-input]]
+    [district.ui.component.form.input :refer [text-input pending-button]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
     [district.ui.graphql.subs :as gql]
@@ -21,9 +21,9 @@
 
 (def page-size 6)
 
-(def users-order [{:key "creation-date/desc" :value "Newest"}
-                  {:key "creation-date/asc" :value "Oldest"}
-                  {:key "username/asc" :value "Username"}])
+(def users-order [{:value "creation-date/desc" :label "Newest"}
+                  {:value "creation-date/asc" :label "Oldest"}
+                  {:value "username/asc" :label "Username"}])
 
 (defn build-users-query [{:keys [:search-term :order-key]} after]
   (let [[order-by order-dir] ((juxt namespace name) (keyword order-key))]
@@ -109,7 +109,7 @@
 
 (defmethod page :route.admin/black-listing []
   (let [form-data (r/atom {:search-term ""
-                           :order-key (:key (first users-order))})]
+                           :order-key (:value (first users-order))})]
     (fn []
       (let [users-search (subscribe [::gql/query {:queries [(build-users-query @form-data nil)]}
                                       {:id @form-data}])]

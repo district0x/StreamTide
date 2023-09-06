@@ -6,8 +6,8 @@
 			font-size: 13px;
 			font-weight: $regular;
 		}
-		select {
-			width: 100%;
+		.custom-select .options .select__value-container {
+			font-weight: bold;
 		}
 	}
 	.contentApprovalFeed {
@@ -27,6 +27,11 @@
 					background-color: lightgray;
 				}
 			}
+		}
+	}
+	.admin-items {
+		&.select-hide {
+			display: none;
 		}
 	}
 	.contentApproval {
@@ -355,6 +360,7 @@
 			}
 		}
 		.formRounds {
+			padding: 19.86px 15px 18.58px;
 			.field {
 				.inputContainer {
 					margin-left: 15px;
@@ -407,7 +413,7 @@
 			line-height: normal;
 			padding: 0;
 
-			.selectAdmin-items {
+			.admin-items {
 				display: block;
 				position: relative;
 				top: auto;
@@ -420,6 +426,7 @@
 				border: none;
 				overflow: initial;
 				a {
+					display: block;
 					width: auto;
 					height: auto;
 					background: none;

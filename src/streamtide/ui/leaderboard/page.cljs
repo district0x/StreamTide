@@ -1,7 +1,6 @@
 (ns streamtide.ui.leaderboard.page
   "Page showing a list of top donations and matchings"
   (:require
-    [district.ui.component.form.input :refer [select-input]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
     [district.ui.graphql.subs :as gql]
@@ -13,18 +12,19 @@
     [streamtide.ui.components.search :refer [search-tools]]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [user-photo]]
+    [streamtide.ui.components.custom-select :refer [select]]
     [streamtide.ui.subs :as st-subs]
     [streamtide.ui.utils :as ui-utils]))
 
 (def page-size 6)
 
-(def leaders-order [{:key "total-amount/desc" :value "Total Higher"}
-                    {:key "total-amount/asc" :value "Total Lower"}
-                    {:key "donation-amount/desc" :value "Granted Higher"}
-                    {:key "donation-amount/asc" :value "Granted Lower"}
-                    {:key "matching-amount/desc" :value "Matching Higher"}
-                    {:key "matching-amount/asc" :value "Matching Lower"}
-                    {:key "username/asc" :value "Artist Name"}])
+(def leaders-order [{:value "total-amount/desc" :label "Total Higher"}
+                    {:value "total-amount/asc" :label "Total Lower"}
+                    {:value "donation-amount/desc" :label "Granted Higher"}
+                    {:value "donation-amount/asc" :label "Granted Lower"}
+                    {:value "matching-amount/desc" :label "Matching Higher"}
+                    {:value "matching-amount/asc" :label "Matching Lower"}
+                    {:value "username/asc" :label "Artist Name"}])
 
 (defn build-leaders-query [{:keys [:search-term :order-key :round]} after]
   (let [[order-by order-dir] ((juxt namespace name) (keyword order-key))]
@@ -97,7 +97,7 @@
 
 (defmethod page :route.leaderboard/index []
   (let [form-data (r/atom {:search-term ""
-                           :order-key (:key (first leaders-order))
+                           :order-key (:value (first leaders-order))
                            :round "overall"})]
     (fn []
       (let [active-session (subscribe [::st-subs/active-session])
@@ -106,10 +106,10 @@
                                          {:id (merge @form-data {:active-session @active-session
                                                                  :active-account-has-session? @active-account-has-session?})}])
             rounds-search (subscribe [::gql/query {:queries [(build-rounds-query)]}])
-            rounds (into [{:key "overall" :value "All rounds"}] (map (fn [round]
+            rounds (into [{:value "overall" :label "All rounds"}] (map (fn [round]
                           (let [round-id (:round/id round)]
-                            {:key round-id
-                             :value (str "Round: " round-id)})) (-> @rounds-search :search-rounds :items)))]
+                            {:value round-id
+                             :label (str "Round: " round-id)})) (-> @rounds-search :search-rounds :items)))]
         [app-layout
          [:main.pageSite
           {:id "leaderboard"}
@@ -119,12 +119,11 @@
             [search-tools {:form-data form-data
                            :search-id :search-term
                            :select-options leaders-order}
-              [:div.custom-select.selectForm.inputField.round
-               [select-input {:form-data form-data
-                              :id :round
-                              :group-class :options
-                              :value js/undefined
-                              :options rounds}]]]]]
+              [:div.custom-select.selectForm.round
+               [select {:form-data form-data
+                        :id :round
+                        :class "options"
+                        :options rounds}]]]]]
           [:div.contentLeaderboard.container
            [:div.headerLeaderboards.d-none.d-md-flex
             [:div.cel-data
