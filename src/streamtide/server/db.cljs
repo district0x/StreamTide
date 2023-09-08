@@ -248,6 +248,8 @@
         query (cond->
                 {:select [:*]
                  :from [:user]}
+                (= order-by :users.order-by/last-seen) (sqlh/merge-left-join
+                                                         :user-timestamp [:= :user.user/address :user-timestamp.user/address])
                 (some? blacklisted) (sqlh/merge-where [:= :user/blacklisted blacklisted])
                 name (sqlh/merge-where [:like :user.user/name (str "%" name "%")])
                 address (sqlh/merge-where [:like :user.user/address (str "%" address "%")])
@@ -256,7 +258,8 @@
                                                [:like :user.user/address (str "%" search-term "%")]])
                 order-by (sqlh/merge-order-by [[(get {:users.order-by/address [:user.user/address [:collate :nocase]]
                                                       :users.order-by/username [:user.user/name [:collate :nocase]]
-                                                      :users.order-by/creation-date :user.user/creation-date}
+                                                      :users.order-by/creation-date :user.user/creation-date
+                                                      :users.order-by/last-seen :user-timestamp.timestamp/last-seen}
                                                      order-by)
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))
@@ -375,6 +378,11 @@
                                                      order-by)
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))
+
+(defn get-user-timestamps [{:keys [:user/address]}]
+  (db-get {:select [:*]
+           :from [:user-timestamp]
+           :where [:= address :user-timestamp.user/address]}))
 
 (defn get-user-content-permissions [{:keys [:user/source-user :user/target-user]}]
   (db-all (cond->

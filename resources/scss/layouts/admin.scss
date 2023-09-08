@@ -163,7 +163,6 @@
 		margin-bottom: 22.48px;
 		border-radius: 6px;
 		position: relative;
-		overflow: hidden;
 		background: $bgCard;
 		padding: 17.65px 21.5px 25px;
 		.titleCel {
@@ -223,8 +222,11 @@
 		}
 		.creation-date {
 			display: flex;
-			.d-lg-none {
-				margin-right: 15px;
+			span {
+				margin-left: 15px;
+				&.last-seen {
+					opacity: 0.5;
+				}
 			}
 		}
 		.button {
@@ -682,6 +684,11 @@
 			}
 			.creation-date {
 				width: 18%;
+				display: block;
+				span {
+					display: block;
+					margin-left: 0;
+				}
 			}
 			.button {
 				margin-top: 0px;

@@ -72,8 +72,11 @@
   "Gets all the grants"
   (stdb/get-grants args))
 
-(defn get-users [_current-user args]
+(defn get-users [current-user args]
   "Gets all users"
+  (when (:users.order-by/last-seen args)
+    (require-auth current-user)
+    (require-admin current-user))
   (stdb/get-users args))
 
 (defn get-announcements [_current-user args]
@@ -214,6 +217,13 @@
 (defn blacklisted? [_current-user user-address]
   "Checks if a user is currently blacklisted"
   (stdb/blacklisted? {:user/address user-address}))
+
+(defn get-user-timestamps [current-user user-address]
+  "Gets the timestamps of a user"
+  (require-auth current-user)
+  (require-admin current-user)
+
+  (stdb/get-user-timestamps {:user/address user-address}))
 
 (defn has-private-content? [_current-user user-address]
   "Checks if a user is currently blacklisted"

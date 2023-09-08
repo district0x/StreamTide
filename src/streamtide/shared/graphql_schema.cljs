@@ -198,6 +198,7 @@ type User {
     user_grant: Grant
     user_blacklisted: Boolean
     user_creationDate: Date
+    user_lastSeen: Date
     user_hasPrivateContent: Boolean
     user_unlocked: Boolean
 }
@@ -375,6 +376,7 @@ enum UsersOrderBy {
     users_orderBy_username
     users_orderBy_address
     users_orderBy_creationDate
+    users_orderBy_lastSeen
 }
 
 enum BlacklistedOrderBy {

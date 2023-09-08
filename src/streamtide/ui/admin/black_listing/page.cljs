@@ -17,12 +17,15 @@
     [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
     [streamtide.ui.components.search :refer [search-tools]]
     [streamtide.ui.components.spinner :as spinner]
+    [streamtide.ui.subs :as st-subs]
     [streamtide.ui.utils :as ui-utils]))
 
 (def page-size 6)
 
 (def users-order [{:value "creation-date/desc" :label "Newest"}
                   {:value "creation-date/asc" :label "Oldest"}
+                  {:value "last-seen/desc" :label "Last Seen ↓"}
+                  {:value "last-seen/asc" :label "Last Seen ↑"}
                   {:value "username/asc" :label "Username"}])
 
 (defn build-users-query [{:keys [:search-term :order-key]} after]
@@ -41,9 +44,10 @@
                :user/name
                :user/blacklisted
                :user/creation-date
+               :user/last-seen
                [:user/grant [:grant/status]]]]]]))
 
-(defn blacklist-entry [{:keys [:user/name :user/address :user/blacklisted :user/creation-date] :as user}]
+(defn blacklist-entry [{:keys [:user/name :user/address :user/blacklisted :user/creation-date :user/last-seen] :as user}]
   (fn []
     (let [tx-id (str "blacklist-" (random-uuid) address)]
       (let [{:keys [:grant/status]} (:user/grant user)
@@ -72,8 +76,9 @@
           [:h4.d-lg-none "Grant Status"]
           [:span status]]
          [:div.cel.creation-date
-          [:h4.d-lg-none "Creation Date"]
-          [:span (ui-utils/format-graphql-time creation-date)]]
+          [:h4.d-lg-none "Creation Date / Last Seen"]
+          [:span.creation (ui-utils/format-graphql-time creation-date)]
+          [:span.last-seen (if last-seen (ui-utils/format-graphql-time last-seen) "N/A")]]
          [:div.cel.button
           (when @loading? {:class "loading"})
           (if blacklisted
@@ -82,7 +87,9 @@
 
 
 (defn blacklist-list [form-data users-search]
-  (let [all-users (->> @users-search
+  (let [active-session (subscribe [::st-subs/active-session])
+        active-account-has-session? (subscribe [::st-subs/active-account-has-session?])
+        all-users (->> @users-search
                         (mapcat (fn [r] (-> r :search-users :items))))
         loading? (:graphql/loading? (last @users-search))
         has-more? (-> (last @users-search) :search-users :has-next-page)]
@@ -100,7 +107,8 @@
                         :load-fn #(let [{:keys [:end-cursor]} (:search-users (last @users-search))]
                                     (dispatch [::graphql-events/query
                                                {:query {:queries [(build-users-query @form-data end-cursor)]}
-                                                :id @form-data}]))}
+                                                :id (merge @form-data {:active-session @active-session
+                                                                       :active-account-has-session? @active-account-has-session?})}]))}
        (when-not (:graphql/loading? (first @users-search))
          (doall
            (for [{:keys [:user/address] :as user} all-users]
@@ -111,8 +119,11 @@
   (let [form-data (r/atom {:search-term ""
                            :order-key (:value (first users-order))})]
     (fn []
-      (let [users-search (subscribe [::gql/query {:queries [(build-users-query @form-data nil)]}
-                                      {:id @form-data}])]
+      (let [active-session (subscribe [::st-subs/active-session])
+            active-account-has-session? (subscribe [::st-subs/active-account-has-session?])
+            users-search (subscribe [::gql/query {:queries [(build-users-query @form-data nil)]}
+                                      {:id (merge @form-data {:active-session @active-session
+                                                              :active-account-has-session? @active-account-has-session?})}])]
         [admin-layout
          [:div.headerBlackListing
           [search-tools {:form-data form-data
@@ -126,26 +137,5 @@
            [:div.cel.cel-grant-status
             [:span.titleCel.col-grant-status "Grant Status"]]
            [:div.cel.cel-creation-date
-            [:span.titleCel.col-user-creation "Creation Date"]]]
-          ;[:div.form
-          ; [:div.formSearchList
-          ;  [:label.cel.cel-data
-          ;   [:h4.d-lg-none "Name"]
-          ;   [text-input {:id :search-name
-          ;                :class "inputField"
-          ;                :form-data search-input}]]
-          ;  [:label.cel.cel-eth
-          ;   [:h4.d-lg-none "ETH Address"]
-          ;   [text-input {:id :search-address
-          ;                :class "inputField"
-          ;                :form-data search-input}]]
-          ;  [:input.btBasic.btBasic-light {:type "submit" :on-click #(swap! form-data merge @search-input)
-          ;                                 :value "SEARCH"}]]
-          ; [:div.custom-select.selectForm.inputField
-          ;  [select-input {:form-data form-data
-          ;                 :id :order-key
-          ;                 :group-class :options
-          ;                 :value js/undefined
-          ;                 :options users-order}]]]
-          ]
+            [:span.titleCel.col-user-creation "Creation Date / Last Seen"]]]]
          [blacklist-list form-data users-search]]))))

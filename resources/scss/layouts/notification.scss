@@ -115,6 +115,9 @@
     .notification-message {
       font-size: 10pt;
     }
+    &.has-announcement {
+      top: unset;
+    }
   }
 
 }
