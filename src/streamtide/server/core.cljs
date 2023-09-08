@@ -14,7 +14,10 @@
             [streamtide.server.constants :as constants]
             [streamtide.server.db :as streamtide.server.db]
             [streamtide.server.graphql.graphql-resolvers :refer [resolvers-map]]
-            [streamtide.server.graphql.middlewares :refer [current-user-express-middleware user-context-fn add-auth-error-plugin]]
+            [streamtide.server.graphql.middlewares :refer [current-user-express-middleware
+                                                           user-context-fn
+                                                           add-auth-error-plugin
+                                                           build-user-timestamp-middleware]]
             [streamtide.server.syncer :as streamtide.server.syncer]
             [streamtide.shared.graphql-schema :refer [graphql-schema]]
             [streamtide.shared.smart-contracts-dev :as smart-contracts-dev]
@@ -50,6 +53,7 @@
                             :graphql {:port 6300
                                       :middlewares [logging-middlewares
                                                     current-user-express-middleware
+                                                    (build-user-timestamp-middleware 60000)
                                                     ;; TODO As we are sending the pictures directly in graphql, we need to increase the limit
                                                     (.json body-parser #js {:limit "5mb"})
                                                     ]

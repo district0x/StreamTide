@@ -64,5 +64,5 @@
 
       :else {:error "Invalid access-token header"})
     (catch :default e
-      (log/info "Failed to verify JWT" e)
+      (log/info "Failed to verify JWT" {:error e})
       {:error "Failed to verify JWT"})))

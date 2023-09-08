@@ -124,6 +124,11 @@
    [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
    [(sql/call :unique :user/address :role/role)]])
 
+(def user-timestamp-columns
+  [[:user/address address primary-key not-nil]
+   [:timestamp/last-seen :timestamp :default-nil]
+   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+
 (def user-content-permission-columns
   [[:user/source-user address not-nil]
    [:user/target-user address not-nil]
@@ -159,6 +164,7 @@
 (def donation-column-names (filter keyword? (map first donation-columns)))
 (def matching-column-names (filter keyword? (map first matching-columns)))
 (def user-roles-column-names (filter keyword? (map first user-roles-columns)))
+(def user-timestamp-column-names (filter keyword? (map first user-timestamp-columns)))
 (def user-content-permission-column-names (filter keyword? (map first user-content-permission-columns)))
 (def announcement-column-names (filter keyword? (map first announcement-columns)))
 (def round-column-names (filter keyword? (map first round-columns)))
@@ -421,7 +427,7 @@
                        :do-update-set (remove #{:user/creation-date} (keys user-info))}})))
 
 (defn ensure-users-exist! [addresses]
-  (log/debug "ensure-users-exist!" addresses)
+  (log/debug "ensure-users-exist!" {:addresses addresses})
   (let [user-infos (map (fn [address]
                           {:user/address address
                            :user/creation-date (shared-utils/now-secs)})
@@ -555,6 +561,15 @@
             :upsert {:on-conflict [:user/source-user :user/target-user]
                      :do-nothing []}}))
 
+(defn set-user-timestamp! [{:keys [:user-addresses :timestamp/last-seen] :as args}]
+  (db-run! {:insert-into :user-timestamp
+            :values (map (fn [address]
+                           (merge
+                             (select-keys args user-timestamp-column-names)
+                             {:user/address address})) user-addresses)
+            :upsert {:on-conflict [:user/address]
+                     :do-update-set (remove #{:user-addresses} (keys args))}}))
+
 (defn all-events []
   (db-all {:select [:*]
            :from [:events]}))
@@ -609,6 +624,9 @@
 
   (db-run! (-> (psqlh/create-table :user-roles :if-not-exists)
                (psqlh/with-columns user-roles-columns)))
+
+  (db-run! (-> (psqlh/create-table :user-timestamp :if-not-exists)
+               (psqlh/with-columns user-timestamp-columns)))
 
   (db-run! (-> (psqlh/create-table :user-content-permissions :if-not-exists)
                (psqlh/with-columns user-content-permission-columns)))

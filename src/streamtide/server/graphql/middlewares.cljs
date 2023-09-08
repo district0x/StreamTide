@@ -3,8 +3,10 @@
   (:require [cljs.reader :refer [read-string]]
             [clojure.string :as string]
             [district.server.config :as config]
+            [streamtide.server.db :as stdb]
             [streamtide.server.graphql.authorization :as authorization]
-            [streamtide.shared.utils :as shared-utils]))
+            [streamtide.shared.utils :as shared-utils]
+            [taoensso.timbre :as log]))
 
 (defn- bearer-token [auth-header]
   (second (string/split auth-header "Bearer ")))
@@ -21,6 +23,30 @@
     (when error
       (aset (.-headers req) "auth-error" (pr-str true))))
   (next))
+
+(defn build-user-timestamp-middleware [interval]
+  "Builds middleware to store in a DB the last interaction timestamp of a user.
+  This must go after [current-user-express-middleware].
+  To optimize performance, it does not write in the DB everytime a user interaction comes, but it keeps
+  the users who has recently interacted in a set in memory instead, and periodically (interval) it writes
+  all of them in DB"
+  (let [users-interacted (atom #{})]
+    (js/setInterval
+      (fn []
+        (try
+          (when (not-empty @users-interacted)
+            (let [[users _] (swap-vals! users-interacted (fn [] #{}))]
+              (stdb/ensure-users-exist! users)
+              (stdb/set-user-timestamp! {:user-addresses users
+                                         :timestamp/last-seen (- (shared-utils/now-secs) (/ interval 1000))})))
+          (catch :default e
+            (log/error "Failed to store user timestamps" {:error e}))))
+      interval)
+    (fn [req _rep next]
+      (let [user (-> (aget req "headers" "current-user") read-string :user/address)]
+        (when user
+          (swap! users-interacted conj user)))
+      (next))))
 
 (defn user-context-fn [event]
   "Adds the logged-in user, if any, server config and current time to the context"
