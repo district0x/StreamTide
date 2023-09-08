@@ -57,6 +57,13 @@
     (try-catch-throw
       (:timestamp/last-seen (logic/get-user-timestamps (user-id current-user) address)))))
 
+(defn user->last-modification-resolver [{:keys [:timestamp/last-modification :user/address] :as user} _ {:keys [:current-user]}]
+  (log/debug "user->last-modification-resolver args" user)
+  (if last-modification
+    last-modification
+    (try-catch-throw
+      (:timestamp/last-modification (logic/get-user-timestamps (user-id current-user) address)))))
+
 (defn user->has-private-content-resolver [{:keys [:user/address] :as user} _ {:keys [:current-user]}]
   (log/debug "user->has-private-content-resolver args" user)
   (try-catch-throw
@@ -314,6 +321,7 @@
           :user/grant user->grant-resolver
           :user/blacklisted user->blacklisted-resolver
           :user/last-seen user->last-seen-resolver
+          :user/last-modification user->last-modification-resolver
           :user/has-private-content user->has-private-content-resolver
           :user/unlocked user->unlocked-resolver}
    :Grant {:grant/user grant->user-resolver

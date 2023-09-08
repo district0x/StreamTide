@@ -127,6 +127,7 @@
 (def user-timestamp-columns
   [[:user/address address primary-key not-nil]
    [:timestamp/last-seen :timestamp :default-nil]
+   [:timestamp/last-modification :timestamp :default-nil]
    [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
 (def user-content-permission-columns
@@ -248,8 +249,11 @@
         query (cond->
                 {:select [:*]
                  :from [:user]}
-                (= order-by :users.order-by/last-seen) (sqlh/merge-left-join
-                                                         :user-timestamp [:= :user.user/address :user-timestamp.user/address])
+                (or
+                  (= order-by :users.order-by/last-seen)
+                  (= order-by :users.order-by/last-modification))
+                (sqlh/merge-left-join
+                  :user-timestamp [:= :user.user/address :user-timestamp.user/address])
                 (some? blacklisted) (sqlh/merge-where [:= :user/blacklisted blacklisted])
                 name (sqlh/merge-where [:like :user.user/name (str "%" name "%")])
                 address (sqlh/merge-where [:like :user.user/address (str "%" address "%")])
@@ -259,7 +263,8 @@
                 order-by (sqlh/merge-order-by [[(get {:users.order-by/address [:user.user/address [:collate :nocase]]
                                                       :users.order-by/username [:user.user/name [:collate :nocase]]
                                                       :users.order-by/creation-date :user.user/creation-date
-                                                      :users.order-by/last-seen :user-timestamp.timestamp/last-seen}
+                                                      :users.order-by/last-seen :user-timestamp.timestamp/last-seen
+                                                      :users.order-by/last-modification :user-timestamp.timestamp/last-modification}
                                                      order-by)
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))
@@ -569,7 +574,7 @@
             :upsert {:on-conflict [:user/source-user :user/target-user]
                      :do-nothing []}}))
 
-(defn set-user-timestamp! [{:keys [:user-addresses :timestamp/last-seen] :as args}]
+(defn set-user-timestamp! [{:keys [:user-addresses :timestamp/last-seen :timestamp/last-modification] :as args}]
   (db-run! {:insert-into :user-timestamp
             :values (map (fn [address]
                            (merge

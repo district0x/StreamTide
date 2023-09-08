@@ -74,9 +74,11 @@
 
 (defn get-users [current-user args]
   "Gets all users"
-  (when (:users.order-by/last-seen args)
+  (when (or (:users.order-by/last-seen args)
+            (:users.order-by/last-modification args))
     (require-auth current-user)
     (require-admin current-user))
+
   (stdb/get-users args))
 
 (defn get-announcements [_current-user args]
@@ -180,6 +182,8 @@
                      bg-photo (update :user/bg-photo upload-photo current-user :bg-photo config)
                      photo (update :user/photo upload-photo current-user :photo config))]
     (stdb/upsert-user-info! (merge args {:user/address current-user}))
+    (stdb/set-user-timestamp! {:user-addresses [current-user]
+                               :timestamp/last-modification (shared-utils/now-secs)})
     (when socials
       (let [[to-delete to-update] ((juxt filter remove) #(clojure.string/blank? (:social/url %)) socials)]
         (when (seq to-update) (stdb/upsert-user-socials! (map #(merge % {:user/address current-user
