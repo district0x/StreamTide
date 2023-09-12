@@ -95,10 +95,10 @@
                                                              :active-account-has-session? @active-account-has-session?})}])]
         [app-layout
          [:main.pageSite
-          {:id "grants"}
+          {:id "Artists"}
           [:div.headerGrants
            [:div.container
-            [:h1.titlePage "Grants"]
+            [:h1.titlePage "Artists"]
             [search-tools {:form-data form-data
                            :search-id :search-term
                            :select-options grants-order}]]]
