@@ -95,7 +95,7 @@
                                                              :active-account-has-session? @active-account-has-session?})}])]
         [app-layout
          [:main.pageSite
-          {:id "Artists"}
+          {:id "grants"}
           [:div.headerGrants
            [:div.container
             [:h1.titlePage "Artists"]
