@@ -98,7 +98,7 @@
           {:id "grants"}
           [:div.headerGrants
            [:div.container
-            [:h1.titlePage "Artists"]
+            [:h1.titlePage "Creators"]
             [search-tools {:form-data form-data
                            :search-id :search-term
                            :select-options grants-order}]]]

@@ -16,7 +16,7 @@
     [streamtide.ui.utils :refer [build-grant-status-query]]))
 
 
-(def nav-menu-items [{:text "Artists"
+(def nav-menu-items [{:text "Creators"
                       :route :route.grants/index}
                      {:text "Leaderboard"
                       :route :route.leaderboard/index}
