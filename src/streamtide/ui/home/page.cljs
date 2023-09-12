@@ -4,7 +4,6 @@
     [district.ui.component.page :refer [page]]
     [streamtide.ui.components.app-layout :refer [app-layout]]))
 
-
 (defmethod page :route/home []
   (let []
     (fn []
@@ -14,16 +13,11 @@
         [:div.contentHome
          [:div.container
           [:h2.titleHome
-           [:span "RIDE"]
+           [:span "FUEL"]
            [:span.the [:span "the"]]
-           [:span "STREAM"]]
+           [:span "FUTURE"]]
           [:div.text
-           [:p "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud."]]
-          [:div.video
-           [:video
-            {:controls true}
-            [:source {:src "/img/layout" :type "video/mp4"}]
-            "Your browser does not support the video tag."]]]
+           [:p "Stream Tide is an open-source patronage tool that operates on Web3 and microgrants. By matching creator contributions, it amplifies that support and makes donations go further during a grant round. Our goal is to support creators, promote open-source & the creative commons, so we can help shape the decentralized future of work. 🚀"]]]
          [:div.hero
           [:div.imgHero
            [:video.item-day

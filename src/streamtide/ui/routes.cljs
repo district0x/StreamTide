@@ -6,7 +6,7 @@
              ["/admin/grant-approval-feed" :route.admin/grant-approval-feed]
              ["/admin/round/:round" :route.admin/round]
              ["/admin/rounds" :route.admin/rounds]
-             ["/grants" :route.grants/index]
+             ["/artists" :route.grants/index]
              ["/leaderboard" :route.leaderboard/index]
              ["/my-content" :route.my-content/index]
              ["/my-settings" :route.my-settings/index]
