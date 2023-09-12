@@ -154,14 +154,15 @@
 (defn- grant-info [grant-status show-popup-fn errors]
   (let []
   [:div.apply
-  [:h2.titleEdit "Apply for a Grant"]
-  [:p "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."]
+  [:h2.titleEdit "Apply to be a creator"]
+ ;We need a way remove the denied state so they can apply again, or a new queue in admin that sends all denied accounts to a single feed that can be searched to approve accounts
+  [:p "If you apply to be a verified creator, you will gain access to patronage tools and grant matching during an upcoming grant matching round, amplifying the impact of contributions you receive during the event. Please note that approval is manual, so please be patient while you wait. Join our "[:a {:href "https://discord.gg/VUP4b7djEN" :target "_blank" :style {:color "Goldenrod"}} "Discord "] "and open a support ticket if you don't receive a notification about your status via email or Discord."]
   (case grant-status
     :grant.status/unrequested [:button.btBasic.btBasic-light.btApply {:on-click #(show-popup-fn % true)
                                                                       :disabled (not-empty (-> @errors :local))} "APPLY FOR A GRANT"]
-    :grant.status/requested [:div.requested "Your Grant has been requested and is pending for approval"]
-    :grant.status/approved [:div.approved "Your Grant has been approved"]
-    :grant.status/rejected [:div.rejected "Your Grant has been rejected"]
+    :grant.status/requested [:div.requested "Your Grant has been requested and is pending for approval 🚀 Join our "[:a {:href "https://discord.gg/VUP4b7djEN" :target "_blank" :style {:color "Goldenrod"}} "Discord "] "while you wait for a response"]
+    :grant.status/approved [:div.approved "Your Grant has been approved 🚀"]
+    :grant.status/rejected [:div.rejected "Your Grant has been rejected. To appeal this decision please join our "[:a {:href "https://discord.gg/VUP4b7djEN" :target "_blank" :style {:color "Goldenrod"}} "Discord "] "and open a support ticket."]
     [:div.spinner-container [spinner/spin]])]))
 
 
@@ -179,7 +180,7 @@
           [:button.btClose {:on-click #(close-popup %)} "Close" ]
           [:div.content
            [:h3 "Apply for a Grant"]
-           [:p "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat."]
+           [:p "This software is in early access. By applying for a grant through Stream Tide, you agree to not hold Stream Tide or its affiliates liable for any claims, losses, or damages arising from the grant application process or the use of granted funds. You acknowledge that you are participating and using this open source software at your own risk and that Stream Tide makes no warranties or guarantees regarding the grant program."]
            [:div.form
             (when loading? [spinner/spin])
             [:label.checkField.simple
@@ -365,7 +366,7 @@
                  [initializable-text-input
                   (merge input-params
                          {:id :tagline
-                          :placeholder "Supporting People - not Platforms"})]]]
+                          :placeholder "Summarize what you do here"})]]]
                [:div.block
                 [:label.inputField
                  {:title "Your username in social networks"}
@@ -397,7 +398,7 @@
                 [:<>
                  [:div.min-donation
                   [:h2 "Minimum donation amount"]
-                  [:p "Donations smaller to this amount will not unlock your restricted content"]
+                  [:p "Donations smaller to this amount will not unlock your 'supporter only' content"]
 
                   [:label.inputField
                    [:span "ETH"]
@@ -406,7 +407,7 @@
                            {:id :min-donation})]]]
                  [:div.perks
                   [:h2 "Perks Button URL"]
-                  [:p "Lorem ipsum dolor sit amet, consectetur adipiscing elit."]
+                  [:p "Add a redemption link for your supporters to claim when they support you. This could be anything from a swag discount code, Web3 redemtpion link, private streams, etc."]
 
                   [:label.inputField
                    [:span "URL"]
