@@ -178,7 +178,7 @@
                                               (.stopPropagation e)
                                               (dispatch [::ss-events/send-support {:donations @form-data
                                                                                    :send-tx/id tx-id}]))}
-                  (if @donate-tx-success? "Thanks champ! 😉" "Simp Today 🤑")]
+                  (if @donate-tx-success? "Thanks champ! 😉" "SIMP TODAY! 🤑")]
                  [:button.btBasic.btBasic-light.btKeep
                   {:on-click #(dispatch [::router-events/navigate :route.grants/index])}
                   "KEEP BROWSING"]]]]
