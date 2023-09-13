@@ -132,7 +132,7 @@
             (when hidden-content?
               [:span.additional-content
                {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
-               "Unlock additional content supporting this creator"])
+               "Unlock additional content by supporting this creator"])
             [infinite-scroll-masonry {:class "medias unpinned"
                                       :loading? loading-unpinned?
                                       :has-more? has-more-unpinned?

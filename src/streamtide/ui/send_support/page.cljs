@@ -79,7 +79,7 @@
               (when (and (nil? (get-in @errors [:local user-address :amount]))
                          (< (js/parseFloat (get-in @form-data [user-address :amount]))
                             (js/parseFloat min-donation)))
-                [:span.warning "Min amount not matched. This donation will not unlock restricted content"])]
+                [:span.warning "Min amount not reached. This donation will not unlock hidden content"])]
              [:div.field.field-currency
               [:span.titleField "Currency"]
               [:div.inputField.simple.disabled
@@ -158,10 +158,10 @@
           {:id "send-support"}
           [:div.container
             [:div.headerSendSupport
-              [:h1.titlePage "Send Support"]]
+              [:h1.titlePage "Simping"]]
             [:div.cart
              (if (empty? @cart)
-               [no-items-found {:message "Your cart is empty"}]
+               [no-items-found {:message "Your cart is empty 😢"}]
                [:div.contentSendSupport
                 [support-seal]
                 (doall
@@ -169,7 +169,7 @@
                     ^{:key address} [send-support-card address form-data errors]))])
                 [:div.buttons
                  [pending-button {:pending? @donate-tx-pending?
-                                  :pending-text "CHECKING OUT"
+                                  :pending-text "Simping in Progress 💸"
                                   :disabled (or @donate-tx-pending? @donate-tx-success?
                                                 (empty? @form-data)
                                                 (some #(or (zero? %) (nil? %)) (map :amount (vals @form-data))))
@@ -178,7 +178,7 @@
                                               (.stopPropagation e)
                                               (dispatch [::ss-events/send-support {:donations @form-data
                                                                                    :send-tx/id tx-id}]))}
-                  (if @donate-tx-success? "CHECKED OUT" "CHECKOUT")]
+                  (if @donate-tx-success? "Thanks champ! 😉" "Simp Today 🤑")]
                  [:button.btBasic.btBasic-light.btKeep
                   {:on-click #(dispatch [::router-events/navigate :route.grants/index])}
                   "KEEP BROWSING"]]]]
