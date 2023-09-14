@@ -43,16 +43,17 @@
                              :user/unlocked]]]]]]))
 
 
-(defn grant-card [{:keys [:user/address :user/photo :user/bg-photo :user/name :user/description :user/unlocked]}]
+(defn grant-card [{:keys [:user/address :user/bg-photo :user/photo :user/name :user/description :user/unlocked]}]
   [:li.card {:key address}
    [nav-anchor {:route :route.profile/index :params {:address address}}
     [:div.thumb
      {:class (when unlocked "star")}
-     [:img {:src (or photo avatar-placeholder)}]]
+     [:img {:src (or bg-photo avatar-placeholder)}]] 
     [:div.content
-     (when bg-photo [user-photo {:src bg-photo}])
+     (when photo [user-photo {:src photo}])
      [:h3 name]
      [:p (format/truncate description 180)]]]])
+
 
 
 (defn grant-tiles [form-data grants-search]
