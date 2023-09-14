@@ -19,7 +19,7 @@
         " patronage tool that operates on Web3 and micro-grants. We host an open-source patronage tool that acts as fuel for creators, with donation matching to maximize the impact of each contribution. Community-directed capital allocation like this serves as a vehicle to help people reach their goals on the Roads of Web3 and beyond. Web3 and Open Source tools like Stream Tide are the “Future Of Work” we envision."]
        [:div.container
         [:h2.titlePage "Mission"]
-        "At Stream Tide, our mission is to usher in a new era for creative artists and culture builders by revolutionizing their work through open-source financial tools. So every individual in the creative commons community has the power to thrive and succeed in a platform-agnostic way.🤘"]
+        "At Stream Tide, our mission is to usher in a new era for creative artists and culture builders by revolutionizing their work through open-source financial tools. So every individual in the creative commons community has the power to thrive and succeed in a platform-agnostic way."]
        [:div.container
         [:h2.titlePage "Vision"]
         "In the realm of arts and culture, it's the individual creators and their vibrant communities that form the lifeblood of creativity. While platforms come and go, the essence of artistry and collaboration remains timeless. Stream Tide emerges not as another platform, but as a dynamic toolset, designed to empower individuals and foster community growth."
