@@ -17,7 +17,7 @@
            [:span.the [:span "the"]]
            [:span "FUTURE"]]
           [:div.text
-           [:p "Stream Tide is an open-source patronage tool that operates on Web3 and microgrants. By matching creator contributions, it amplifies that support and makes donations go further during a grant round. Our goal is to support creators, promote open-source & the creative commons, so we can help shape the decentralized future of work. 🚀"]]]
+           [:p "Stream Tide is an open-source patronage tool that operates on Web3 and microgrants. We host grant matching events that match donations made to creators, turning 'a small stream of support into a tidal wave of support 🌊'. \n Our goal is to support creators, promote open-source, and the creative commons, helping to shape the decentralized future of work. 🚀"]]]
          [:div.hero
           [:div.imgHero
            [:video.item-day
