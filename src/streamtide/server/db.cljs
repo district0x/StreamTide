@@ -80,14 +80,15 @@
 (def notifications-category-columns
   [[:user/address address not-nil]
    [:notification/category :varchar not-nil]
-   [(sql/call :primary-key :user/address)]
+   [:notification/type :varchar not-nil]
+   [:notification/enable :tinyint]
+   [(sql/call :primary-key :user/address :notification/category :notification/type)]
    [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
 (def notifications-type-columns
   [[:user/address address not-nil]
    [:notification/type :varchar not-nil]
    [:notification/user-id :varchar]
-   [:notification/enable :tinyint]
    [(sql/call :primary-key :user/address :notification/type)]
    [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
@@ -223,11 +224,13 @@
            :from [:user]
            :where [:= user-address :user.user/address]}))
 
-(defn get-user-socials [user-address]
-  (let [sql-query (db-all {:select [:*]
-                           :from [:social-link]
-                           :where [:= user-address :social-link.user/address]})]
-    sql-query))
+(defn get-user-socials [{:keys [:user/address :user/addresses :social/network :social/verified]}]
+  (db-all (cond-> {:select [:*]
+                   :from [:social-link]}
+                  address (sqlh/merge-where [:= :social-link.user/address address])
+                  addresses (sqlh/merge-where [:in :social-link.user/address addresses])
+                  network (sqlh/merge-where [:= :social-link.social/network network])
+                  (some? verified) (sqlh/merge-where [:= :social-link.social/verified verified]))))
 
 (defn get-user-perks [current-user {:keys [:user/address]}]
   (db-get {:select [:p.*]
@@ -243,37 +246,37 @@
                    [:= :u.user/blacklisted false]]}))
 
 
-(defn get-notification-categories [{:keys [:user/address :notification/category]}]
+(defn get-notification-categories [{:keys [:user/address :user/addresses :notification/category :notification/type :notification/enable]}]
   (db-all (cond-> {:select [:*]
-                   :from [:notification-category]
-                   :where [:= :user/address address]}
-                  category (sqlh/merge-where [:= :notification/category category]))))
-
-(defn get-notification-types [{:keys [:user/address :notification/type :notification/enable :notification/user-id]}]
-  (db-all (cond-> {:select [:*]
-                   :from [:notification-type]
-                   :where [:= :user/address address]}
+                   :from [:notification-category]}
+                  address (sqlh/merge-where [:= :user/address address])
+                  addresses (sqlh/merge-where [:in :user/address addresses])
+                  category (sqlh/merge-where [:= :notification/category category])
                   type (sqlh/merge-where [:= :notification/type type])
-                  enable (sqlh/merge-where [:= :notification/enable enable])
+                  (some? enable) (sqlh/merge-where [:= :notification/enable enable]))))
+
+(defn get-notification-types [{:keys [:user/address :user/addresses :notification/type :notification/user-id]}]
+  (db-all (cond-> {:select [:*]
+                   :from [:notification-type]}
+                  address (sqlh/merge-where [:= :user/address address])
+                  addresses (sqlh/merge-where [:in :user/address addresses])
+                  type (sqlh/merge-where [:= :notification/type type])
                   user-id (sqlh/merge-where [:= :notification/user-id user-id]))))
 
-(defn get-notification-types-many [{:keys [:user/address :notification/type :notification/user-id]}]
+(defn get-notification-types-many [{:keys [:user/address :user/addresses :notification/type :notification/user-id]}]
   (db-all (cond-> {:select [:*]
-                   :from [:notification-type-many]
-                   :where [:= :user/address address]}
+                   :from [:notification-type-many]}
+                  address (sqlh/merge-where [:= :user/address address])
+                  addresses (sqlh/merge-where [:in :user/address addresses])
                   type (sqlh/merge-where [:= :notification/type type])
                   user-id (sqlh/merge-where [:= :notification/user-id user-id]))))
 
 (defn get-notification-receivers [category]
   (db-all {:select [:*]
            :from [[:notification-category :nc]]
-           :left-join [[:notification-type :nt]
-                       [:= :nc.user/address :nt.user/address]
-                       [:notification-type-many :ntm]
-                       [:= :nt.user/address :ntm.user/address]]
            :where [:and
                    [:= :nc.notification/category category]
-                   [:= :nt.notification/enable true]]}))
+                   [:= :nc.notification/enable true]]}))
 
 (defn get-grant [user-address]
   (db-get {:select [:*]
@@ -534,26 +537,27 @@
     (db-run! {:delete-from :perks
               :where [:= :user/address address]})))
 
-(defn add-to-notification-category! [{:keys [:user/address :notification/category] :as args}]
-  (log/debug "add-to-notification-category!" args)
+(defn upsert-notification-categories! [categories-setting]
+  (log/debug "add-to-notification-category!" {:args categories-setting})
   (db-run! {:insert-into :notification-category
-            :values [(select-keys args notifications-category-column-names)]
-            :upsert {:on-conflict [:user/address :notification/category]
-                     :do-nothing []}}))
+            :values (map #(select-keys % notifications-category-column-names) categories-setting)
+            :upsert {:on-conflict [:user/address :notification/category :notification/type]
+                     :do-update-set [:notification/enable]}}))
 
-(defn remove-from-notification-category! [{:keys [:user/address :notification/category] :as args}]
+(defn remove-from-notification-category! [{:keys [:user/address :notification/category :notification/type] :as args}]
   (log/debug "remove-from-notification-category!" args)
   (when address
     (db-run! (cond-> {:delete-from :notification-category
                       :where [:= :user/address address]}
-                     category (sqlh/merge-where [:= :notification/category category])))))
+                     category (sqlh/merge-where [:= :notification/category category])
+                     type (sqlh/merge-where [:= :notification/type type])))))
 
-(defn upsert-notification-type! [{:keys [:user/address :notification/type :notification/enable :notification/user-id] :as args}]
+(defn upsert-notification-type! [{:keys [:user/address :notification/type :notification/user-id] :as args}]
   (log/debug "upsert-notification-type!" args)
   (db-run! {:insert-into :notification-type
             :values [(select-keys args notifications-type-column-names)]
             :upsert {:on-conflict [:user/address :notification/type]
-                     :do-update-set (keys args)}}))
+                     :do-update-set [:notification/user-id]}}))
 
 (defn add-notification-type-many! [{:keys [:user/address :notification/type :notification/user-id] :as args}]
   (log/debug "add-notification-type-many!" args)
@@ -562,13 +566,14 @@
             :upsert {:on-conflict [:user/address :notification/type :notification/user-id]
                      :do-nothing []}}))
 
-(defn remove-notification-type-many! [{:keys [:user/address :notification/type :notification/id] :as args}]
+(defn remove-notification-type-many! [{:keys [:user/address :notification/type :notification/id :notification/user-id] :as args}]
   (log/debug "remove-notification-type-many!" args)
   (when (or (and address type) id)
     (db-run! (cond-> {:delete-from :notification-type-many}
                      address (sqlh/merge-where [:= :user/address address])
                      type (sqlh/merge-where [:= :notification/type type])
-                     id (sqlh/merge-where [:= :notification/id id])))))
+                     id (sqlh/merge-where [:= :notification/id id])
+                     user-id (sqlh/merge-where [:= :notification/user-id id])))))
 
 (defn upsert-grants! [{:keys [:user/addresses :grant/status :grant/decision-date] :as args}]
   "Insert new grants for given users or update them if the users already requested a grant"

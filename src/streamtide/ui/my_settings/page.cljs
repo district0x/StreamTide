@@ -4,21 +4,21 @@
     [cljs-web3-next.core :as web3]
     [clojure.string :as string]
     [district.graphql-utils :as gql-utils]
-    [district.ui.component.form.input :refer [text-input get-by-path assoc-by-path file-drag-input checkbox-input radio-group]]
+    [district.ui.component.form.input :refer [text-input get-by-path assoc-by-path file-drag-input checkbox-input err-reported radio-group]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.subs :as gql]
-    [district.ui.notification.events :as notification-events]
     [district.ui.router.events :as router-events]
     [district.ui.web3-accounts.subs :as accounts-subs]
     [re-frame.core :refer [dispatch subscribe]]
     [reagent.core :as r]
     [reagent.ratom :refer [reaction]]
-    [streamtide.shared.utils :refer [valid-url? expected-root-domain? social-domains]]
+    [streamtide.shared.utils :refer [valid-url? valid-email? expected-root-domain? social-domains deep-merge]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.components.general :refer [no-items-found support-seal discord-invite-link]]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [avatar-placeholder]]
+    [streamtide.ui.components.web-push :as web-push]
     [streamtide.ui.my-settings.events :as ms-events]
     [streamtide.ui.my-settings.subs :as ms-subs]
     [streamtide.ui.utils :refer [switch-popup from-wei check-session build-grant-status-query]]
@@ -48,15 +48,37 @@
                     :social/url
                     :social/verified]]]])
 
+(defn build-user-notifications-query [{:keys [:user/address]}]
+  [:user
+   {:user/address address}
+   [[:user/notification-categories
+     [:notification/category
+      :notification/type
+      :notification/enable]]
+    [:user/notification-types
+     [:notification/type
+      :notification/user-ids]]]])
+
 (defn initializable-text-input
   [{:keys [:form-values :id] :as opts}]
   [text-input (merge {:value (get-by-path form-values id)}
                      (apply dissoc opts [:form-values]))])
 
-(defn social-link-edit [{:keys [:id :form-data :form-values :icon-src :verifiable? :errors :placeholder]}]
+(defn initializable-checkbox-input
+  [{:keys [:form-values :form-data :id] :as opts}]
+  [err-reported opts (fn [{:keys [id form-data form-values on-change]}]
+                       [:input (merge
+                                 {:type "checkbox"
+                                  :checked (get-by-path form-values id "")
+                                  :on-change #(let [v (-> % .-target .-checked)]
+                                                (swap! form-data assoc-by-path id v)
+                                                (when on-change
+                                                  (on-change v)))})])])
+
+(defn social-link-edit [{:keys [:id :form-data :form-values :icon-src :verifiable? :errors :placeholder :not-removable]}]
   (let [value-id (conj id :url)
         verified? (get-by-path form-values (conj id :verified))
-        network (last id)]
+        network (keyword (name (last id)))]
     [:div.social
      [:div.header
       [:div.icon
@@ -75,7 +97,7 @@
                                                                       (update-in data path dissoc network)
                                                                       data)))))}])}
          "VERIFY"])
-      (when-not (string/blank? (:url (get-by-path form-values id)))
+      (when (and (not not-removable) (not (string/blank? (:url (get-by-path form-values id)))))
         [:button.btRemove
          {:on-click (fn []
                       (swap! form-data #(assoc-by-path (with-meta % {:touched? true}) value-id "")))}
@@ -114,6 +136,38 @@
                                                   :social/url (:url v)})))
           []
           socials))
+
+(defn notification-categories->gql [notification-settings]
+  (gql-utils/clj->gql (reduce-kv (fn [aggr category v]
+               (concat aggr (reduce-kv (fn [inner-aggr type enable?]
+                                         (conj inner-aggr
+                                               {:notification/category (gql-utils/kw->gql-name category)
+                                                :notification/type (gql-utils/kw->gql-name type)
+                                                :notification/enable enable?})
+                                         ) [] v)))
+             [] notification-settings)))
+
+(defn- notification-categories-gql->kw [notification-settings]
+  (reduce (fn [aggr {:keys [:notification/category :notification/type :notification/enable]}]
+            (assoc-in aggr [(gql-utils/gql-name->kw category) (gql-utils/gql-name->kw type)] enable))
+          {}
+          notification-settings))
+
+(defn notification-types->gql [notification-settings]
+  (gql-utils/clj->gql (reduce-kv (fn [aggr type user-id]
+               (conj aggr {:notification/type (gql-utils/kw->gql-name type)
+                           :notification/user-ids [user-id]}))
+             [] notification-settings)))
+
+(defn- notification-types-gql->kw [notification-settings]
+  (reduce (fn [aggr {:keys [:notification/type :notification/user-ids]}]
+            (let [type (gql-utils/gql-name->kw type)]
+              (if (= type :notification-type/discord)
+                (assoc aggr type {:url (first user-ids)
+                                  :verified true})
+                (assoc aggr type (first user-ids)))))
+          {}
+          notification-settings))
 
 (defn- parse-min-donation [entries]
   (update entries :min-donation #(if % (from-wei %) "0")))
@@ -202,13 +256,13 @@
     (fn [{:keys [:form-data :errors]}]
       (let [user-socials-query (when @active-account (subscribe [::gql/query {:queries [(build-user-socials-query {:user/address @active-account})]}
                                                                  {:refetch-on [::ms-events/verify-social-success]}]))
-            loading? (or (nil? user-socials-query) (:graphql/loading? (last @user-socials-query)))
+            loading? (or (nil? user-socials-query) (:graphql/loading? @user-socials-query))
             initial-values (when user-socials-query (-> @user-socials-query
                                                    :user
                                                    (update :user/socials socials-gql->kw)
                                                    remove-ns
                                                    (select-keys [:socials])))
-            form-values (merge-with #(if (map? %2) (merge %1 %2) %2) initial-values @form-data)
+            form-values (deep-merge initial-values @form-data)
             input-params {:read-only loading?
                           :form-values form-values
                           :form-data form-data
@@ -256,6 +310,118 @@
                                     :icon-src "/img/layout/ico_patreon.svg"
                                     :placeholder "https://patreon.com/..."})]]]))))
 
+(defn notification-type [{:keys [:title :type :category :input-params]}]
+  (let [value-id [:notification-categories category type]
+        checked? (get-by-path (:form-values input-params) value-id)]
+    [:label.type
+     title
+     [:div.checkField.checkPublicPrivate
+     [initializable-checkbox-input (merge input-params {:id value-id})]
+     [:div.checkmark-container
+      [:span.text (if checked? "on" "off")]
+      [:span.checkmark
+        {:class (when checked? "checked")}]]]]))
+
+
+(defn collapsible []
+  (let [collapsed? (r/atom true)]
+    (fn [class title-component content-component]
+      [:div
+       {:class (str class (when @collapsed? " collapsed"))}
+       [:div.collapsible-header
+        {:on-click #(swap! collapsed? not)}
+        title-component]
+       [:div.collapsible-content content-component]])))
+
+(defn category [{:keys [:category :title :input-params]}]
+  [collapsible "category"
+   [:h3.category-title title]
+   [:div.types
+    [notification-type {:title "Push Notifications" :type :notification-type/web-push :category category :input-params input-params}]
+    ;[notification-type {:title "Web3 Push Notifications" :type :notification-type/web-3-push :category category :input-params input-params}]
+    [notification-type {:title "Discord" :type :notification-type/discord :category category :input-params input-params}]
+    [notification-type {:title "Email" :type :notification-type/email :category category :input-params input-params}]]])
+
+(defn discord-setup [input-params]
+  [collapsible "type-setup discord-setup"
+   [:h3.category-title "Discord"]
+   [:div.socialAccounts
+  [:div.verifier-hint "Verify you have a valid Discord account connected to "
+    [:a {:href discord-invite-link :target :_blank :rel "noopener noreferrer"} "district0x server"]]
+  [social-link-edit (merge input-params
+                           {:id [:socials :discord]
+                            :icon-src "/img/layout/ico_discord.svg"
+                            :verifiable? true
+                            :not-removable true})]]])
+
+(defn email-setup [{:keys [:form-data :form-values :errors]}]
+  (let [id [:notification-types :notification-type/email]]
+    [collapsible (str "type-setup email-setup" (when (-> @errors :local (get-in id)) " force-not-collapse"))
+     [:h3.category-title "Email"]
+     [:div.generalInfo
+      [:p "Setup your email"]
+      [:p.note "Email will not be visible to any other user, only used for notifications."]
+      [:label.inputField
+       [:span "Email"]
+       [initializable-text-input
+        {:form-data form-data
+         :form-values form-values
+         :id id
+         :type :email
+         :errors errors
+         :placeholder "your@email.com"}]]]]))
+
+(defn web-push-setup []
+  [collapsible "type-setup web-push-setup"
+   [:h3.category-title "Push Notifications"]
+   [web-push/subscribe-button {:text "Enable push notifications in this browser"
+                               :class "btBasic btBasic-light btEnablePush"}]])
+
+(defn notification-settings []
+  (let [active-account (subscribe [::accounts-subs/active-account])]
+    (fn [{:keys [:form-data :form-values :errors]}]
+      (let [user-notifications-query (when @active-account (subscribe [::gql/query {:queries [(build-user-notifications-query {:user/address @active-account})]}
+                                                                       {:refetch-on [::ms-events/verify-social-success]}]))
+            user-socials-query (when @active-account (subscribe [::gql/query {:queries [(build-user-socials-query {:user/address @active-account})]}
+                                                                 {:disable-fetch? true}]))
+            loading? (or (nil? user-notifications-query) (:graphql/loading? @user-notifications-query) (:graphql/loading? @user-socials-query))
+            initial-values (when user-notifications-query (-> (deep-merge @user-socials-query @user-notifications-query)
+                                                              :user
+                                                              (update :user/notification-categories notification-categories-gql->kw)
+                                                              (update :user/notification-types notification-types-gql->kw)
+                                                              (update :user/socials socials-gql->kw)
+                                                              remove-ns
+                                                              (select-keys [:notification-categories :notification-types :socials])))
+            form-values (deep-merge initial-values @form-data)
+            input-params {:read-only loading?
+                          :form-values form-values
+                          :form-data form-data
+                          :errors errors}
+            cats [:notification-category/announcements :notification-category/newsletter :notification-category/grant-status :notification-category/donations :notification-category/patron-publications]
+            types [:notification-type/web-push :notification-type/discord :notification-type/email]
+            default-values (deep-merge (into {} (for [cat cats]
+                                                  [cat (into {} (for [type types]
+                                                                  [type true]))]))
+                                  {:notification-category/newsletter {:notification-type/web-push false}})]
+        (when (and (not loading?)
+                   (empty? (:notification-categories initial-values))
+                   (nil? (:notification-categories @form-data)))
+          (swap! form-data assoc :notification-categories default-values))
+        [:div.notification-settings
+         [:h2.titleEdit "Notifications settings"]
+         [:h3 "Which notification you receive"]
+         [:div.categories
+          [category {:title "Announcements" :category :notification-category/announcements :input-params input-params}]
+          [category {:title "Newsletter" :category :notification-category/newsletter :input-params input-params}]
+          [category {:title "Grant Status" :category :notification-category/grant-status :input-params input-params}]
+          [category {:title "Donations" :category :notification-category/donations :input-params input-params}]
+          [category {:title "Patrons publications" :category :notification-category/patron-publications :input-params input-params}]]
+         [:h3 "How you receive notifications"]
+         [:div.type-setting
+          [discord-setup input-params]
+          [email-setup input-params]
+          [web-push-setup]]]))))
+
 (defn clean-form-data [form-data form-values initial-values]
   (try
     (cond-> form-values
@@ -263,6 +429,8 @@
                                               (or (= key :name)
                                                   (not= (key initial-values) val))) form-values)))
             (:socials @form-data) (update :socials socials-kw->gql)
+            (:notification-categories @form-data) (update :notification-categories notification-categories->gql)
+            (:notification-types @form-data) (update :notification-types notification-types->gql)
             (and (:photo @form-data) (-> @form-data :photo :error)) (dissoc :photo)
             (and (:photo @form-data) (-> @form-data :photo :error not)) (update :photo photo->gql)
             (and (:bg-photo @form-data) (-> @form-data :bg-photo :error)) (dissoc :bg-photo)
@@ -279,6 +447,10 @@
   (and (not-empty url)
        (if (some? domains) (not (expected-root-domain? url domains))
                            (not (valid-url? url))))))
+
+(defn- some-invalid-email? [email]
+  (and (not-empty email)
+       (not (valid-email? email))))
 
 (defmethod page :route.my-settings/index []
   (let [active-account (subscribe [::accounts-subs/active-account])
@@ -306,6 +478,8 @@
                                          (assoc-in [:socials :pinterest :url] "URL not valid")
                                          (some-invalid-url? (-> @form-data :socials :patreon :url) (:patreon social-domains))
                                          (assoc-in [:socials :patreon :url] "URL not valid")
+                                         (some-invalid-email? (-> @form-data :notification-types :email))
+                                         (assoc-in [:notification-types :email] "Email not valid")
 
                                          (-> @form-data :photo :error)
                                          (assoc :photo (-> @form-data :photo :error))
@@ -324,7 +498,7 @@
                                                    (select-keys [:name :description :tagline :handle :url :photo :bg-photo :perks :min-donation])
                                                    select-photos
                                                    parse-min-donation))
-            form-values (merge-with #(if (map? %2) (merge %1 %2) %2) initial-values @form-data)
+            form-values (deep-merge initial-values @form-data)
             input-params {:read-only loading?
                           :form-values form-values
                           :form-data form-data
@@ -392,6 +566,8 @@
                         {:id :description
                          :input-type :textarea})]]]
               [social-links input-params]
+              [:hr.lineProfileEdit]
+              [notification-settings input-params]
               [:hr.lineProfileEdit]
               [grant-info grant-status show-grant-popup-fn errors]
               (when (= grant-status :grant.status/approved)

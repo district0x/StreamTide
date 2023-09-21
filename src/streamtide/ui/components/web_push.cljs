@@ -5,6 +5,7 @@
             [re-frame.core :refer [subscribe dispatch] :as re-frame]
             [district.ui.graphql.events :as gql-events]
             [streamtide.shared.utils :as shared-utils]
+            [streamtide.ui.components.error-notification :as error-notification]
             [streamtide.ui.config :as config]))
 
 ; This ns provides the component, event handlers and effects to subscribe to push notifications.
@@ -23,12 +24,13 @@
 ; the notifications might be blocked by ad-blockers or even the OS itself.
 
 
-(defn subscribe-button []
+(defn subscribe-button [{:keys [:text :component :class] :or {text "Enable push notifications"
+                                                       component :button}}]
   "Entry point component. Add this somewhere to trigger the push notification subscription process"
-  [:button
-   {:on-click
-    #(dispatch [::enable-push-notifications])}
-   "CLICK"])
+  [component
+   {:class class
+    :on-click #(dispatch [::enable-push-notifications])}
+   text])
 
 (re-frame/reg-fx
   :register-service-worker
@@ -94,7 +96,8 @@
   ; If users do not allow push notifications, we just show an error
   (fn [{:keys [db]} [_ {:keys [:registration] :as data}]]
     {:dispatch-n [[::logging/error "Permission for sending push notifications denied"]
-                  [::notification-events/show "[ERROR] Permission for sending push notifications denied"]]}))
+                  [::error-notification/show-error "Permission for sending push notifications denied"
+                   [{:message "Website permission blocks notifications. Enable them to continue"}]]]}))
 
 (re-frame/reg-fx
   :push-subscribe
@@ -120,13 +123,16 @@
   ; Sends a GraphQL mutation request to add a new web-push subscription in the server
   (fn [{:keys [db]} [_ {:keys [:subscription] :as data}]]
     (let [query
-          {:queries [[:add-push-subscription
-                      {:subscription :$subscription}]]
+          {:queries [[:add-notification-type
+                      {:notification/type
+                       {:notification/type :notification-type/web-push
+                        :notification/user-ids :$subscription
+                        }}]]
            :variables [{:variable/name :$subscription
-                        :variable/type :String!}]}]
+                        :variable/type (keyword "[ID!]!")}]}]
       {:dispatch [::gql-events/mutation
                   {:query query
-                   :variables {:subscription (shared-utils/json-stringify subscription)}
+                   :variables {:subscription [(shared-utils/json-stringify subscription)]}
                    :on-success [::add-subscription-success data]
                    :on-error [::add-subscription-error data]}]})))
 
@@ -143,11 +149,11 @@
                    "Failed to subscribe to push notifications"
                    {:error (map :message error)
                     :subscription subscription} ::add-subscription]
-                  [::notification-events/show "[ERROR] An error occurs while subscribing to push notifications"]]}))
+                  [::error-notification/show-error "An error occurs while subscribing to push notifications" error]]}))
 
 (re-frame/reg-event-fx
   ::log-and-show
   (fn [{:keys [db]} [_ message details]]
     (merge
       {:dispatch-n [[::logging/error message details]
-                    [::notification-events/show "[ERROR] Cannot subscribe to push notifications"]]})))
+                    [::error-notification/show-error "Cannot subscribe to push notifications" details]]})))
