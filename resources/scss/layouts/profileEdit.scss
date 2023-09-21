@@ -255,6 +255,11 @@
 				.category {
 					margin-bottom: 5px;
 
+					.category-description {
+						font-size: smaller;
+						font-weight: bold;
+					}
+
 					.types {
 						width: 100%;
 						background: $bgCard;

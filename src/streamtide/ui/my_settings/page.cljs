@@ -333,14 +333,16 @@
         title-component]
        [:div.collapsible-content content-component]])))
 
-(defn category [{:keys [:category :title :input-params]}]
+(defn category [{:keys [:category :title :description :input-params]}]
   [collapsible "category"
    [:h3.category-title title]
-   [:div.types
-    [notification-type {:title "Push Notifications" :type :notification-type/web-push :category category :input-params input-params}]
-    ;[notification-type {:title "Web3 Push Notifications" :type :notification-type/web-3-push :category category :input-params input-params}]
-    [notification-type {:title "Discord" :type :notification-type/discord :category category :input-params input-params}]
-    [notification-type {:title "Email" :type :notification-type/email :category category :input-params input-params}]]])
+   [:<>
+     [:p.category-description description]
+     [:div.types
+      [notification-type {:title "Push Notifications" :type :notification-type/web-push :category category :input-params input-params}]
+      ;[notification-type {:title "Web3 Push Notifications" :type :notification-type/web-3-push :category category :input-params input-params}]
+      [notification-type {:title "Discord" :type :notification-type/discord :category category :input-params input-params}]
+      [notification-type {:title "Email" :type :notification-type/email :category category :input-params input-params}]]]])
 
 (defn discord-setup [input-params]
   [collapsible "type-setup discord-setup"
@@ -411,11 +413,21 @@
          [:h2.titleEdit "Notifications settings"]
          [:h3 "Which notification you receive"]
          [:div.categories
-          [category {:title "Announcements" :category :notification-category/announcements :input-params input-params}]
-          [category {:title "Newsletter" :category :notification-category/newsletter :input-params input-params}]
-          [category {:title "Grant Status" :category :notification-category/grant-status :input-params input-params}]
-          [category {:title "Donations" :category :notification-category/donations :input-params input-params}]
-          [category {:title "Patrons publications" :category :notification-category/patron-publications :input-params input-params}]]
+          [category {:title "Announcements"
+                     :description "Receive a notification when there is an important update."
+                     :category :notification-category/announcements :input-params input-params}]
+          [category {:title "Newsletter"
+                     :description "Subscribe to our periodic highlights for the latest news and insights."
+                     :category :notification-category/newsletter :input-params input-params}]
+          [category {:title "Grant Status"
+                     :description "Get notified when you grant request is approved or rejected."
+                     :category :notification-category/grant-status :input-params input-params}]
+          [category {:title "Donations"
+                     :description "Receive a notification when somebody sends you a donation."
+                     :category :notification-category/donations :input-params input-params}]
+          [category {:title "Patrons publications"
+                     :description "Receive a message every time a creator supported by you adds new content."
+                     :category :notification-category/patron-publications :input-params input-params}]]
          [:h3 "How you receive notifications"]
          [:div.type-setting
           [discord-setup input-params]
