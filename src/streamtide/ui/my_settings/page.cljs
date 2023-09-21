@@ -12,7 +12,7 @@
     [re-frame.core :refer [dispatch subscribe]]
     [reagent.core :as r]
     [reagent.ratom :refer [reaction]]
-    [streamtide.shared.utils :refer [valid-url? valid-email? expected-root-domain? social-domains deep-merge]]
+    [streamtide.shared.utils :refer [valid-url? valid-email? expected-root-domain? social-domains deep-merge from-wei]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.components.general :refer [no-items-found support-seal discord-invite-link]]
@@ -21,7 +21,7 @@
     [streamtide.ui.components.web-push :as web-push]
     [streamtide.ui.my-settings.events :as ms-events]
     [streamtide.ui.my-settings.subs :as ms-subs]
-    [streamtide.ui.utils :refer [switch-popup from-wei check-session build-grant-status-query]]
+    [streamtide.ui.utils :refer [switch-popup check-session build-grant-status-query]]
     [taoensso.timbre :as log]))
 
 (def page-size 6)

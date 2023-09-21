@@ -114,7 +114,7 @@
          [:div.cell.col-date
           [:span (ui-utils/format-graphql-time date)]]
          [:div.cell.col-amount
-          [:span (ui-utils/format-price amount)]]
+          [:span (shared-utils/format-price amount)]]
          [:div.cell.col-include [:span.checkmark
                {:on-click #(dispatch [::r-events/enable-donation {:id id :enabled? (not enabled?)}])
                 :class (when enabled? "checked")}]]]))))
@@ -152,7 +152,7 @@
         [nav-receiver [:h3 (ui-utils/user-or-address name address)]]
         [social-links {:socials (filter #(:social/verified %) socials)
                        :class "cel"}]]]
-      [:div.cell.col-matching [:span (ui-utils/format-price matching)]]
+      [:div.cell.col-matching [:span (shared-utils/format-price matching)]]
       [:div.cell.col-multiplier
        [multipliers receiver multiplier-factors]]]
      [:div.donationsInner
@@ -358,8 +358,8 @@
                  (str "Status: " status)])
               [:div.start (str "Start Time: " (ui-utils/format-graphql-time start))]
               [:div.end (str "End Time: " (ui-utils/format-graphql-time (+ start duration)))]
-              [:div.matching (str "Matching pool: " (ui-utils/format-price matching-pool))]
-              [:div.distributed (str "Distributed amount: " (ui-utils/format-price distributed))]
+              [:div.matching (str "Matching pool: " (shared-utils/format-price matching-pool))]
+              [:div.distributed (str "Distributed amount: " (shared-utils/format-price distributed))]
               (when (round-open? round)
                 (let [match-pool-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/fill-matching-pool tx-id-mp}])
                       match-pool-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/fill-matching-pool tx-id-mp}])

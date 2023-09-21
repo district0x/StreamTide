@@ -271,13 +271,6 @@
                   type (sqlh/merge-where [:= :notification/type type])
                   user-id (sqlh/merge-where [:= :notification/user-id user-id]))))
 
-(defn get-notification-receivers [category]
-  (db-all {:select [:*]
-           :from [[:notification-category :nc]]
-           :where [:and
-                   [:= :nc.notification/category category]
-                   [:= :nc.notification/enable true]]}))
-
 (defn get-grant [user-address]
   (db-get {:select [:*]
            :from [:grant]

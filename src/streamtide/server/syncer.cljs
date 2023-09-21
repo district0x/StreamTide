@@ -15,6 +15,7 @@
     [district.server.config :refer [config]]
     [district.server.web3 :refer [ping-start ping-stop web3]]
     [mount.core :as mount :refer [defstate]]
+    [streamtide.server.notifiers.notifiers :as notifiers]
     [streamtide.server.db :as db]
     [streamtide.shared.utils :as shared-utils]
     [taoensso.timbre :as log]))
@@ -81,9 +82,11 @@
   (let [{:keys [:addresses :timestamp]} args]
     (safe-go
       (db/ensure-users-exist! addresses)
-      (db/upsert-grants! {:user/addresses addresses
-                          :grant/status (name :grant.status/approved)
-                          :grant/decision-date timestamp}))))
+      (let [grants {:user/addresses addresses
+                    :grant/status (name :grant.status/approved)
+                    :grant/decision-date timestamp}]
+        (db/upsert-grants! grants)
+        (notifiers/notify-grants-statuses grants)))))
 
 (defn round-started-event [_ {:keys [:args]}]
   (let [{:keys [:round-start :round-id :round-duration]} args]
@@ -108,14 +111,16 @@
 (defn donate-event [_ {:keys [:args]}]
   (let [{:keys [:sender :value :patron-address :round-id :timestamp]} args]
     (safe-go
-      (let [round-id (when (not= (str round-id) "0") round-id)]
+      (let [round-id (when (not= (str round-id) "0") round-id)
+            donation {:donation/sender sender
+                      :donation/receiver patron-address
+                      :donation/date timestamp
+                      :donation/amount value
+                      :donation/coin (name :eth)
+                      :round/id round-id}]
         (db/upsert-user-info! {:user/address sender})
-        (db/add-donation! {:donation/sender sender
-                           :donation/receiver patron-address
-                           :donation/date timestamp
-                           :donation/amount value
-                           :donation/coin (name :eth)
-                           :round/id round-id})
+        (db/add-donation! donation)
+        (notifiers/notify-donation donation)
         (let [min-donation (:user/min-donation (db/get-user patron-address))]
           (when (or (nil? min-donation) (bn/>= (js/BigNumber. value) (js/BigNumber. min-donation)))
             (db/add-user-content-permission! {:user/source-user sender

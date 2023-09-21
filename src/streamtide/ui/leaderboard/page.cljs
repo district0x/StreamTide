@@ -6,6 +6,7 @@
     [district.ui.graphql.subs :as gql]
     [re-frame.core :refer [subscribe dispatch]]
     [reagent.core :as r]
+    [streamtide.shared.utils :as shared-utils]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [nav-anchor no-items-found]]
     [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
@@ -13,8 +14,7 @@
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [user-photo]]
     [streamtide.ui.components.custom-select :refer [select]]
-    [streamtide.ui.subs :as st-subs]
-    [streamtide.ui.utils :as ui-utils]))
+    [streamtide.ui.subs :as st-subs]))
 
 (def page-size 6)
 
@@ -60,13 +60,13 @@
      [:ul.score
       [:li
        [:h4.d-md-none "Amount Granted"]
-       [:span (ui-utils/format-price donation-amount)]]
+       [:span (shared-utils/format-price donation-amount)]]
       [:li
        [:h4.d-md-none "Matching Received"]
-       [:span (ui-utils/format-price matching-amount)]]
+       [:span (shared-utils/format-price matching-amount)]]
       [:li
        [:h4.d-md-none "Total Received"]
-       [:span (ui-utils/format-price total-amount)]]]]))
+       [:span (shared-utils/format-price total-amount)]]]]))
 
 (defn leaderboard-entries [form-data leaders-search]
   (let [active-session (subscribe [::st-subs/active-session])

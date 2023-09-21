@@ -1,7 +1,9 @@
 (ns streamtide.shared.utils
   (:require
     [bignumber.core :as bn]
+    [cljs-web3-next.core :as web3]
     [cljsjs.bignumber]
+    [district.format :as format]
     [clojure.string :as string])
   (:require-macros [streamtide.shared.utils]))
 
@@ -24,6 +26,19 @@
 (defn safe-number-str [number]
   "Make sure number are not in scientific notation"
   (if (nil? number) "" (-> number js/BigNumber. bn/fixed)))
+
+(defn from-wei
+  ([amount]
+   (from-wei amount :ether))
+  ([amount unit]
+   (web3/from-wei (str amount) unit)))
+
+(defn format-price [price]
+  (let [price (from-wei price :ether)
+        min-fraction-digits (if (= "0" price) 0 4)]
+    (format/format-token (bn/number price) {:max-fraction-digits 5
+                                            :token "ETH"
+                                            :min-fraction-digits min-fraction-digits})))
 
 (def auth-data-msg
   ; message to sign for log-in. '%s' is replaced by the OTP

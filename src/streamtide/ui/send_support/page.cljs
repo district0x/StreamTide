@@ -12,6 +12,7 @@
     [re-frame.core :as re-frame :refer [subscribe dispatch]]
     [reagent.core :as r]
     [reagent.ratom :refer [reaction]]
+    [streamtide.shared.utils :as shared-utils]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.general :refer [nav-anchor no-items-found support-seal]]
     [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
@@ -61,7 +62,7 @@
           [spinner/spin]
           (let [user-info (:user @user-info-query)
                 nav (partial nav-anchor {:route :route.profile/index :params {:address user-address}})
-                min-donation (ui-utils/from-wei (or (:user/min-donation user-info) "0"))]
+                min-donation (shared-utils/from-wei (or (:user/min-donation user-info) "0"))]
             (when-not (get-in @form-data [user-address :amount])
               (swap! form-data assoc-in [user-address :amount]
                      (if (= "0" min-donation) default-min-donation min-donation)))
@@ -102,7 +103,7 @@
        [:span (ui-utils/format-graphql-time date)]]
       [:li
        [:h4.d-lg-none "Amount"]
-       [:span (ui-utils/format-price amount)]]]]))
+       [:span (shared-utils/format-price amount)]]]]))
 
 (defn donations []
   (let [active-account (subscribe [::accounts-subs/active-account])]
