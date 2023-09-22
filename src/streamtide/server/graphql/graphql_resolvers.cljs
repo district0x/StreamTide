@@ -3,6 +3,7 @@
   This namespace does not perform any authorization or any complex logic, but it is mainly an entry point which
   delegates the GraphQL calls to the business logic layer."
   (:require [cljs.core.async :refer [<!]]
+            [clojure.string :as string]
             [district.graphql-utils :as graphql-utils]
             [district.shared.async-helpers :refer [safe-go <?]]
             [district.shared.error-handling :refer [try-catch-throw]]
@@ -227,6 +228,8 @@
 (defn add-announcement-mutation [_ {:keys [:announcement/text] :as args} {:keys [:current-user]}]
   (log/debug "add-announcement-mutation" args)
   (try-catch-throw
+    (when (string/blank? text)
+      (throw (js/Error. "Announcement cannot be empty")))
     (logic/add-announcement! (user-id current-user) (select-keys args [:announcement/text]))
     true))
 

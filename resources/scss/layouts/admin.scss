@@ -713,6 +713,12 @@
 				overflow: hidden;
 				background: $bgCard;
 				padding: 24px 20px 21px;
+				.btBasic {
+					&:disabled {
+						pointer-events: none;
+						background-color: lightgray;
+					}
+				}
 			}
 			.textField {
 				margin-bottom: 19px;

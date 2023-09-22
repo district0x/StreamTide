@@ -1,6 +1,7 @@
 (ns streamtide.ui.admin.announcements.page
   "Page to manage the announcements which appear in the top of the page"
   (:require
+    [clojure.string :as string]
     [district.ui.component.form.input :refer [text-input]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.subs :as gql]
@@ -65,7 +66,7 @@
            [:input.btBasic.btBasic-light
             {:type "submit"
              :value "POST"
-             :disabled @adding?
+             :disabled (or @adding? (string/blank? (:announcement @form-data)))
              :on-click #(dispatch [::a-events/add-announcement {:form-data @form-data
                                                                 :on-success (fn []
                                                                               (swap! form-data assoc :announcement ""))}])
