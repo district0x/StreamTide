@@ -1,6 +1,7 @@
 #popUpGrant,
 #popUpAddContent,
-#popUpSafeLink {
+#popUpSafeLink,
+#popUpWarn {
 	position: fixed;
 	top: 0;
 	left: 0;
@@ -81,7 +82,7 @@
 			display: none;
 		}
 	}
-	.popUpContent, .popUpGrant, .popUpSafeLink {
+	.popUpContent, .popUpGrant, .popUpSafeLink, .popUpWarn {
 		width: calc(100% - 42px);
 		max-width: 490px;
 		margin: 0 auto;

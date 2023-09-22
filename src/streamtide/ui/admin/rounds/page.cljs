@@ -15,6 +15,7 @@
     [streamtide.ui.components.general :refer [nav-anchor no-items-found]]
     [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
     [streamtide.ui.components.spinner :as spinner]
+    [streamtide.ui.components.warn-popup :as warn-popup]
     [streamtide.ui.utils :as ui-utils]))
 
 (def page-size 6)
@@ -87,6 +88,9 @@
 (defn get-duration [{:keys [:days :hours]}]
   (* 3600 (+ (* 24 days) hours)))
 
+(defn round-distributed? [round]
+  (or (= (:round/matching-pool round) "0")
+    (not= (:round/distributed round) "0")))
 
 (defmethod page :route.admin/rounds []
   (let [form-data (r/atom {:days 10 :hours 0})
@@ -126,9 +130,12 @@
                             :class (str "btBasic btBasic-light btStartRound")
                             :on-click (fn [e]
                                         (.stopPropagation e)
-                                        (dispatch [::r-events/start-round {:send-tx/id tx-id
-                                                                           :duration (get-duration @form-data)
-                                                                           :matching-pool (:pool @form-data)}]))}
+                                        (dispatch
+                                          [::warn-popup/show-popup
+                                           {:check #(not (round-distributed? (-> @rounds-search first :search-rounds :items first)))
+                                            :on-accept [::r-events/start-round {:send-tx/id tx-id
+                                                                                :duration (get-duration @form-data)
+                                                                                :matching-pool (:pool @form-data)}]}]))}
             (if @start-round-tx-success? "Started" "Start")]]]
           [:div.headerRound
            [:h3 "Previous Rounds"]]
@@ -143,4 +150,6 @@
             [:span.titleCel.col-eth "Matching Pool"]]
            [:div.cel.cel-distributed
             [:span.titleCel.col-eth "Distributed"]]]
-         [round-entries rounds-search]]))))
+         [round-entries rounds-search]
+         [warn-popup/warn-popup {:content "The previous round has not been distributed yet. Creating a new round will no longer allow distribution of the previous round. Are you certain you want to proceed?"
+                                 :button-label "Start New Round"}]]))))
