@@ -16,7 +16,17 @@
 		}
 	}
 	.anuncio {
-		display: none;
+		height: 36.5px;
+		background: $lilac;
+		font-size: 18px;
+		line-height: 36.5px;
+		text-align: center;
+		display: block;
+		p {
+			overflow: hidden;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+		}
 	}
 	.contentHeader {
 		width: 100%;

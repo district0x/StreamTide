@@ -16,5 +16,5 @@
   (let [announcement-query (subscribe [::gql/query {:queries [(build-announcement-query)]}])
         announcement-text (-> @announcement-query :announcements :items first :announcement/text)]
     (when announcement-text
-      [:div.anuncio.d-none.d-lg-block
+      [:div.anuncio.d-lg-block
        [:p announcement-text]])))
