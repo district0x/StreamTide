@@ -32,6 +32,14 @@
     :round/matching-pool
     :round/distributed]])
 
+(defn build-round-is-last-query [{:keys [:round/id]}]
+  [:search-rounds
+   {:first 1
+    :after (str (dec (int id)))
+    :order-by :rounds.order-by/id
+    :order-dir :asc}
+   [:has-next-page]])
+
 (def donations-order [{:key "amount/desc" :value "Granted Higher"}
                       {:key "amount/asc" :value "Granted Lower"}
                       {:key "date/desc" :value "Newest"}
@@ -257,7 +265,7 @@
 ;                 (assoc m receiver (* divisor amount)))
 ;               {} amounts)))
 
-(defn donations-entries [round-id round donations-search]
+(defn donations-entries [round-id round donations-search last-round?]
   (let [tx-id (str "distribute_" round-id)
         distribute-tx-pending (subscribe [::tx-id-subs/tx-pending? {:streamtide/distribute tx-id}])
         distribute-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/distribute tx-id}])
@@ -278,7 +286,11 @@
         (doall
           (for [[receiver donations] donations-by-receiver]
             ^{:key (:user/address receiver)} [receiver-entry receiver donations matchings]))])
-     (when (and (not (round-open? round)) (= "0" (:round/distributed round)) (not= "0" (:round/matching-pool round)))
+     (when (and (not (round-open? round))  ; round needs to be closed ...
+                (= "0" (:round/distributed round)) ; ... and not distributed yet
+                (not= "0" (:round/matching-pool round)) ; ... and has something to distribute
+                last-round? ; ... be the last existing round
+                )
       [pending-button {:pending? @distribute-tx-pending
                        :pending-text "Distributing"
                        :disabled (or @distribute-tx-pending @distribute-tx-success?)
@@ -290,7 +302,7 @@
                                                                      :matchings matchings}]))}
        (if @distribute-tx-success? "Distributed" "Distribute")])]))
 
-(defn donations [round-id round]
+(defn donations [round-id round last-round?]
   (let [form-data (r/atom {:round round-id
                            :order-key (:key (first donations-order))})]
     (fn []
@@ -313,7 +325,7 @@
 
          (if (or loading? has-more?)
            [spinner/spin]
-           [donations-entries round-id round donations-search])]))))
+           [donations-entries round-id round donations-search last-round?])]))))
 
 
 (defmethod page :route.admin/round []
@@ -325,9 +337,11 @@
     (fn []
       (let [round-info-query (subscribe [::gql/query {:queries [(build-round-info-query {:round/id round-id})]}
                                          {:refetch-on [::r-events/round-closed]}])
-            loading? (:graphql/loading? @round-info-query)
+            build-round-is-last-query (subscribe [::gql/query {:queries [(build-round-is-last-query {:round/id round-id})]}])
+            loading? (or (:graphql/loading? @round-info-query) (:graphql/loading? @build-round-is-last-query))
             round (:round @round-info-query)
-            {:keys [:round/start :round/duration :round/matching-pool :round/distributed]} round]
+            {:keys [:round/start :round/duration :round/matching-pool :round/distributed]} round
+            last-round? (-> @build-round-is-last-query :search-rounds :has-next-page not)]
         [app-layout
          [:main.pageSite.pageRound
           {:id "round"}
@@ -380,4 +394,4 @@
                                                                                     :round round}]))}
                      (if @close-round-tx-success? "Round Closed" "Close Round")]]]
                   ))
-              [donations round-id round]])]]]))))
+              [donations round-id round last-round?]])]]]))))
