@@ -323,61 +323,71 @@
         {:class (when checked? "checked")}]]]]))
 
 
-(defn collapsible []
-  (let [collapsed? (r/atom true)]
-    (fn [class title-component content-component]
-      [:div
-       {:class (str class (when @collapsed? " collapsed"))}
-       [:div.collapsible-header
-        {:on-click #(swap! collapsed? not)}
-        title-component]
-       [:div.collapsible-content content-component]])))
+(defn collapsible [{:keys [:class :title-component :content-component :atom-collapsed?]}]
+  [:div
+   {:class (str class (when @atom-collapsed? " collapsed"))}
+   [:div.collapsible-header
+    {:on-click #(swap! atom-collapsed? not)}
+    title-component]
+   [:div.collapsible-content content-component]])
 
 (defn category [{:keys [:category :title :description :input-params]}]
-  [collapsible "category"
-   [:h3.category-title title]
-   [:<>
+  [collapsible
+   {:class "category"
+    :title-component [:h3.category-title title]
+    :content-component
+    [:<>
      [:p.category-description description]
      [:div.types
       [notification-type {:title "Push Notifications" :type :notification-type/web-push :category category :input-params input-params}]
       ;[notification-type {:title "Web3 Push Notifications" :type :notification-type/web-3-push :category category :input-params input-params}]
       [notification-type {:title "Discord" :type :notification-type/discord :category category :input-params input-params}]
-      [notification-type {:title "Email" :type :notification-type/email :category category :input-params input-params}]]]])
+      [notification-type {:title "Email" :type :notification-type/email :category category :input-params input-params}]]]
+    :atom-collapsed? (r/atom true)}])
 
 (defn discord-setup [input-params]
-  [collapsible "type-setup discord-setup"
-   [:h3.category-title "Discord"]
-   [:div.socialAccounts
-  [:div.verifier-hint "Verify you have a valid Discord account connected to "
-    [:a {:href discord-invite-link :target :_blank :rel "noopener noreferrer"} "district0x server"]]
-  [social-link-edit (merge input-params
-                           {:id [:socials :discord]
-                            :icon-src "/img/layout/ico_discord.svg"
-                            :verifiable? true
-                            :not-removable true})]]])
+  [collapsible
+   {:class "type-setup discord-setup"
+   :title-component [:h3.category-title "Discord"]
+   :content-component
+    [:div.socialAccounts
+     [:div.verifier-hint "Verify you have a valid Discord account connected to "
+      [:a {:href discord-invite-link :target :_blank :rel "noopener noreferrer"} "district0x server"]]
+     [social-link-edit (merge input-params
+                              {:id [:socials :discord]
+                               :icon-src "/img/layout/ico_discord.svg"
+                               :verifiable? true
+                               :not-removable true})]]
+    :atom-collapsed? (r/atom (:default-collapsed? input-params))}])
 
-(defn email-setup [{:keys [:form-data :form-values :errors]}]
+(defn email-setup [{:keys [:form-data :form-values :errors :default-collapsed?]}]
   (let [id [:notification-types :notification-type/email]]
-    [collapsible (str "type-setup email-setup" (when (-> @errors :local (get-in id)) " force-not-collapse"))
-     [:h3.category-title "Email"]
-     [:div.generalInfo
-      [:p "Setup your email"]
-      [:p.note "Email will not be visible to any other user, only used for notifications."]
-      [:label.inputField
-       [:span "Email"]
-       [initializable-text-input
-        {:form-data form-data
-         :form-values form-values
-         :id id
-         :type :email
-         :errors errors
-         :placeholder "your@email.com"}]]]]))
+    [collapsible
+     {:class (str "type-setup email-setup" (when (-> @errors :local (get-in id)) " force-not-collapse"))
+     :title-component [:h3.category-title "Email"]
+     :content-component
+      [:div.generalInfo
+       [:p "Setup your email"]
+       [:p.note "Email will not be visible to any other user, only used for notifications."]
+       [:label.inputField
+        [:span "Email"]
+        [initializable-text-input
+         {:form-data form-data
+          :form-values form-values
+          :id id
+          :type :email
+          :errors errors
+          :placeholder "your@email.com"}]]]
+      :atom-collapsed? (r/atom default-collapsed?)}]))
 
-(defn web-push-setup []
-  [collapsible "type-setup web-push-setup"
-   [:h3.category-title "Push Notifications"]
-   [web-push/subscribe-button {:text "Enable push notifications in this browser"
-                               :class "btBasic btBasic-light btEnablePush"}]])
+(defn web-push-setup [input-params]
+  [collapsible
+   {:class "type-setup web-push-setup"
+   :title-component [:h3.category-title "Push Notifications"]
+   :content-component
+    [web-push/subscribe-button {:text "Enable push notifications in this browser"
+                                :class "btBasic btBasic-light btEnablePush"}]
+    :atom-collapsed? (r/atom (:default-collapsed? input-params))}])
 
 (defn notification-settings []
   (let [active-account (subscribe [::accounts-subs/active-account])]
@@ -429,10 +439,12 @@
                      :description "Receive a message every time a creator supported by you adds new content."
                      :category :notification-category/patron-publications :input-params input-params}]]
          [:h3 "How you receive notifications"]
-         [:div.type-setting
-          [discord-setup input-params]
-          [email-setup input-params]
-          [web-push-setup]]]))))
+         (let [input-params (assoc input-params :default-collapsed? (or loading?
+                                                                         (not (empty? (:notification-categories initial-values)))))]
+           [:div.type-setting
+            [discord-setup input-params]
+            [email-setup input-params]
+            [web-push-setup input-params]])]))))
 
 (defn clean-form-data [form-data form-values initial-values]
   (try
