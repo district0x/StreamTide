@@ -1,5 +1,6 @@
 (ns streamtide.server.notifiers.email-notifier
   (:require
+    [clojure.string :as string]
     [district.server.config :refer [config]]
     [district.sendgrid :as sendgrid]
     [district.shared.async-helpers :refer [<? safe-go]]
@@ -13,11 +14,15 @@
 (def notifier-type (name notifier-type-kw))
 
 (defn set-email [user-address email]
-  (when-not (valid-email? email)
-    (throw (str "Invalid Email: " email)))
-  (stdb/upsert-notification-type! {:user/address user-address
-                                   :notification/user-id email
-                                   :notification/type notifier-type}))
+  (if (string/blank? email)
+    (stdb/remove-notification-type! {:user/address user-address
+                                    :notification/type notifier-type})
+    (do
+      (when-not (valid-email? email)
+        (throw (str "Invalid Email: " email)))
+      (stdb/upsert-notification-type! {:user/address user-address
+                                       :notification/user-id email
+                                       :notification/type notifier-type}))))
 
 (defn get-emails [addresses]
   (stdb/get-notification-types {:user/addresses addresses

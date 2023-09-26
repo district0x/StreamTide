@@ -552,6 +552,14 @@
             :upsert {:on-conflict [:user/address :notification/type]
                      :do-update-set [:notification/user-id]}}))
 
+(defn remove-notification-type! [{:keys [:user/address :notification/type :notification/user-id] :as args}]
+  (log/debug "remove-notification-type!" args)
+  (when (and address type)
+    (db-run! (cond-> {:delete-from :notification-type}
+                     address (sqlh/merge-where [:= :user/address address])
+                     type (sqlh/merge-where [:= :notification/type type])
+                     user-id (sqlh/merge-where [:= :notification/user-id user-id])))))
+
 (defn add-notification-type-many! [{:keys [:user/address :notification/type :notification/user-id] :as args}]
   (log/debug "add-notification-type-many!" args)
   (db-run! {:insert-into :notification-type-many
@@ -566,7 +574,7 @@
                      address (sqlh/merge-where [:= :user/address address])
                      type (sqlh/merge-where [:= :notification/type type])
                      id (sqlh/merge-where [:= :notification/id id])
-                     user-id (sqlh/merge-where [:= :notification/user-id id])))))
+                     user-id (sqlh/merge-where [:= :notification/user-id user-id])))))
 
 (defn upsert-grants! [{:keys [:user/addresses :grant/status :grant/decision-date] :as args}]
   "Insert new grants for given users or update them if the users already requested a grant"
