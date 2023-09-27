@@ -323,13 +323,15 @@
         {:class (when checked? "checked")}]]]]))
 
 
-(defn collapsible [{:keys [:class :title-component :content-component :atom-collapsed?]}]
+(defn collapsible [{:keys [:default-collapsed?]}]
+  (let [atom-collapsed? (r/atom default-collapsed?)]
+    (fn [{:keys [:class :title-component :content-component]}]
   [:div
    {:class (str class (when @atom-collapsed? " collapsed"))}
    [:div.collapsible-header
     {:on-click #(swap! atom-collapsed? not)}
     title-component]
-   [:div.collapsible-content content-component]])
+   [:div.collapsible-content content-component]])))
 
 (defn category [{:keys [:category :title :description :input-params]}]
   [collapsible
@@ -343,7 +345,7 @@
       ;[notification-type {:title "Web3 Push Notifications" :type :notification-type/web-3-push :category category :input-params input-params}]
       [notification-type {:title "Discord" :type :notification-type/discord :category category :input-params input-params}]
       [notification-type {:title "Email" :type :notification-type/email :category category :input-params input-params}]]]
-    :atom-collapsed? (r/atom true)}])
+    :default-collapsed? true}])
 
 (defn discord-setup [input-params]
   [collapsible
@@ -358,7 +360,7 @@
                                :icon-src "/img/layout/ico_discord.svg"
                                :verifiable? true
                                :not-removable true})]]
-    :atom-collapsed? (r/atom (:default-collapsed? input-params))}])
+    :default-collapsed? (:default-collapsed? input-params)}])
 
 (defn email-setup [{:keys [:form-data :form-values :errors :default-collapsed?]}]
   (let [id [:notification-types :notification-type/email]]
@@ -378,7 +380,7 @@
           :type :email
           :errors errors
           :placeholder "your@email.com"}]]]
-      :atom-collapsed? (r/atom default-collapsed?)}]))
+      :default-collapsed? default-collapsed?}]))
 
 (defn web-push-setup [input-params]
   [collapsible
@@ -387,7 +389,7 @@
    :content-component
     [web-push/subscribe-button {:text "Enable push notifications in this browser"
                                 :class "btBasic btBasic-light btEnablePush"}]
-    :atom-collapsed? (r/atom (:default-collapsed? input-params))}])
+    :default-collapsed? (:default-collapsed? input-params)}])
 
 (defn notification-settings []
   (let [active-account (subscribe [::accounts-subs/active-account])]
@@ -415,36 +417,37 @@
                                                   [cat (into {} (for [type types]
                                                                   [type true]))]))
                                   {:notification-category/newsletter {:notification-type/web-push false}})]
-        (when (and (not loading?)
-                   (empty? (:notification-categories initial-values))
-                   (nil? (:notification-categories @form-data)))
-          (swap! form-data assoc :notification-categories default-values))
-        [:div.notification-settings
-         [:h2.titleEdit "Notifications settings"]
-         [:h3 "Which notification you receive"]
-         [:div.categories
-          [category {:title "Announcements"
-                     :description "Receive a notification when there is an important update."
-                     :category :notification-category/announcements :input-params input-params}]
-          [category {:title "Newsletter"
-                     :description "Subscribe to our periodic highlights for the latest news and insights."
-                     :category :notification-category/newsletter :input-params input-params}]
-          [category {:title "Grant Status"
-                     :description "Get notified when you grant request is approved or rejected."
-                     :category :notification-category/grant-status :input-params input-params}]
-          [category {:title "Donations"
-                     :description "Receive a notification when somebody sends you a donation."
-                     :category :notification-category/donations :input-params input-params}]
-          [category {:title "Patrons publications"
-                     :description "Receive a message every time a creator supported by you adds new content."
-                     :category :notification-category/patron-publications :input-params input-params}]]
-         [:h3 "How you receive notifications"]
-         (let [input-params (assoc input-params :default-collapsed? (or loading?
-                                                                         (not (empty? (:notification-categories initial-values)))))]
-           [:div.type-setting
-            [discord-setup input-params]
-            [email-setup input-params]
-            [web-push-setup input-params]])]))))
+        (if loading?
+          [:div.spinner-container [spinner/spin]]
+          (do
+          (when (and (empty? (:notification-categories initial-values))
+                     (nil? (:notification-categories @form-data)))
+            (swap! form-data assoc :notification-categories default-values))
+          [:div.notification-settings
+           [:h2.titleEdit "Notifications settings"]
+           [:h3 "Which notification you receive"]
+           [:div.categories
+            [category {:title "Announcements"
+                       :description "Receive a notification when there is an important update."
+                       :category :notification-category/announcements :input-params input-params}]
+            [category {:title "Newsletter"
+                       :description "Subscribe to our periodic highlights for the latest news and insights."
+                       :category :notification-category/newsletter :input-params input-params}]
+            [category {:title "Grant Status"
+                       :description "Get notified when you grant request is approved or rejected."
+                       :category :notification-category/grant-status :input-params input-params}]
+            [category {:title "Donations"
+                       :description "Receive a notification when somebody sends you a donation."
+                       :category :notification-category/donations :input-params input-params}]
+            [category {:title "Patrons publications"
+                       :description "Receive a message every time a creator supported by you adds new content."
+                       :category :notification-category/patron-publications :input-params input-params}]]
+           [:h3 "How you receive notifications"]
+           (let [input-params (assoc input-params :default-collapsed? (not (empty? (:notification-categories initial-values))))]
+             [:div.type-setting
+              [discord-setup input-params]
+              [email-setup input-params]
+              [web-push-setup input-params]])]))))))
 
 (defn clean-form-data [form-data form-values initial-values]
   (try
@@ -502,8 +505,8 @@
                                          (assoc-in [:socials :pinterest :url] "URL not valid")
                                          (some-invalid-url? (-> @form-data :socials :patreon :url) (:patreon social-domains))
                                          (assoc-in [:socials :patreon :url] "URL not valid")
-                                         (some-invalid-email? (-> @form-data :notification-types :email))
-                                         (assoc-in [:notification-types :email] "Email not valid")
+                                         (some-invalid-email? (-> @form-data :notification-types :notification-type/email))
+                                         (assoc-in [:notification-types :notification-type/email] "Email not valid")
 
                                          (-> @form-data :photo :error)
                                          (assoc :photo (-> @form-data :photo :error))
