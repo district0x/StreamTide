@@ -247,13 +247,15 @@
 
 
 (defn get-notification-categories [{:keys [:user/address :user/addresses :notification/category :notification/type :notification/enable]}]
-  (db-all (cond-> {:select [:*]
-                   :from [:notification-category]}
-                  address (sqlh/merge-where [:= :user/address address])
-                  addresses (sqlh/merge-where [:in :user/address addresses])
-                  category (sqlh/merge-where [:= :notification/category category])
-                  type (sqlh/merge-where [:= :notification/type type])
-                  (some? enable) (sqlh/merge-where [:= :notification/enable enable]))))
+  (db-all (cond-> {:select [:nc.*]
+                   :from [[:notification-category :nc]]
+                   :join [[:user :u] [:= :nc.user/address :u.user/address]]
+                   :where [:= :u.user/blacklisted false]}
+                  address (sqlh/merge-where [:= :nc.user/address address])
+                  addresses (sqlh/merge-where [:in :nc.user/address addresses])
+                  category (sqlh/merge-where [:= :nc.notification/category category])
+                  type (sqlh/merge-where [:= :nc.notification/type type])
+                  (some? enable) (sqlh/merge-where [:= :nc.notification/enable enable]))))
 
 (defn get-notification-types [{:keys [:user/address :user/addresses :notification/type :notification/user-id]}]
   (db-all (cond-> {:select [:*]
