@@ -43,7 +43,7 @@
   (let [notification {:category :announcements
                       :title "New Announcement"
                       :body (:announcement/text announcement)}
-        notification-entries (stdb/get-notification-categories {:notification-category (name :notification-category/patron-publications)
+        notification-entries (stdb/get-notification-categories {:notification/category (name :notification-category/announcements)
                                                                 :notification/enable true})]
     (notify-all-types notification-entries notification)))
 
