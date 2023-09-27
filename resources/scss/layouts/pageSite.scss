@@ -13,6 +13,9 @@
 	&.closeFooter {
 		transition: $trasition;
 		min-height: 100vh;
+		&.has-announcement {
+			min-height: calc(100vh - 36px);
+		}
 	}
 	.titlePage {
 		font-family: $kittenSwash;

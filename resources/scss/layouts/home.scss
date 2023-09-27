@@ -136,6 +136,11 @@
 				transition: $trasition;
 				min-height: calc(100vh - 140px);
 			}
+			&.has-announcement {
+				.contentHome {
+					min-height: calc(100vh - 176px);
+				}
+			}
 		}
 		.container {
 			max-width: 1240px;
