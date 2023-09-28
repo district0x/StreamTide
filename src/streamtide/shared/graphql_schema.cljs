@@ -83,13 +83,6 @@ type Query {
         after: String
     ): RoundList
 
-#    searchBlacklisted(
-#        orderBy: BlacklistedOrderBy
-#        orderDir: OrderDir
-#        first: Int
-#        after: String
-#    ): BlacklistedList
-
     roles: [Role]
 
     announcements(
@@ -163,6 +156,10 @@ type Mutation {
     generateTwitterOauthUrl(
         callback: String!
     ): String!
+
+    addNotificationType(
+       notification_type: NotificationTypeSettingInput
+    ): Boolean
 }
 
 input UserInput {
@@ -176,6 +173,8 @@ input UserInput {
     user_perks: String
     user_minDonation: String
     user_socials: [SocialLinkInput!]
+    user_notificationCategories: [NotificationCategorySettingInput!]
+    user_notificationTypes: [NotificationTypeSettingInput!]
 }
 
 type signInPayload {
@@ -202,6 +201,8 @@ type User {
     user_lastModification: Date
     user_hasPrivateContent: Boolean
     user_unlocked: Boolean
+    user_notificationCategories: [NotificationCategorySetting!]
+    user_notificationTypes: [NotificationTypeSetting!]
 }
 
 type SocialLink {
@@ -213,6 +214,43 @@ type SocialLink {
 input SocialLinkInput {
     social_network: SocialNetwork!
     social_url: String
+}
+
+type NotificationCategorySetting {
+    notification_category: NotificationCategory
+    notification_type: NotificationType
+    notification_enable: Boolean
+}
+
+type NotificationTypeSetting {
+    notification_type: NotificationType!
+    notification_userIds: [ID!]!
+}
+
+input NotificationCategorySettingInput {
+    notification_category: NotificationCategory!
+    notification_type: NotificationType!
+    notification_enable: Boolean!
+}
+
+enum NotificationCategory {
+    notificationCategory_announcements
+    notificationCategory_newsletter
+    notificationCategory_grantStatus
+    notificationCategory_donations
+    notificationCategory_patronPublications
+}
+
+input NotificationTypeSettingInput {
+    notification_type: NotificationType!
+    notification_userIds: [ID!]!
+}
+
+enum NotificationType {
+    notificationType_email
+    notificationType_discord
+    notificationType_webPush
+    notificationType_web3Push
 }
 
 type Grant {
@@ -235,13 +273,6 @@ type UserList {
     endCursor: String
     hasNextPage: Boolean
 }
-
-#type BlacklistedList {
-#    items: [User]
-#    totalCount: Int
-#    endCursor: String
-#    hasNextPage: Boolean
-#}
 
 type AnnouncementList {
     items: [Announcement]

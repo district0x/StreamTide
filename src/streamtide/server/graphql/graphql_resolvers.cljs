@@ -9,6 +9,7 @@
             [district.shared.error-handling :refer [try-catch-throw]]
             [streamtide.server.business-logic :as logic]
             [streamtide.server.graphql.authorization :as authorization]
+            [streamtide.shared.utils :as shared-utils]
             [taoensso.timbre :as log]))
 
 (def enum graphql-utils/kw->gql-name)
@@ -74,6 +75,20 @@
   (log/debug "user->unlocked-resolver args" user)
   (try-catch-throw
     (logic/unlocked? (user-id current-user) address)))
+
+(defn user->notification-categories-resolver [{:keys [:user/address] :as user} _ {:keys [:current-user]}]
+  (log/debug "user->notification-categories-resolver args" user)
+  (try-catch-throw
+    (map #(-> %
+              (update :notification/category (fn [c] (db-name->gql-enum :notification-category c)))
+              (update :notification/type (fn [t] (db-name->gql-enum :notification-type t))))
+         (logic/get-notification-categories (user-id current-user) address))))
+
+(defn user->notification-types-resolver [{:keys [:user/address] :as user} _ {:keys [:current-user]}]
+  (log/debug "user->notification-types-resolver args" user)
+  (try-catch-throw
+    (map #(update % :notification/type (fn [t] (db-name->gql-enum :notification-type t)))
+         (logic/get-notification-types (user-id current-user) address))))
 
 (defn grant->user-resolver [{:keys [:grant/user] :as user-grant}]
   (log/debug "grant->user-resolver args" user-grant)
@@ -176,12 +191,29 @@
     (logic/get-announcements (user-id current-user) args)))
 
 
+(defn adjust-notification-categories [categories]
+  (map (fn [category-setting]
+         (-> category-setting
+             (update :notification/category gql-name->db-name)
+             (update :notification/type gql-name->db-name))) categories))
+
+(defn adjust-notification-types [types]
+  (map (fn [type-setting]
+         (update type-setting :notification/type gql-name->db-name)) types))
+
+
 (defn update-user-info-mutation [_ {:keys [:input] :as args} {:keys [:current-user :config]}]
   (log/debug "update-user-info-mutation" {:input input
                                           :current-user current-user})
   (try-catch-throw
-    (let [user-id (user-id current-user)]
-      (logic/update-user-info! user-id (:input args) config)
+    (let [user-id (user-id current-user)
+          input (:input args)
+          input (cond-> input
+                        (:user/notification-categories input)
+                        (update :user/notification-categories adjust-notification-categories)
+                        (:user/notification-types input)
+                        (update :user/notification-types adjust-notification-types))]
+      (logic/update-user-info! user-id input config)
       (logic/get-user user-id user-id))))
 
 (defn sign-in-mutation [_ {:keys [:data-signature :data] :as args} {:keys [config]}]
@@ -292,6 +324,12 @@
   (try-catch-throw
     (logic/generate-twitter-oauth-url (user-id current-user) args)))
 
+(defn add-notification-type-mutation [_ {:keys [:notification/type] :as args} {:keys [:current-user]}]
+  (log/debug "add-notification-type-mutation args" args)
+  (try-catch-throw
+    (logic/add-notification-type (user-id current-user) (update type :notification/type graphql-utils/gql-name->kw))
+    true))
+
 ;; Map GraphQL types to the functions handling them
 (def resolvers-map
   {:Query {:user user-query-resolver
@@ -318,7 +356,8 @@
               :sign-in sign-in-mutation
               :generate-otp generate-otp-mutation
               :verify-social verify-social-mutation
-              :generate-twitter-oauth-url generate-twitter-oauth-url-mutation}
+              :generate-twitter-oauth-url generate-twitter-oauth-url-mutation
+              :add-notification-type add-notification-type-mutation}
    :User {:user/socials user->socials-resolver
           :user/perks user->perks-resolver
           :user/grant user->grant-resolver
@@ -326,7 +365,9 @@
           :user/last-seen user->last-seen-resolver
           :user/last-modification user->last-modification-resolver
           :user/has-private-content user->has-private-content-resolver
-          :user/unlocked user->unlocked-resolver}
+          :user/unlocked user->unlocked-resolver
+          :user/notification-categories user->notification-categories-resolver
+          :user/notification-types user->notification-types-resolver}
    :Grant {:grant/user grant->user-resolver
            :grant/status grant->status-resolver}
    :Content {:content/user content->user-resolver

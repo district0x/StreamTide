@@ -28,6 +28,8 @@
                            :user/photo :$photo
                            :user/bg-photo :$bgphoto
                            :user/socials :$socials
+                           :user/notification-categories :$notificationcategories
+                           :user/notification-types :$notificationtypes
                            }}
                         [:user/address]]]
              :variables [{:variable/name :$name
@@ -50,13 +52,21 @@
                           :variable/type :String}
                          {:variable/name :$socials
                           :variable/type (keyword "[SocialLinkInput!]")}
+                         {:variable/name :$notificationcategories
+                          :variable/type (keyword "[NotificationCategorySettingInput!]")}
+                         {:variable/name :$notificationtypes
+                          :variable/type (keyword "[NotificationTypeSettingInput!]")}
                          ]}]
         {:db (assoc db :uploading-settings true)
          :dispatch [::gql-events/mutation
                     {:query query
                      :variables (-> form-data
-                                    (select-keys [:name :description :tagline :handle :url :perks :min-donation :socials :photo :bg-photo])
-                                    (clojure.set/rename-keys {:bg-photo :bgphoto :min-donation :mindonation}))
+                                    (select-keys [:name :description :tagline :handle :url :perks :min-donation
+                                                  :socials :photo :bg-photo :notification-categories :notification-types])
+                                    (clojure.set/rename-keys {:bg-photo :bgphoto
+                                                              :min-donation :mindonation
+                                                              :notification-categories :notificationcategories
+                                                              :notification-types :notificationtypes}))
                      :on-success on-success
                      :on-error on-error}]}))))
 

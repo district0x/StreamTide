@@ -51,10 +51,10 @@
       [nav [:span (ui-utils/format-graphql-time (+ start duration))]]]
      [:div.cel.matching-pool
       [:h4.d-lg-none "Matching Pool"]
-      [nav [:span (ui-utils/format-price matching-pool)]]]
+      [nav [:span (shared-utils/format-price matching-pool)]]]
      [:div.cel.distributed
       [:h4.d-lg-none "Distributed"]
-      [nav [:span (ui-utils/format-price distributed)]]]]))
+      [nav [:span (shared-utils/format-price distributed)]]]]))
 
 
 (defn round-entries [rounds-search]

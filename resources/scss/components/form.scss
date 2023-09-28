@@ -180,13 +180,13 @@
 				content: '';
 				position: absolute;
 				display: block;
-				left: 16.56px;
 				top: 1.29px;
 				width: 15.08px;
 				height: 14.95px;
 				border-radius: 34px;
-				background-color: $lilac;
 				transition: $trasitionbt;
+				background-color: $yellow;
+				left: 1.48px;
 			}
 		}
 		.private,
@@ -200,8 +200,8 @@
 		}
 		/* Show the checkmark when checked */
 		.checkmark.checked:after {
-			background-color: $yellow;
-			left: 1.48px;
+			background-color: $lilac;
+			left: 16.56px;
 		}
 
 		&.loading {
@@ -271,14 +271,14 @@
 				width: 51px;
 				margin-right: 12.12px;
 				&::after {
-					left: 25.5px;
+					left: 2.28px;
 					top: 1.98px;
 					width: 23.22px;
 					height: 23.03px;
 				}
 			}
-			input:checked ~ .checkmark:after {
-				left: 2.28px;
+			.checkmark.checked:after {
+				left: 25.5px;
 			}
 		}
 	}

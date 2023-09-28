@@ -226,6 +226,106 @@
 				margin-bottom: 20px;
 			}
 		}
+		.notification-settings {
+			h3 {
+				margin-bottom: 5px;
+			}
+			.collapsible-header {
+				background-color: #a478f9;
+				height: 52.77px;
+				width: 100%;
+				display: flex;
+				align-items: center;
+				padding: 0 10.74px 0 16.68px;
+				border-top-left-radius: 7px;
+				border-top-right-radius: 7px;
+				&:hover {
+					background-color: $bgSite;
+					cursor: pointer;
+				}
+			}
+			.collapsible-content {
+				border-bottom-left-radius: 7px;
+				border-bottom-right-radius: 7px;
+				border: 3px solid #a478f9;
+				padding: 0 15.75px;
+			}
+			.categories {
+				margin-bottom: 25px;
+				.category {
+					margin-bottom: 5px;
+
+					.category-description {
+						font-size: smaller;
+						font-weight: bold;
+					}
+
+					.types {
+						width: 100%;
+						background: $bgCard;
+						line-height: 55.77px;
+						//border-bottom-left-radius: 7px;
+						//border-bottom-right-radius: 7px;
+						//border: 3px solid #a478f9;
+						border-top: none;
+
+						.type {
+							display: flex;
+							justify-content: space-between;
+
+							&:hover {
+								background-color: $bgSite;
+								cursor: pointer;
+							}
+
+							.checkmark-container {
+								display: flex;
+								align-items: center;
+
+								span.text {
+									margin-right: 5px;
+								}
+							}
+						}
+					}
+				}
+			}
+			.type-setup {
+				margin-bottom: 5px;
+
+			}
+			.discord-setup {
+				.socialAccounts {
+					margin-bottom: 20px;
+				}
+			}
+			.email-setup {
+				.note {
+					font-size: smaller;
+				}
+				.inputField {
+					margin-bottom: 5px;
+				}
+			}
+			.web-push-setup {
+				.btEnablePush {
+					margin: 20px auto;
+					font-size: 15px;
+				}
+			}
+			.collapsed {
+				&:not(.force-not-collapse) {
+					.collapsible-header {
+						border-bottom-left-radius: 7px;
+						border-bottom-right-radius: 7px;
+					}
+
+					.collapsible-content {
+						display: none;
+					}
+				}
+			}
+		}
 		.apply {
 			text-align: center;
 			max-width: 678px;

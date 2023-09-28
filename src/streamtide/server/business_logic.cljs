@@ -9,11 +9,15 @@
             [district.shared.error-handling :refer [try-catch-throw]]
             [fs]
             [streamtide.server.db :as stdb]
+            [streamtide.server.notifiers.notifiers :as notifiers]
             [streamtide.server.verifiers.twitter-verifier :as twitter]
             [streamtide.server.verifiers.discord-verifier]
             [streamtide.server.verifiers.eth-verifier]
             [streamtide.server.verifiers.twitter-verifier :as twitter]
             [streamtide.server.verifiers.verifiers :as verifiers]
+            [streamtide.server.notifiers.discord-notifier]
+            [streamtide.server.notifiers.email-notifier]
+            [streamtide.server.notifiers.web-push-notifier]
             [streamtide.shared.utils :as shared-utils]))
 
 (def path (nodejs/require "path"))
@@ -48,13 +52,18 @@
   (when-not (= (name :grant.status/approved) (:grant/status (stdb/get-grant current-user)))
     (throw (js/Error. "Unauthorized - require approved grant to perform operation"))))
 
+(defn require-same-user [current-user address]
+  "Checks the requesting address is the same as the current user. Throws an error otherwise"
+  (when-not (= current-user address)
+    (throw (js/Error. "Unauthorized - User not allowed to fetch this info for another user"))))
+
 (defn get-user [_current-user address]
   "Gets user data from its ETH address"
   (stdb/get-user address))
 
 (defn get-user-socials [_current-user address]
   "Gets the social links of a user from its address"
-  (stdb/get-user-socials address))
+  (stdb/get-user-socials {:user/address address}))
 
 (defn get-user-perks [current-user args]
   "Gets the social links of a user from its address"
@@ -131,6 +140,23 @@
 
   (twitter/generate-twitter-oauth-url args))
 
+(defn- add-notification-types [current-user notification-type-input]
+  (doall
+    (for [{:keys [:user/address :notification/user-id :notification/type]}
+          (map (fn [user-id]
+                 {:user/address current-user
+                  :notification/user-id user-id
+                  :notification/type (-> notification-type-input :notification/type name keyword)})
+               (:notification/user-ids notification-type-input))]
+      (notifiers/store-id type address user-id))))
+
+(defn add-notification-type [current-user notification-type-input]
+  "Adds notification details for a given user"
+  (require-auth current-user)
+  (require-not-blacklisted current-user)
+
+  (add-notification-types current-user notification-type-input))
+
 (defn- upload-photo [url-data user-addr photo-type config]
   (let [matcher (re-matches #"data:image/(\w+);base64,(.+)" url-data)
         filetype (get matcher 1)
@@ -169,7 +195,7 @@
             (not (shared-utils/valid-url? url)))
     (throw (str "invalid URL: " url))))
 
-(defn update-user-info! [current-user {:keys [:user/socials :user/perks :user/photo :user/bg-photo] :as args} config]
+(defn update-user-info! [current-user {:keys [:user/socials :user/perks :user/photo :user/bg-photo :user/notification-categories :user/notification-types] :as args} config]
   "Sets the user info"
   (require-auth current-user)
   (require-not-blacklisted current-user)
@@ -196,7 +222,38 @@
     (when perks
       (if (str/blank? perks)
         (stdb/remove-user-perks! {:user/address current-user})
-        (stdb/upsert-user-perks! {:user/address current-user :user/perks perks})))))
+        (stdb/upsert-user-perks! {:user/address current-user :user/perks perks})))
+
+    (when notification-categories
+      (stdb/upsert-notification-categories! (map #(merge {:user/address current-user} %) notification-categories)))
+    (when notification-types
+      (doall
+        (for [notification-type-input notification-types]
+          (add-notification-types current-user notification-type-input))))))
+
+(defn get-notification-categories [current-user address]
+  (require-auth current-user)
+  (require-not-blacklisted current-user)
+  (require-same-user current-user address)
+
+  (stdb/get-notification-categories {:user/address address}))
+
+(defn get-notification-types [current-user address]
+  (require-auth current-user)
+  (require-not-blacklisted current-user)
+  (require-same-user current-user address)
+
+  (let [notification-types (map #(-> %
+                                     (merge {:notification/user-ids [(:notification/user-id %)]})
+                                     (dissoc :notification/user-id))
+                                (stdb/get-notification-types {:user/address address}))
+        notification-types-many (->> (stdb/get-notification-types-many {:user/address address})
+                                     (group-by :notification/type)
+                                     vals
+                                     (map (fn [user-ids]
+                                            {:notification/type (:notification/type (first user-ids))
+                                             :notification/user-ids (map :notification/user-id user-ids)})))]
+    (concat notification-types notification-types-many)))
 
 (defn validate-sign-in [current-user]
   "Validates a user can sign in. That is, if not blacklisted"
@@ -214,9 +271,13 @@
   (require-auth current-user)
   (require-admin current-user)
 
-  ; TODO check grant status is not nil and valid value
-  ;(when (contains? grant-statuses decision))
-  (stdb/upsert-grants! (merge (select-keys args [:user/addresses :grant/status]) {:grant/decision-date (shared-utils/now-secs)})))
+  ; Grant approval needs to be done through smart contract, rejection from here
+  (when-not (contains? #{(name :grant.status/rejected) (name :grant.status/unrequested) (name :grant.status/requested)} status)
+    (throw (js/Error. (str "Invalid status: " status))))
+
+  (let [grants (merge (select-keys args [:user/addresses :grant/status]) {:grant/decision-date (shared-utils/now-secs)})]
+    (stdb/upsert-grants! grants)
+    (notifiers/notify-grants-statuses grants)))
 
 (defn blacklisted? [_current-user user-address]
   "Checks if a user is currently blacklisted"
@@ -244,7 +305,8 @@
   (require-auth current-user)
   (require-admin current-user)
 
-  (stdb/add-announcement! (select-keys args [:announcement/text])))
+  (stdb/add-announcement! (select-keys args [:announcement/text]))
+  (notifiers/notify-announcement args))
 
 (defn remove-announcement! [current-user {:keys [:announcement/id] :as args}]
   "Removes an existing announcement"
@@ -262,7 +324,9 @@
   (check-content-url url)
 
   (stdb/add-content! (merge {:user/address current-user}
-                            (select-keys args [:content/type :content/url :content/public :content/pinned]))))
+                            (select-keys args [:content/type :content/url :content/public :content/pinned])))
+
+  (notifiers/notify-new-content (stdb/get-user current-user)))
 
 (defn remove-content! [current-user {:keys [:content/id] :as args}]
   "Removes content of the logged in user"
