@@ -1,0 +1,30 @@
+#about {
+  .container {
+    &:not(.titleContainer) {
+      margin-bottom: 40px;
+    }
+  }
+  h1, h2 {
+    margin-bottom: 10px;
+  }
+
+  p {
+    line-height: normal;
+    margin-bottom: 10px;
+  }
+
+  a {
+    color: goldenrod;
+  }
+
+  @include media-breakpoint-down(md) {
+    .container {
+      &:not(.titleContainer) {
+        margin-bottom: 20px;
+      }
+      h1, h2 {
+        margin-bottom: 0;
+      }
+    }
+  }
+}
