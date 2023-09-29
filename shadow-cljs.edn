@@ -11,10 +11,7 @@
 
  :builds {:ui
           {:target :browser
-           :modules {:main {:init-fn streamtide.ui.core/init}
-                     :service-worker {:entries [streamtide.ui.service-worker]
-                                      :web-worker true
-                                      :depends-on #{:main}}}
+           :modules {:main {:init-fn streamtide.ui.core/init}}
            :main streamtide.ui.core
            :infer-externs true
            :output-dir "resources/public/js/"
