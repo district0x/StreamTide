@@ -130,7 +130,8 @@ node_modules
 .circleci
 .shadow-cljs
 .nrepl-port
-resources/public/js
+resources/public/js/**
+!resources/public/js/service-worker.js
 resources/public/css/main.css
 resources/public/contracts/build
 config.edn
