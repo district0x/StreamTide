@@ -1,6 +1,6 @@
 /* Service Worker for listening to push messages and show notifications */
 
-const image = '/img/layout/logo-icon.svg';
+const image = '/img/layout/logo-notification.png';
 
 /**
  * "Show a notification when receiving a push event"
