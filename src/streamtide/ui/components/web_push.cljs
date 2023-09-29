@@ -154,6 +154,5 @@
 (re-frame/reg-event-fx
   ::log-and-show
   (fn [{:keys [db]} [_ message details]]
-    (merge
-      {:dispatch-n [[::logging/error message details]
-                    [::error-notification/show-error "Cannot subscribe to push notifications" details]]})))
+    {:dispatch-n [[::logging/error message details]
+                  [::error-notification/show-error "Cannot subscribe to push notifications" [details]]]}))

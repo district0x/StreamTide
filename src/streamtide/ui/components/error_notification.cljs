@@ -17,8 +17,8 @@
 
 (defn- parse-error [js-error]
   (let [js-error (if (and (coll? js-error) (not (map? js-error))) (first js-error) js-error)]
-  (-> (js->clj js-error :keywordize-keys true)
-      :message)))
+    (let [{:keys [:message :error]} (js->clj js-error :keywordize-keys true)]
+      (or message error))))
 
 (re-frame/reg-event-fx
   ::show-error
