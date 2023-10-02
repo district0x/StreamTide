@@ -34,7 +34,7 @@
   is.d0x/district-ui-smart-contracts {:mvn/version "23.8.7"}
   is.d0x/district-ui-web3 {:mvn/version "23.8.7"}
   is.d0x/district-ui-web3-accounts {:mvn/version "23.8.7"}
-  is.d0x/district-ui-web3-chain {:mvn/version "23.8.7"}
+  is.d0x/district-ui-web3-chain {:mvn/version "23.10.2"}
   is.d0x/district-ui-web3-tx-id {:mvn/version "23.10.6"}
   mount/mount {:mvn/version "0.1.16"}
   org.clojure/clojure {:mvn/version "1.11.1"}
