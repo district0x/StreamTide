@@ -242,7 +242,7 @@
                                                               divisor (if (bn/= sum (new-bn 0)) sum (bn// matching-pool sum))]
                                                           (recur (next multipliers) multiplier
                                                                  (bn/+ acc (bn/* amount (bn/* (- multiplier prev_mult) divisor)))))
-                                                        (bn/fixed (.integerValue acc js/BigNumber.ROUND_FLOOR)))))))
+                                                        (bn/fixed (.integerValue ^js/BigNumber acc js/BigNumber.ROUND_FLOOR)))))))
                                        {} amounts)]
     receivers-matchings))
 

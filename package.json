@@ -58,7 +58,9 @@
     "normalize.css": "8.0.1",
     "sass": "1.63.6",
     "shadow-cljs": "2.19.8",
-    "truffle": "5.8.1"
+    "truffle": "5.8.1",
+    "webpack": "5.88.2",
+    "webpack-cli": "5.1.4"
   },
   "engines": {
     "node": "^18.0.0"
