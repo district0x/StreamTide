@@ -79,14 +79,15 @@
       (db/remove-from-blacklist! {:user/address _blacklisted}))))
 
 (defn patrons-added-event [_ {:keys [:args]}]
-  (let [{:keys [:addresses :timestamp]} args]
+  (let [{:keys [:addresses :timestamp]} args
+        addresses (js->clj addresses)]
     (safe-go
       (db/ensure-users-exist! addresses)
       (let [grants {:user/addresses addresses
                     :grant/status (name :grant.status/approved)
                     :grant/decision-date timestamp}]
-        (db/upsert-grants! grants)
-        (notifiers/notify-grants-statuses grants)))))
+           (db/upsert-grants! grants)
+           (notifiers/notify-grants-statuses grants)))))
 
 (defn round-started-event [_ {:keys [:args]}]
   (let [{:keys [:round-start :round-id :round-duration]} args]
