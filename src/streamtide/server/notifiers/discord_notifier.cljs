@@ -33,8 +33,17 @@
                                                 (clj->js {:content (build-content message)})
                                                 headers)]
                              (-> message
-                                 ; nothing to do here
-                                 (.then (fn [])))))))))))))
+                                 (.then (fn []
+                                          (log/debug "Discord message sent" {:message message :user-id user-id})))
+                                 (.catch (fn [error]
+                                           (log/error "Failed to send discord message" {:error error
+                                                                                        :error-data (-> error .-response .-data)
+                                                                                        :channel-id channel-id
+                                                                                        :user-id user-id})))))))))
+              (.catch (fn [error]
+                        (log/error "Failed to create discord direct message channel" {:error error
+                                                                                      :error-data (-> error .-response .-data)
+                                                                                      :user-id user-id}))))))))
 
 (defn discord-notify [user-entries {:keys [:title :body] :as message}]
   (safe-go
