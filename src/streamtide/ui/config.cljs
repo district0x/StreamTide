@@ -33,6 +33,7 @@
                                   :symbol "AGOR"
                                   :decimals 18}
                 :block-explorer-urls ["https://testnet.arbiscan.io/"]}
+   :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    ;:domain "TBD"
    })
 
@@ -49,6 +50,7 @@
                                   :symbol "ETH"
                                   :decimals 18}
                 :block-explorer-urls ["https://explorer.arbitrum.io"]}
+   :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    ;:domain "TBD"
    })
 
