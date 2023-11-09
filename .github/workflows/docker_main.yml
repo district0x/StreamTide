@@ -14,6 +14,7 @@ jobs:
     strategy:
       matrix:
         image: ["server", "ui"]
+        env: ["qa", "prod"]
     permissions:
       contents: read # for actions/checkout to fetch code
       security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
@@ -47,5 +48,6 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           file: docker-builds/${{ matrix.image }}/Dockerfile
+          build-args: BUILD_ENV=${{ matrix.env }}
           push: true
-          tags: ${{ secrets.ECR_REGISTRY }}/streamtide-${{ matrix.image }}:latest-qa
+          tags: ${{ secrets.ECR_REGISTRY }}/streamtide-${{ matrix.image }}:latest-${{ matrix.env }}
