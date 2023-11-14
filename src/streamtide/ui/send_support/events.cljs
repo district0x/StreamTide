@@ -10,6 +10,7 @@
     [district.ui.web3-tx.events :as tx-events]
     [re-frame.core :as re-frame]
     [streamtide.shared.utils :as shared-utils]
+    [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.events :as st-events :refer [wallet-chain-interceptors]]
     [streamtide.ui.utils :refer [build-tx-opts]]))
 
@@ -41,10 +42,16 @@
                                          :on-tx-success-n [[::logging/info (str tx-name " tx success") ::send-support]
                                                            [::notification-events/show "Donations successfully sent"]
                                                            [::send-support-success]]
-                                         :on-tx-error [::logging/error (str tx-name " tx error")
-                                                       {:user {:id active-account}
-                                                        :donations donations}
-                                                       ::send-support]}])})))
+                                         :on-tx-error-n [[::logging/error (str tx-name " tx error")
+                                                          {:user {:id active-account}
+                                                           :donations donations}
+                                                          ::send-support]
+                                                         [::error-notification/show-error "Transaction failed"]]
+                                         :on-tx-hash-error-n [[::logging/error (str tx-name " tx error")
+                                                               {:user {:id active-account}
+                                                                :donations donations}
+                                                               ::send-support]
+                                                              [::error-notification/show-error "Transaction failed"]]}])})))
 
 (re-frame/reg-event-fx
   ::send-support-success

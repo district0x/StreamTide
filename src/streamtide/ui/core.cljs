@@ -20,6 +20,7 @@
             [district.ui.web3-accounts]
             [district.ui.web3-chain]
             [district.ui.web3-chain.events :as web3-chain-events]
+            [district.ui.web3-tx.events :as tx-events]
             [district.ui.web3-tx-id]
             [district.ui.web3]
             [district.ui.web3.events :as web3-events]
@@ -122,7 +123,13 @@
                        :dispatch-to [::st-events/web3-creation-failed]}
                       {:register :chain-changed
                        :events #{::web3-chain-events/chain-changed}
-                       :dispatch-to [::st-events/web3-chain-changed]}]}))
+                       :dispatch-to [::st-events/web3-chain-changed]}
+                      {:register :send-tx-started
+                       :events #{::tx-events/send-tx}
+                       :dispatch-to [::st-events/send-tx-started]}
+                      {:register :send-tx-finished
+                       :events #{::tx-events/tx-hash-error ::tx-events/tx-success ::tx-events/tx-error}
+                       :dispatch-to [::st-events/send-tx-finished]}]}))
 
 (defn ^:export init []
   (dev-setup)

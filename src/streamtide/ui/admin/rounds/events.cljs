@@ -7,6 +7,7 @@
     [district.ui.web3-accounts.queries :as account-queries]
     [district.ui.web3-tx.events :as tx-events]
     [re-frame.core :as re-frame]
+    [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.events :refer [wallet-chain-interceptors]]
     [streamtide.ui.utils :refer [build-tx-opts]]
     [streamtide.shared.utils :as shared-utils]))
@@ -29,10 +30,16 @@
                                        :on-tx-success-n [[::logging/info (str tx-name " tx success") ::start-round]
                                                          [::notification-events/show (str "New round successfully started")]
                                                          [::round-started]]
-                                       :on-tx-error [::logging/error (str tx-name " tx error")
-                                                     {:user {:id active-account}
-                                                      :duration duration}
-                                                     ::start-round]}]})))
+                                       :on-tx-error-n [[::logging/error (str tx-name " tx error")
+                                                        {:user {:id active-account}
+                                                         :duration duration}
+                                                        ::start-round]
+                                                       [::error-notification/show-error "Transaction failed"]]
+                                       :on-tx-hash-error-n [[::logging/error (str tx-name " tx error")
+                                                             {:user {:id active-account}
+                                                              :duration duration}
+                                                             ::start-round]
+                                                            [::error-notification/show-error "Transaction failed"]]}]})))
 
 (re-frame/reg-event-fx
   ::round-started
