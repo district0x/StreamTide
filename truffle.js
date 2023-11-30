@@ -23,8 +23,11 @@ let parameters = {
             "0x0A0A8610F57fE41EC26D5163d1Eb986cE598dc5F"]
     },
     "prod" : {
-        multiSig: "TBD",
-        admins: []
+        multiSig: "0xf7190fa8c89F7c57ff77b8Bc0Da85e9a2daF70Ad",
+        admins: [
+            "0xf7190fa8c89F7c57ff77b8Bc0Da85e9a2daF70Ad",
+            "0xb078844477A5420cB627C1961B30ED33E0126973",
+            "0x0A0A8610F57fE41EC26D5163d1Eb986cE598dc5F"]
     }
 };
 
@@ -63,10 +66,10 @@ module.exports = {
             skipDryRun: true
         },
         "alchemy-arbitrum-mainnet": {
-            provider: () => new HDWalletProvider(process.env.ARBITRUM_PRIV_KEY, "https://arb-goerli.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY),
+            provider: () => new HDWalletProvider(process.env.ARBITRUM_PRIV_KEY, "https://arb-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY),
             network_id: 42161,
-            gas: 6e6,
-            gasPrice: 1e9,
+            gas: 6e7,
+            gasPrice: 3e8,
             skipDryRun: true
         }
     },

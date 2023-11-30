@@ -27,7 +27,7 @@ module.exports = async(deployer, network, accounts) => {
     }
 
     await status.step(async () => {
-        const streamtide = await deployer.deploy(Streamtide, Object.assign(opts, {gas: 2000000}));
+        const streamtide = await deployer.deploy(Streamtide, Object.assign(opts, {gas: 20000000}));
         return {[sk.streamtideAddr]: streamtide.address};
     });
 
@@ -35,7 +35,7 @@ module.exports = async(deployer, network, accounts) => {
         const streamtideAddr = status.getValue(sk.streamtideAddr);
 
         linkBytecode(StreamtideForwarder, forwarderTargetPlaceholder, streamtideAddr);
-        const streamtideForwarder = await deployer.deploy(StreamtideForwarder, Object.assign(opts, {gas: 500000}));
+        const streamtideForwarder = await deployer.deploy(StreamtideForwarder, Object.assign(opts, {gas: 5000000}));
         return {[sk.streamtideForwarderAddr]: streamtideForwarder.address};
     });
 

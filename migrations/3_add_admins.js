@@ -18,6 +18,6 @@ module.exports = async(deployer, network, accounts) => {
 
     for (const admin of parameters.admins) {
         console.log ("Adding admin: " + admin);
-        await streamtideFwd.addAdmin(admin, Object.assign(opts, {gas: 500000}));
+        await streamtideFwd.addAdmin(admin, Object.assign(opts, {gas: 5000000}));
     }
 }
