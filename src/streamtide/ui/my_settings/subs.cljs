@@ -11,3 +11,8 @@
   ::verifying-social?
   (fn [db [_ network]]
     (get-in db [:verifying-social? network])))
+
+(re-frame/reg-sub
+  ::stored-settings
+  (fn [db [_ address]]
+    (get-in db [:my-settings address])))

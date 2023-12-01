@@ -1,4 +1,5 @@
 #popUpGrant,
+#popUpRestoreSettings,
 #popUpAddContent,
 #popUpSafeLink,
 #popUpWarn {
@@ -82,7 +83,25 @@
 			display: none;
 		}
 	}
-	.popUpContent, .popUpGrant, .popUpSafeLink, .popUpWarn {
+	.popUpRestoreSettings {
+		.content {
+			padding: 20px 20px 2px;
+		}
+		.restore {
+			margin-bottom: 5px;
+		}
+		.discard {
+			color: black;
+			background-color: lightgrey;
+			&:hover {
+				background-color: $yellow;
+			}
+		}
+		.btBasic {
+			font-size: 16px;
+		}
+	}
+	.popUpContent, .popUpGrant, .popUpSafeLink, .popUpWarn, .popUpRestoreSettings {
 		width: calc(100% - 42px);
 		max-width: 490px;
 		margin: 0 auto;
@@ -267,6 +286,9 @@
 					color: #3b1d56;
 				}
 			}
+		}
+		.btBasic {
+			font-size: 16px;
 		}
 	}
 	@include media-breakpoint-up(lg) {

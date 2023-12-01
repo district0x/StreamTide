@@ -100,7 +100,8 @@
         (assoc :cart (:cart store))
         (assoc :trust-domains (:trust-domains store))
         (assoc :multipliers (:multipliers store))
-        (assoc :donations (:donations store)))))
+        (assoc :donations (:donations store))
+        (assoc :my-settings (:my-settings store)))))
 
 (re-frame/reg-event-fx
   ::init

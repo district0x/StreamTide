@@ -3,7 +3,9 @@
     [district.ui.graphql.events :as gql-events]
     [district.ui.logging.events :as logging]
     [district.ui.notification.events :as notification-events]
+    [district.ui.web3-accounts.queries :as account-queries]
     [re-frame.core :as re-frame]
+    [streamtide.shared.utils :as shared-utils]
     [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.components.verifiers :as verifiers]))
 
@@ -160,3 +162,30 @@
                    "Failed to verify social"
                    {:error error
                     :form-data form-data} ::verify-social]]}))
+
+(re-frame/reg-event-fx
+  ::store-settings-local
+  [(re-frame/inject-cofx :store)]
+  (fn [{:keys [db store]} [_ form-data]]
+    (let [active-account (account-queries/active-account db)
+          state {:form form-data
+                 :touched? (-> form-data meta :touched?)
+                 :timestamp (shared-utils/now-secs)}]
+      {:store (assoc-in store [:my-settings active-account] state)
+       :db (assoc-in db [:my-settings active-account] state)})))
+
+(re-frame/reg-event-fx
+  ::discard-stored-form
+  [(re-frame/inject-cofx :store)]
+  (fn [{:keys [db store]} _]
+    (let [active-account (account-queries/active-account db)]
+      {:store (update store :my-settings dissoc active-account)
+       :db (update db :my-settings dissoc active-account)})))
+
+(re-frame/reg-event-fx
+  ::restore-stored-form
+  (fn [{:keys [db]} [_ form-data-atom]]
+    (let [active-account (account-queries/active-account db)
+          state (get-in db [:my-settings active-account])]
+      (reset! form-data-atom (with-meta (:form state) {:touched? (:touched? state)}))
+      {})))

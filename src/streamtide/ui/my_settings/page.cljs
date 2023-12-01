@@ -12,7 +12,7 @@
     [re-frame.core :refer [dispatch subscribe]]
     [reagent.core :as r]
     [reagent.ratom :refer [reaction]]
-    [streamtide.shared.utils :refer [valid-url? valid-email? expected-root-domain? social-domains deep-merge from-wei]]
+    [streamtide.shared.utils :refer [valid-url? valid-email? expected-root-domain? social-domains deep-merge from-wei now-secs]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.components.general :refer [no-items-found support-seal discord-invite-link]]
@@ -250,6 +250,24 @@
                                                                   :on-success
                                                                   (fn [] (close-popup nil))}])}]]]]]))))
 
+(defn popup-restore-settings [_ restore-settings-loaded? form-data]
+  (fn [restore-settings-popup-open? _]
+    [:div {:id "popUpRestoreSettings" :style {"display" (if @restore-settings-popup-open? "flex" "none")}}
+     [:div.bgPopUp]
+     [:div.popUpRestoreSettings
+      [:div.content
+       [:h3 "Restore settings"]
+       [:p "You made some modifications to your profile you did not save. Do you want to restore them?"]
+       [:input.btBasic.btBasic-light.restore {:type "submit"
+                                              :value "Restore unsaved modifications"
+                                              :on-click (fn []
+                                                          (dispatch [::ms-events/restore-stored-form form-data])
+                                                          (reset! restore-settings-loaded? true))}]
+       [:input.btBasic.btBasic-light.discard {:type "submit"
+                                              :value "Discard modifications"
+                                              :on-click (fn []
+                                                          (dispatch [::ms-events/discard-stored-form])
+                                                          (reset! restore-settings-loaded? true))}]]]]))
 
 (defn social-links []
   (let [active-account (subscribe [::accounts-subs/active-account])]
@@ -479,12 +497,23 @@
   (and (not-empty email)
        (not (valid-email? email))))
 
+(defn- restore-settings? [active-account restore-settings-loaded?]
+  (when @active-account
+    (let [stored-settings @(subscribe [::ms-subs/stored-settings @active-account])
+          require-restore? (and (not @restore-settings-loaded?)
+                                stored-settings
+                                (:touched? stored-settings)
+                                (> (+ 864000 (:timestamp stored-settings)) (now-secs)))]
+      (when-not require-restore? (reset! restore-settings-loaded? true))
+      require-restore?)))
+
 (defmethod page :route.my-settings/index []
   (let [active-account (subscribe [::accounts-subs/active-account])
         grant-popup-open? (r/atom false)
         show-grant-popup-fn (fn [e show]
                               (when e (.stopPropagation e))
                      (switch-popup grant-popup-open? show))
+        restore-settings-loaded? (r/atom false)
         form-data (r/atom {})
         errors (reaction {:local (cond-> {}
                                          (and (:min-donation @form-data)
@@ -512,9 +541,14 @@
                                          (assoc :photo (-> @form-data :photo :error))
                                          (-> @form-data :bg-photo :error)
                                          (assoc :bg-photo (-> @form-data :bg-photo :error)))})]
+    (add-watch form-data :store-settings-local
+               (fn [_ _ _ new-state]
+                 (when (-> new-state meta :touched?)
+                  (dispatch [::ms-events/store-settings-local new-state]))))
     (fn []
       (check-session)
-      (let [user-settings (when @active-account (subscribe [::gql/query {:queries [(build-user-settings-query {:user/address @active-account})]}]))
+      (let [restore-settings-popup-open? (r/atom (restore-settings? active-account restore-settings-loaded?))
+            user-settings (when @active-account (subscribe [::gql/query {:queries [(build-user-settings-query {:user/address @active-account})]}]))
             grant-status-query (when @active-account (subscribe [::gql/query {:queries [(build-grant-status-query {:user/address @active-account})]}
                                                             {:refetch-on [::ms-events/request-grant-success]}]))
             grant-status (when grant-status-query (-> @grant-status-query :grant :grant/status gql-utils/gql-name->kw))
@@ -626,7 +660,9 @@
                                     {:form-data (clean-form-data form-data form-values initial-values)
                                      :on-success (fn []
                                                    (reset! form-data (with-meta @form-data {:touched? false}))
+                                                   (dispatch [::ms-events/discard-stored-form @active-account])
                                                    (dispatch [::router-events/navigate :route.profile/index
                                                               {:address @active-account}]))}])}
              "SAVE CHANGES"]]]]
-         [popup-request-grant grant-popup-open? show-grant-popup-fn #(clean-form-data form-data form-values initial-values)]]))))
+         [popup-request-grant grant-popup-open? show-grant-popup-fn #(clean-form-data form-data form-values initial-values)]
+         [popup-restore-settings restore-settings-popup-open? restore-settings-loaded? form-data]]))))
