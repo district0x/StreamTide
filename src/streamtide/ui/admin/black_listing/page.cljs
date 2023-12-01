@@ -54,10 +54,11 @@
             loading? (subscribe [::bl-subs/blacklisting? address])
             blacklist-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/blacklist tx-id}])
             blacklist-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/blacklist tx-id}])
+            waiting-wallet? (subscribe [::st-subs/waiting-wallet? {:streamtide/blacklist tx-id}])
             blacklist-button (fn [{:keys [:text :pending :completed :class]} blacklisted?]
-                               [pending-button {:pending? @blacklist-tx-pending?
+                               [pending-button {:pending? (or @blacklist-tx-pending? @waiting-wallet?)
                                                 :pending-text pending
-                                                :disabled (or @blacklist-tx-pending? @blacklist-tx-success?)
+                                                :disabled (or @blacklist-tx-pending? @blacklist-tx-success? @waiting-wallet?)
                                                 :class (str "btBasic btBasic-light " class)
                                                 :on-click (fn [e]
                                                             (.stopPropagation e)

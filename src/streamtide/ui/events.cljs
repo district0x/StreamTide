@@ -234,6 +234,28 @@
      :store (assoc-in store [:trust-domains domain] true)}))
 
 (re-frame/reg-event-fx
+  ::set-waiting-wallet
+  ; Sets if a transaction is waiting for wallet action
+  [interceptors]
+  (fn [{:keys [db]} [tx-id waiting]]
+    {:db (assoc-in db [:waiting-wallet tx-id] waiting)}))
+
+(re-frame/reg-event-fx
+  ::send-tx-started
+  ; Event launched when a new tx is triggered
+  [interceptors]
+  (fn [_ [[_ {:keys [:tx-id]}]]]
+    {:dispatch-n [[::set-waiting-wallet tx-id true]
+                  [::notification-events/show "Complete transaction with your wallet..."]]}))
+
+(re-frame/reg-event-fx
+  ::send-tx-finished
+  ; Event launched when a tx finishes. Either fails or completes
+  [interceptors]
+  (fn [_ [[_ {:keys [:tx-id]}]]]
+    {:dispatch [::set-waiting-wallet tx-id false]}))
+
+(re-frame/reg-event-fx
   ::dispatch-n
   (fn [_ [_ evs & args]]
     {:dispatch-n

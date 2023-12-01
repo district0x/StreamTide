@@ -16,6 +16,7 @@
     [streamtide.ui.components.infinite-scroll :refer [infinite-scroll]]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.warn-popup :as warn-popup]
+    [streamtide.ui.subs :as st-subs]
     [streamtide.ui.utils :as ui-utils]))
 
 (def page-size 6)
@@ -101,7 +102,8 @@
                                        :refetch-on [::r-events/round-started]}])
             last-active? (-> @rounds-search first :search-rounds :items first (shared-utils/active-round? (shared-utils/now-secs)))
             start-round-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/start-round tx-id}])
-            start-round-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/start-round tx-id}])]
+            start-round-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/start-round tx-id}])
+            waiting-wallet? (subscribe [::st-subs/waiting-wallet? {:streamtide/start-round tx-id}])]
         [admin-layout
          [:div.headerRound
           [:span.titleCel "Start new Round"]
@@ -124,9 +126,9 @@
               [:span "ETH"]
               [amount-input {:id :pool
                              :form-data form-data}]]]]
-           [pending-button {:pending? @start-round-tx-pending?
+           [pending-button {:pending? (or @start-round-tx-pending? @waiting-wallet?)
                             :pending-text "Starting"
-                            :disabled (or @start-round-tx-pending? @start-round-tx-success? last-active?)
+                            :disabled (or @start-round-tx-pending? @start-round-tx-success? last-active? @waiting-wallet?)
                             :class (str "btBasic btBasic-light btStartRound")
                             :on-click (fn [e]
                                         (.stopPropagation e)
