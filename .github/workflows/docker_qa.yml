@@ -1,14 +1,13 @@
-name: docker_build_prod
+name: docker_build_qa
 
 on:
   push:
     branches:
-      - main
-      - master
+      - qa
 
 jobs:
   docker_build:
     uses: ./.github/workflows/docker_build.yml
     with:
-      env: "prod"
-    name: Prod Docker Build
+      env: "qa"
+    name: QA Docker Build
