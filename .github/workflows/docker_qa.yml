@@ -10,4 +10,5 @@ jobs:
     uses: ./.github/workflows/docker_build.yml
     with:
       env: "qa"
+    secrets: inherit
     name: QA Docker Build

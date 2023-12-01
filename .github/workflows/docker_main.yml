@@ -11,4 +11,5 @@ jobs:
     uses: ./.github/workflows/docker_build.yml
     with:
       env: "prod"
+    secrets: inherit
     name: Prod Docker Build
