@@ -12,18 +12,25 @@
                             :task (do
                                     (println "Compiling smart contracts")
                                     (shell "npx truffle compile"))}
+         pack-ui-dependencies {:doc "Generate a single js file from all npm dependencies"
+                               :task (do
+                                       (println "Packing ui dependencies")
+                                       (shell "npx webpack"))}
          watch-ui {:doc "Watch and compile ui code changes CLJS -> JS in src/ui/**"
                    :requires ([babashka.cli :as cli])
                    :task (let [aliases (or *command-line-args* [])
                                command-args (format "-M:dev:shadow-cljs%s watch ui" (clojure.string.join "" aliases))]
                            (println "Starting watch-ui. args:" command-args)
                            (clojure command-args))}
-         release-ui {:doc "Compile ui CLJS -> JS in src/ui/** for release"
-                   :requires ([babashka.cli :as cli])
-                   :task (let [aliases (or *command-line-args* [])
-                               command-args (format "-M:shadow-cljs%s release ui" (clojure.string.join "" aliases))]
-                           (println "Preparing UI for release. args:" command-args)
-                           (clojure command-args))}
+         compile-ui {:doc "Compile ui CLJS -> JS in src/ui/** for release"
+                     :requires ([babashka.cli :as cli])
+                     :task (let [aliases (or *command-line-args* [])
+                                 command-args (format "-M:shadow-cljs%s release ui" (clojure.string.join "" aliases))]
+                             (println "Preparing UI for release. args:" command-args)
+                             (clojure command-args))}
+         release-ui {:doc "compile project and pack all dependencies for release"
+                     :requires ([babashka.cli :as cli])
+                     :depends [compile-ui pack-ui-dependencies]}
          watch-server {:doc "Watch and compile server code changes CLJS -> JS in src/server/**"
                        :requires ([babashka.cli :as cli])
                        :task (let [aliases (or *command-line-args* [])

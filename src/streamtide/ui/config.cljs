@@ -15,7 +15,11 @@
    :smart-contracts {:contracts smart-contracts-dev/smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
    :web3-chain {:chain-id "1337"
-                :chain-name "Ganache"}
+                :rpc-urls ["http://localhost:8545"]
+                :chain-name "Ganache"
+                :native-currency {:name "ETH"
+                                  :symbol "ETH"
+                                  :decimals 18}}
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    ;:domain "localhost"
    })

@@ -1,4 +1,4 @@
 (ns cljsjs.jwt-decode
-  (:require ["jwt-decode" :as jd]))
+  (:require ["jwt-decode" :default jd]))
 
 (js/goog.exportSymbol "jwt_decode" jd)

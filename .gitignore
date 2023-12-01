@@ -12,3 +12,4 @@
 /.cpcache/
 /.shadow-cljs/
 /server/
+/target/

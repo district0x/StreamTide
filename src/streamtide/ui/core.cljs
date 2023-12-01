@@ -2,7 +2,8 @@
   "Main entry point of the Frontend.
   Loads the config and load all required modules.
   It also load the content of the persistent storage into the re-frame db"
-  (:require [akiroz.re-frame.storage :as storage]
+  (:require ["@thirdweb-dev/react-core" :refer [useWallet useAddress]]
+            [akiroz.re-frame.storage :as storage]
             [cljsjs.jquery]
             [cljsjs.jwt-decode]
             [district.cljs-utils :as cljs-utils]
@@ -136,8 +137,11 @@
   (dev-setup)
   (let [full-config (cljs-utils/merge-in
                       config-map
-                      {:web3 {:authorize-on-init? false}
-                       :web3-accounts {:eip55? true}
+                      {:web3 {:authorize-on-init? false
+                              :connect-on-init? false}
+                       :web3-accounts {:eip55? true
+                                       :disable-loading-at-start? true
+                                       :disable-polling? true}
                        :smart-contracts {:format :truffle-json
                                          :contracts-path "/contracts/build/"}
                        :web3-tx {:disable-loading-recommended-gas-prices? true}

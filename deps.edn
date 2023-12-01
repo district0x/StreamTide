@@ -29,12 +29,12 @@
   is.d0x/district-server-web3-events {:mvn/version "23.5.22"}
   is.d0x/re-frame-web3-fx {:mvn/version "23.5.3"}
   is.d0x/district-sendgrid {:mvn/version "23.9.25"}
-  is.d0x/district-ui-reagent-render {:mvn/version "23.1.26"}
+  is.d0x/district-ui-reagent-render {:mvn/version "23.10.11"}
   is.d0x/district-ui-router {:mvn/version "23.2.9"}
   is.d0x/district-ui-smart-contracts {:mvn/version "23.8.7"}
-  is.d0x/district-ui-web3 {:mvn/version "23.8.7"}
+  is.d0x/district-ui-web3 {:mvn/version "23.10.11"}
   is.d0x/district-ui-web3-accounts {:mvn/version "23.8.7"}
-  is.d0x/district-ui-web3-chain {:mvn/version "23.8.7"}
+  is.d0x/district-ui-web3-chain {:mvn/version "23.10.2"}
   is.d0x/district-ui-web3-tx-id {:mvn/version "23.10.6"}
   mount/mount {:mvn/version "0.1.16"}
   org.clojure/clojure {:mvn/version "1.11.1"}
@@ -51,7 +51,7 @@
    {binaryage/devtools {:mvn/version "1.0.7"}
     cider/cider-nrepl {:mvn/version "0.27.2"}
     cider/piggieback {:mvn/version "0.4.0"}
-    day8.re-frame/re-frame-10x {:mvn/version "1.5.0"}
+    day8.re-frame/re-frame-10x {:mvn/version "1.8.1"}
     day8.re-frame/test {:mvn/version "0.1.5"}
     day8.re-frame/tracing {:mvn/version "0.6.2"}
     jamesmacaulay/cljs-promises {:mvn/version "0.1.0"}
