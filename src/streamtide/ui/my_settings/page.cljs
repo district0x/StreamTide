@@ -192,7 +192,7 @@
                     :accept "image/*"
                     :errors errors
                     :file-accept-pred (fn [{:keys [name type size] :as props}]
-                                        (and (#{"image/png" "image/gif" "image/jpeg" "image/svg+xml"} type)
+                                        (and (#{"image/png" "image/gif" "image/jpeg" "image/svg+xml" "image/webp"} type)
                                              (< size max-filesize)))
                     :on-file-accepted (fn [{:keys [name type size array-buffer] :as props}]
                                         (swap! form-data update-in [id] dissoc :error)
@@ -201,7 +201,7 @@
                     :on-file-rejected (fn [{:keys [name type size] :as props}]
                                         (swap! form-data assoc id {:error (if (>= size max-filesize)
                                                                             "File too large (> 3MB)"
-                                                                            "Non .png .jpeg .gif .svg file selected")})
+                                                                            "Non .png .jpeg .gif .svg .webp file selected")})
                                         (reset! form-data (with-meta @form-data {:touched? true}))
                                         (log/warn "Rejected file" {:name name :type type :size size} ::file-rejected))}])
 
