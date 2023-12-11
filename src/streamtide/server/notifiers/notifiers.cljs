@@ -47,10 +47,11 @@
                                                                 :notification/enable true})]
     (notify-all-types notification-entries notification)))
 
-(defn notify-new-content [{:keys [:user/address :user/name] :as creator}]
+(defn notify-new-content [{:keys [:user/address] :as creator}]
   "Sends a notification to the supported of a creator when there is new content"
   (let [notification {:title "New content from supported patron"
-                      :body (gstring/format "The creator you support \"%s\" has added new content" name)}
+                      :body (gstring/format "The creator you support \"%s\" has added new content" (:user/name creator))}
+
         addresses (map :user/source-user (stdb/get-user-content-permissions {:user/target-user address}))
         enabled-notifications (stdb/get-notification-categories {:user/addresses addresses
                                                                  :notification/category (name :notification-category/patron-publications)
