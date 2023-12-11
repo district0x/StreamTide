@@ -109,12 +109,10 @@
                     ; request a change of network
                     (re-frame/dispatch [::chain-events/request-switch-chain
                                         chain-id
-                                        {:on-error [::chain-events/request-add-chain
-                                                    (:web3-chain config-map)
-                                                    {:on-error
-                                                     [::dispatch-n
-                                                      [[::error-notification/show-error "Cannot switch network"]
-                                                       [::logging/error "Cannot switch network"]]]}]}])
+                                        {:chain-info (:web3-chain config-map)
+                                         :on-error [::dispatch-n
+                                                    [[::error-notification/show-error "Cannot switch network"]
+                                                     [::logging/error "Cannot switch network"]]]}])
                     ; interrupt the event processing
                     (assoc context :queue #queue [])))))))
 
