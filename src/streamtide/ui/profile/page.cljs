@@ -121,7 +121,7 @@
                                        :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content-pinned)))]
                                                    (dispatch [::graphql-events/query
                                                               {:query {:queries [(build-user-content-query {:user/address user-account :pinned true} end-cursor)]}
-                                                               :id {:user-content user-account :active-account active-account :pinned true}}]))
+                                                               :id {:user-content user-account :active-account active-account :active-session? active-session? :pinned true}}]))
                                        :loading-spinner-delegate (fn [] [:div.spinner-container [spinner/spin]])
                                        :load-more-content [:img]}
                 (when-not (:graphql/loading? (first @user-content-pinned))
@@ -139,7 +139,7 @@
                                       :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @user-content-unpinned)))]
                                                   (dispatch [::graphql-events/query
                                                              {:query {:queries [(build-user-content-query {:user/address user-account :pinned false} end-cursor)]}
-                                                              :id {:user-content user-account :active-account active-account :pinned false}}]))
+                                                              :id {:user-content user-account :active-account active-account :active-session? active-session? :pinned false}}]))
                                       :loading-spinner-delegate (fn [] [:div.spinner-container [spinner/spin]])}
              (when-not (:graphql/loading? (first @user-content-unpinned))
                (doall
