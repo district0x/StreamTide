@@ -121,7 +121,7 @@
 			line-height: 53px;
 			&:disabled {
 				pointer-events: none;
-				background-color: lightgray;
+				background-color: $bgDisabled;
 			}
 		}
 		&.add {
@@ -198,7 +198,7 @@
 				color: $purple;
 				overflow: hidden;
 				&:disabled {
-					background-color: lightgray;
+					background-color: $bgDisabled;
 				}
 			}
 

@@ -2,6 +2,7 @@
   "Page to approve the requested grants.
   It shows a list of grants pending to be approved, such that an admin can approve or reject them"
   (:require
+    [district.graphql-utils :as gql-utils]
     [district.ui.component.form.input :refer [checkbox-input]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
@@ -18,13 +19,23 @@
     [streamtide.ui.utils :as ui-utils]))
 
 (defn content-approval-entry [{:keys [:user/address :user/photo :user/name :user/socials]}
-                              {:keys [:grant/request-date]}
-                              form-data]
+                              {:keys [:grant/request-date :grant/status]}
+                              form-data show-rejected?]
   (let [reviewing? @(subscribe [::gaf-subs/reviewing?])
-        decision? @(subscribe [::gaf-subs/decision? address])
-        nav (partial nav-anchor {:route :route.profile/index :params {:address address}})]
+        decision @(subscribe [::gaf-subs/decision address])
+        nav (partial nav-anchor {:route :route.profile/index :params {:address address}})
+        rejected? (or (= :grant.status/rejected decision)
+            (= :grant.status/rejected (gql-utils/gql-name->kw status)))]
     [:div.contentApproval
-     (when decision? {:class "remove"})
+     {:class (cond
+               (or
+                 (= :grant.status/approved decision)
+                 (and (not show-rejected?)
+                    decision))
+               "remove"
+               (and show-rejected? rejected?)
+               "rejected"
+               :else nil)}
      [:div.cel.data
       [nav [user-photo {:src photo :class "lb"}]]
       [nav [:h3 name]]]
@@ -35,7 +46,8 @@
      [:div.cel.buttons
        [checkbox-input (merge {:form-data form-data
                                :id address}
-                              (when reviewing? {:disabled true}))]]]))
+                              (when reviewing? {:disabled true}))]]
+     (when rejected? [:div.rejected-annotation "Rejected"])]))
 
 (def page-size 6)
 
@@ -43,7 +55,7 @@
   (let []
     [:search-grants
      (cond-> {:first page-size
-              :statuses [:grant.status/requested]
+              :statuses statuses
               :order-by :grants.order-by/request-date
               :order-dir :desc}
              after                   (assoc :after after))
@@ -58,7 +70,7 @@
                              [:user/socials [:social/network
                                              :social/url]]]]]]]]))
 
-(defn grants-entries [query-params grants-search form-data]
+(defn grants-entries [query-params grants-search form-data show-rejected?]
   (let [all-grants (->> @grants-search
                         (mapcat (fn [r] (-> r :search-grants :items))))
         loading? (:graphql/loading? (last @grants-search))
@@ -81,33 +93,45 @@
        (when-not (:graphql/loading? (first @grants-search))
          (doall
            (for [{:keys [:grant/user] :as grant} all-grants]
-             ^{:key (:user/address user)} [content-approval-entry user grant form-data])))])))
+             ^{:key (:user/address user)} [content-approval-entry user grant form-data show-rejected?])))])))
 
 
 (defmethod page :route.admin/grant-approval-feed []
-  (let [query-params {:statuses [:grant.status/requested]}
-        grants-search (subscribe [::gql/query {:queries [(build-grants-query query-params nil)]}
-                                  {:id query-params}])
-        tx-id (str "add-patrons-" (random-uuid))
-        form-data (r/atom {})]
+  (let [tx-id (str "add-patrons-" (random-uuid))
+        form-data (r/atom {})
+        show-rejected-form-data (r/atom {})]
     (fn []
-      (let [reviewing? @(subscribe [::gaf-subs/reviewing?])
+      (let [show-rejected? (:show-rejected @show-rejected-form-data)
+            query-params {:statuses (cond-> [:grant.status/requested]
+                                            show-rejected? (conj :grant.status/rejected))}
+            grants-search (subscribe [::gql/query {:queries [(build-grants-query query-params nil)]}
+                                      {:id query-params}])
+            reviewing? @(subscribe [::gaf-subs/reviewing?])
             selected-addresses (filter (fn [[_ selected]] selected) @form-data)
             review-button-props (fn [status]
                                   (merge
                                     {:on-click #(dispatch [::gaf-events/review-grant
                                                           {:send-tx/id tx-id
                                                            :user/addresses (keys selected-addresses)
-                                                           :grant/status status}])}
+                                                           :grant/status status
+                                                           :on-success (fn []
+                                                                         (reset! form-data {}))}])}
                                     (when (or reviewing? (empty? selected-addresses)) {:disabled true})))]
         [admin-layout
-         [:div.reviewButtons
+         [:div.control-header
+          [:div.showRejected
+           [:label.checkField.simple
+            [checkbox-input {:id        :show-rejected
+                             :form-data show-rejected-form-data}]
+            [:span.checkmark {:class (when show-rejected? "checked")}]
+            [:span.text "Show rejected"]]]
+          [:div.reviewButtons
            [:button.btBasic.btBasic-light.btApprove
             (review-button-props :grant.status/approved)
             "APPROVE selected"]
            [:button.btBasic.btBasic-light.btDeny
             (review-button-props :grant.status/rejected)
-            "DENY selected"]]
+            "DENY selected"]]]
          [:div.headerApprovalFeed.d-none.d-lg-flex
           [:div.cel.cel-data
            [:span.titleCel.col-user "User Profile"]]
@@ -117,4 +141,4 @@
            [:span.titleCel.col-date "Request Date"]]
           [:div.cel.cel-buttons
            [:span.titleCel.col-buttons "Select"]]]
-          [grants-entries query-params grants-search form-data]]))))
+          [grants-entries query-params grants-search form-data show-rejected?]]))))
