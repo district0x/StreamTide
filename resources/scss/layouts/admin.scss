@@ -17,14 +17,25 @@
 		h3 {
 			font-size: 20px;;
 		}
-		.reviewButtons {
+		.control-header {
 			display: flex;
-			margin-bottom: 10px;
+			align-items: end;
 			justify-content: space-between;
-			.btBasic {
-				&:disabled {
-					pointer-events: none;
-					background-color: lightgray;
+			margin-bottom: 10px;
+			.showRejected {
+				.input-group {
+					display: none;
+				}
+			}
+			.reviewButtons {
+				display: flex;
+				justify-content: space-between;
+
+				.btBasic {
+					&:disabled {
+						pointer-events: none;
+						background-color: $bgDisabled;
+					}
 				}
 			}
 		}
@@ -43,6 +54,20 @@
 		background: $bgCard;
 		padding: 19.86px 15px 18.58px;
 		max-height: 500px;
+		&.rejected {
+			background-color: $bgDisabled;
+		}
+		.rejected-annotation {
+			position: absolute;
+			bottom: 5px;
+			right: 5px;
+			font-size: smaller;
+			background: #a478f9;
+			border-radius: 92px;
+			padding: 1px 4px;
+			color: white;
+			font-weight: bold;
+		}
 		.data {
 			width: 100%;
 			display: flex;
@@ -102,6 +127,11 @@
 			&.loading {
 				opacity: 0.3;
 				pointer-events: none;
+			}
+			.input-group {
+				.help-block {
+					display: none;
+				}
 			}
 		}
 		&.remove {
@@ -383,7 +413,7 @@
 			height: 56px;
 			&:disabled {
 				pointer-events: none;
-				background-color: lightgray;
+				background-color: $bgDisabled;
 			}
 		}
 	}
@@ -696,7 +726,7 @@
 
 				.btBasic:disabled {
 					pointer-events: none;
-					background-color: lightgray;
+					background-color: $bgDisabled;
 				}
 			}
 		}
@@ -716,7 +746,7 @@
 				.btBasic {
 					&:disabled {
 						pointer-events: none;
-						background-color: lightgray;
+						background-color: $bgDisabled;
 					}
 				}
 			}

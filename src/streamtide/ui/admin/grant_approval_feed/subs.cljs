@@ -8,6 +8,6 @@
     (get db :reviewing-grants?)))
 
   (re-frame/reg-sub
-    ::decision?
+    ::decision
     (fn [db [_ address]]
-    (get-in db [:reviewed-grant? address])))
+    (get-in db [:reviewed-grant address])))
