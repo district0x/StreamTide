@@ -40,6 +40,7 @@
             [streamtide.ui.config :refer [config-map]]
             [streamtide.ui.effects]
             [streamtide.ui.events :as st-events]
+            [streamtide.ui.feeds.page]
             [streamtide.ui.grants.page]
             [streamtide.ui.home.page]
             [streamtide.ui.leaderboard.page]
