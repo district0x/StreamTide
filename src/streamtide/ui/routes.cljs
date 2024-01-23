@@ -14,4 +14,5 @@
              ["/oauth-callback-verifier" :route.oauth-callback/verifier]
              ["/profile/:address" :route.profile/index]
              ["/profile" :route.profile/index]
+             ["/feeds" :route.feeds/index]
              ["/send-support" :route.send-support/index]])

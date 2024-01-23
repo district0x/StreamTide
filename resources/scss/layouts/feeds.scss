@@ -1,0 +1,87 @@
+.pageFeeds {
+	padding-top: 97.21px;
+	background-color: $bgProfile;
+	.contentFeeds {
+		margin-bottom: 20px;
+		.medias {
+			.content {
+				width: calc(100% - 25px);
+				margin: 0 12.5px 24px;
+
+				audio, video {
+					width: 100%;
+				}
+
+				.contentFoot {
+					display: flex;
+					justify-content: space-between;
+
+					.userProfile {
+						a {
+							margin-top: 14px;
+							margin-bottom: 30px;
+							margin-left: 30px;
+
+							width: fit-content;
+
+							display: flex;
+							align-items: center;
+
+							.user {
+								width: 36px;
+								height: 36px;
+
+								.photo {
+									box-shadow: 0px 0px 0px 1px $lilac;
+								}
+
+								&.star {
+									&::after {
+										height: 18px;
+										width: 19px;
+										bottom: 0px;
+										right: -9.5px;
+									}
+								}
+							}
+
+							h3 {
+								margin-left: 10px;
+							}
+						}
+					}
+
+					.date {
+						font-size: smaller;
+						margin-top: 14px;
+						margin-right: 14px;
+					}
+				}
+			}
+		}
+	}
+	.not-found {
+		text-align: center;
+		font-weight: bold;
+	}
+	@include media-breakpoint-up(md) {
+		.contentFeeds {
+			.medias {
+				.content {
+					width: calc(50% - 25px);
+					margin: 0 12.5px 24px;
+				}
+			}
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		padding-top: 140.29px;
+		background-color: $bgSite;
+		.contentFeeds {
+			background-color: $bgCard;
+			border-radius: 15px;
+			padding: 14px 40px;
+			position: relative;
+		}
+	}
+}
