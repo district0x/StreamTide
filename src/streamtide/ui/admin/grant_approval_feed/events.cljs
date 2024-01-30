@@ -59,10 +59,12 @@
 (re-frame/reg-event-fx
   ::review-grant-success
   (fn [{:keys [db]} [_ args]]
-    (let [{:keys [:user/addresses :grant/status]} args]
+    (let [{:keys [:user/addresses :grant/status :on-success]} args]
+      (when on-success
+        (on-success))
       {:db (-> db
                (dissoc :reviewing-grants?)
-               (update :reviewed-grant? merge (reduce (fn [col address] (conj col {address status})) {} addresses)))
+               (update :reviewed-grant merge (reduce (fn [col address] (conj col {address status})) {} addresses)))
        :dispatch [::notification-events/show (str "Grants successfully " (if (= :grant.status/approved status) "approved" "rejected")  )]})))
 
 (re-frame/reg-event-fx

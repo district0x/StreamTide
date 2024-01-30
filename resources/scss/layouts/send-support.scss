@@ -123,7 +123,7 @@
 			margin-bottom: 23.09px;
 			&:disabled {
 				pointer-events: none;
-				background-color: lightgray;
+				background-color: $bgDisabled;
 			}
 		}
 		margin-bottom: 50px;

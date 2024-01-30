@@ -48,7 +48,7 @@
 
 				&:disabled {
 					pointer-events: none;
-					background-color: lightgray;
+					background-color: $bgDisabled;
 				}
 			}
 		}
@@ -85,7 +85,7 @@
 
 			&:disabled {
 				pointer-events: none;
-				background-color: lightgray;
+				background-color: $bgDisabled;
 			}
 		}
 	}
