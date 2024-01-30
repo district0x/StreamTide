@@ -7,6 +7,7 @@
     [district.ui.web3-accounts.queries :as account-queries]
     [district.ui.web3-tx.events :as tx-events]
     [re-frame.core :as re-frame]
+    [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.events :refer [wallet-chain-interceptors]]
     [streamtide.ui.utils :refer [build-tx-opts]]
     [taoensso.timbre :as log]))
@@ -51,10 +52,16 @@
                                                                :params {:round round}}}
                                        :on-tx-success-n [[::logging/info (str tx-name " tx success") ::distribute]
                                                         [::notification-events/show (str "Matching pool successfully distributed for round " round)]]
-                                       :on-tx-error [::logging/error (str tx-name " tx error")
-                                                     {:user {:id active-account}
-                                                      :matchings matchings}
-                                                     ::distribute]}]})))
+                                       :on-tx-error-n [[::logging/error (str tx-name " tx error")
+                                                        {:user {:id active-account}
+                                                         :matchings matchings}
+                                                        ::distribute]
+                                                       [::error-notification/show-error "Transaction failed"]]
+                                       :on-tx-hash-error-n [[::logging/error (str tx-name " tx error")
+                                                             {:user {:id active-account}
+                                                              :matchings matchings}
+                                                             ::distribute]
+                                                            [::error-notification/show-error "Transaction failed"]]}]})))
 
 (re-frame/reg-event-fx
   ::fill-matching-pool
@@ -73,11 +80,18 @@
                                                                :params {:round round}}}
                                        :on-tx-success-n [[::logging/info (str tx-name " tx success") ::fill-matching-pool]
                                                         [::notification-events/show (str "Matching pool successfully filled with " amount " ETH")]]
-                                       :on-tx-error [::logging/error (str tx-name " tx error")
-                                                     {:user {:id active-account}
-                                                      :round round
-                                                      :amount amount}
-                                                     ::fill-matching-pool]}]})))
+                                       :on-tx-error-n [[::logging/error (str tx-name " tx error")
+                                                        {:user {:id active-account}
+                                                         :round round
+                                                         :amount amount}
+                                                        ::fill-matching-pool]
+                                                       [::error-notification/show-error "Transaction failed"]]
+                                       :on-tx-hash-error-n [[::logging/error (str tx-name " tx error")
+                                                             {:user {:id active-account}
+                                                              :round round
+                                                              :amount amount}
+                                                             ::fill-matching-pool]
+                                                            [::error-notification/show-error "Transaction failed"]]}]})))
 
 (re-frame/reg-event-fx
   ::close-round
@@ -97,10 +111,16 @@
                                        :on-tx-success-n [[::logging/info (str tx-name " tx success") ::close-round]
                                                          [::notification-events/show "Round successfully closed"]
                                                          [::round-closed]]
-                                       :on-tx-error [::logging/error (str tx-name " tx error")
-                                                     {:user {:id active-account}
-                                                      :round round}
-                                                     ::close-round]}]})))
+                                       :on-tx-error-n [[::logging/error (str tx-name " tx error")
+                                                        {:user {:id active-account}
+                                                         :round round}
+                                                        ::close-round]
+                                                       [::error-notification/show-error "Transaction failed"]]
+                                       :on-tx-hash-error-n [[::logging/error (str tx-name " tx error")
+                                                             {:user {:id active-account}
+                                                              :round round}
+                                                             ::close-round]
+                                                            [::error-notification/show-error "Transaction failed"]]}]})))
 
 (re-frame/reg-event-fx
   ::round-closed

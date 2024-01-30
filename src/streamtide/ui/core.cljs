@@ -2,7 +2,8 @@
   "Main entry point of the Frontend.
   Loads the config and load all required modules.
   It also load the content of the persistent storage into the re-frame db"
-  (:require [akiroz.re-frame.storage :as storage]
+  (:require ["@thirdweb-dev/react-core" :refer [useWallet useAddress]]
+            [akiroz.re-frame.storage :as storage]
             [cljsjs.jquery]
             [cljsjs.jwt-decode]
             [district.cljs-utils :as cljs-utils]
@@ -20,6 +21,7 @@
             [district.ui.web3-accounts]
             [district.ui.web3-chain]
             [district.ui.web3-chain.events :as web3-chain-events]
+            [district.ui.web3-tx.events :as tx-events]
             [district.ui.web3-tx-id]
             [district.ui.web3]
             [district.ui.web3.events :as web3-events]
@@ -38,6 +40,7 @@
             [streamtide.ui.config :refer [config-map]]
             [streamtide.ui.effects]
             [streamtide.ui.events :as st-events]
+            [streamtide.ui.feeds.page]
             [streamtide.ui.grants.page]
             [streamtide.ui.home.page]
             [streamtide.ui.leaderboard.page]
@@ -99,7 +102,8 @@
         (assoc :cart (:cart store))
         (assoc :trust-domains (:trust-domains store))
         (assoc :multipliers (:multipliers store))
-        (assoc :donations (:donations store)))))
+        (assoc :donations (:donations store))
+        (assoc :my-settings (:my-settings store)))))
 
 (re-frame/reg-event-fx
   ::init
@@ -122,14 +126,23 @@
                        :dispatch-to [::st-events/web3-creation-failed]}
                       {:register :chain-changed
                        :events #{::web3-chain-events/chain-changed}
-                       :dispatch-to [::st-events/web3-chain-changed]}]}))
+                       :dispatch-to [::st-events/web3-chain-changed]}
+                      {:register :send-tx-started
+                       :events #{::tx-events/send-tx}
+                       :dispatch-to [::st-events/send-tx-started]}
+                      {:register :send-tx-finished
+                       :events #{::tx-events/tx-hash-error ::tx-events/tx-success ::tx-events/tx-error}
+                       :dispatch-to [::st-events/send-tx-finished]}]}))
 
 (defn ^:export init []
   (dev-setup)
   (let [full-config (cljs-utils/merge-in
                       config-map
-                      {:web3 {:authorize-on-init? false}
-                       :web3-accounts {:eip55? true}
+                      {:web3 {:authorize-on-init? false
+                              :connect-on-init? false}
+                       :web3-accounts {:eip55? true
+                                       :disable-loading-at-start? true
+                                       :disable-polling? true}
                        :smart-contracts {:format :truffle-json
                                          :contracts-path "/contracts/build/"}
                        :web3-tx {:disable-loading-recommended-gas-prices? true}

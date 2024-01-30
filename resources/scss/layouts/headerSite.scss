@@ -194,8 +194,31 @@
 		}
 	}
 	.btLogin {
-		width: 297.39px;
-		margin: 0 auto 39px;
+		width: 217.39px;
+		margin: 0 auto 5px;
+	}
+	.connectWallet {
+		background-color: $lilac;
+		border: 0;
+		border-radius: 6px;
+		height: 52px;
+		color: $white;
+		justify-content: center;
+		&.btLogin {
+			margin-left: 2px;
+		}
+		&:hover {
+			background-color: $yellow;
+		}
+		div {
+			span {
+				color: $white
+			}
+			span:nth-child(2) {
+				opacity: 0.6;
+
+			}
+		}
 	}
 	.policyTerms {
 		display: flex;
@@ -340,10 +363,18 @@
 				}
 			}
 		}
+		.btLoginContainer {
+
+			order: 3;
+		}
 		.btLogin {
 			order: 3;
 			width: 139.71px;
 			margin: 0;
+		}
+		.connectWalletContainer {
+			order: 4;
+			min-width: 182px;
 		}
 	}
 	@include media-breakpoint-up(llg) {

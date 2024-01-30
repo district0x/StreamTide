@@ -153,7 +153,8 @@
         tx-id (str "donate_" (random-uuid))]
     (fn []
       (let [donate-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/donate tx-id}])
-            donate-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/donate tx-id}])]
+            donate-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/donate tx-id}])
+            waiting-wallet? (subscribe [::st-subs/waiting-wallet? {:streamtide/donate tx-id}])]
         [app-layout
          [:main.pageSite
           {:id "send-support"}
@@ -169,9 +170,9 @@
                   (for [[address _] @cart]
                     ^{:key address} [send-support-card address form-data errors]))])
                 [:div.buttons
-                 [pending-button {:pending? @donate-tx-pending?
+                 [pending-button {:pending? (or @donate-tx-pending? @waiting-wallet?)
                                   :pending-text "Simping in Progress 💸"
-                                  :disabled (or @donate-tx-pending? @donate-tx-success?
+                                  :disabled (or @donate-tx-pending? @donate-tx-success? @waiting-wallet?
                                                 (empty? @form-data)
                                                 (some #(or (zero? %) (nil? %)) (map :amount (vals @form-data))))
                                   :class (str "btBasic btBasic-light btCheckout" (when-not @donate-tx-success? " checkedOut"))

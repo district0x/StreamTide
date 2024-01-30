@@ -15,9 +15,12 @@
    :smart-contracts {:contracts smart-contracts-dev/smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
    :web3-chain {:chain-id "1337"
-                :chain-name "Ganache"}
+                :rpc-urls ["http://localhost:8545"]
+                :chain-name "Ganache"
+                :native-currency {:name "ETH"
+                                  :symbol "ETH"
+                                  :decimals 18}}
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
-   ;:domain "localhost"
    })
 
 (def qa-config
@@ -26,15 +29,14 @@
    :graphql {:url "https://api.streamtide.qa.district0x.io/graphql"}
    :smart-contracts {:contracts smart-contracts-qa/smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
-   :web3-chain {:chain-id "421613"
-                :rpc-urls ["https://goerli-rollup.arbitrum.io/rpc"]
-                :chain-name "Arbitrum Testnet"
-                :native-currency {:name "AGOR"
-                                  :symbol "AGOR"
+   :web3-chain {:chain-id "421614"
+                :rpc-urls ["https://sepolia-rollup.arbitrum.io/rpc"]
+                :chain-name "Arbitrum Sepolia"
+                :native-currency {:name "ETH"
+                                  :symbol "ETH"
                                   :decimals 18}
-                :block-explorer-urls ["https://testnet.arbiscan.io/"]}
+                :block-explorer-urls ["https://sepolia.arbiscan.io/"]}
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
-   ;:domain "TBD"
    })
 
 (def production-config
@@ -51,7 +53,6 @@
                                   :decimals 18}
                 :block-explorer-urls ["https://explorer.arbitrum.io"]}
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
-   ;:domain "TBD"
    })
 
 (def config-map

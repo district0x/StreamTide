@@ -43,3 +43,8 @@
   ::trust-domain?
   (fn [db [_ domain]]
     (get-in db [:trust-domains domain])))
+
+(re-frame/reg-sub
+  ::waiting-wallet?
+  (fn [db [_ tx-id]]
+    (get-in db [:waiting-wallet tx-id])))

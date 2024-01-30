@@ -18,6 +18,7 @@
     [streamtide.ui.components.general :refer [nav-anchor no-items-found]]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [user-photo social-links]]
+    [streamtide.ui.subs :as st-subs]
     [streamtide.ui.utils :as ui-utils]))
 
 (def page-size 1000)
@@ -241,7 +242,7 @@
                                                               divisor (if (bn/= sum (new-bn 0)) sum (bn// matching-pool sum))]
                                                           (recur (next multipliers) multiplier
                                                                  (bn/+ acc (bn/* amount (bn/* (- multiplier prev_mult) divisor)))))
-                                                        (bn/fixed (.integerValue acc js/BigNumber.ROUND_FLOOR)))))))
+                                                        (bn/fixed (.integerValue ^js/BigNumber acc js/BigNumber.ROUND_FLOOR)))))))
                                        {} amounts)]
     receivers-matchings))
 
@@ -269,6 +270,7 @@
   (let [tx-id (str "distribute_" round-id)
         distribute-tx-pending (subscribe [::tx-id-subs/tx-pending? {:streamtide/distribute tx-id}])
         distribute-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/distribute tx-id}])
+        waiting-wallet? (subscribe [::st-subs/waiting-wallet? {:streamtide/distribute tx-id}])
 
         all-donations (->> @donations-search
                            (mapcat (fn [r] (-> r :search-donations :items)))
@@ -291,9 +293,9 @@
                 (not= "0" (:round/matching-pool round)) ; ... and has something to distribute
                 last-round? ; ... be the last existing round
                 )
-      [pending-button {:pending? @distribute-tx-pending
+      [pending-button {:pending? (or @distribute-tx-pending @waiting-wallet?)
                        :pending-text "Distributing"
-                       :disabled (or @distribute-tx-pending @distribute-tx-success?)
+                       :disabled (or @distribute-tx-pending @distribute-tx-success? @waiting-wallet?)
                        :class (str "btBasic btBasic-light btDistribute" (when-not @distribute-tx-success? " distributed"))
                        :on-click (fn [e]
                                    (.stopPropagation e)
@@ -363,18 +365,20 @@
               (when (round-open? round)
                 (let [match-pool-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/fill-matching-pool tx-id-mp}])
                       match-pool-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/fill-matching-pool tx-id-mp}])
+                      match-pool-waiting-wallet? (subscribe [::st-subs/waiting-wallet? {:streamtide/fill-matching-pool tx-id-mp}])
                       close-round-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/close-round tx-id-cr}])
-                      close-round-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/close-round tx-id-cr}])]
+                      close-round-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/close-round tx-id-cr}])
+                      close-round-waiting-wallet? (subscribe [::st-subs/waiting-wallet? {:streamtide/close-round tx-id-cr}])]
                   [:<>
                    [:div.form.fillPoolForm
                     [:label.inputField
                      [:span "Amount"]
                      [amount-input {:id :amount
                                     :form-data form-data}]]
-                    [pending-button {:pending? @match-pool-tx-pending?
+                    [pending-button {:pending? (or @match-pool-tx-pending? @match-pool-waiting-wallet?)
                                      :pending-text "Filling Up Matching Pool"
-                                     :disabled (or @match-pool-tx-pending? @match-pool-tx-success?
-                                                   @close-round-tx-pending? @close-round-tx-success?
+                                     :disabled (or @match-pool-tx-pending? @match-pool-tx-success? @match-pool-waiting-wallet?
+                                                   @close-round-tx-pending? @close-round-tx-success? @close-round-waiting-wallet?
                                                    (>= 0 (:amount @form-data)))
                                      :class (str "btBasic btBasic-light btMatchPool")
                                      :on-click (fn [e]
@@ -384,9 +388,9 @@
                                                                                            :round round}]))}
                      (if @match-pool-tx-success? "Matching Pool Filled up" "Fill Up Matching Pool")]]
                    [:div.form.closeRoundForm
-                    [pending-button {:pending? @close-round-tx-pending?
+                    [pending-button {:pending? (or @close-round-tx-pending? @close-round-waiting-wallet?)
                                      :pending-text "Closing Round"
-                                     :disabled (or @close-round-tx-pending? @close-round-tx-success?)
+                                     :disabled (or @close-round-tx-pending? @close-round-tx-success? @close-round-waiting-wallet?)
                                      :class (str "btBasic btBasic-light btCloseRound")
                                      :on-click (fn [e]
                                                  (.stopPropagation e)
