@@ -50,4 +50,4 @@ jobs:
           file: docker-builds/${{ matrix.image }}/Dockerfile
           build-args: BUILD_ENV=${{ inputs.env }}
           push: true
-          tags: ${{ secrets.ECR_REGISTRY }}/streamtide-${{ matrix.image }}:latest-${{ inputs.env }}
+          tags: ${{ secrets.ECR_REGISTRY }}/streamtide-${{ inputs.env }}-${{ matrix.image }}:latest
