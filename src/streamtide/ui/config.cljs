@@ -46,7 +46,7 @@
    :smart-contracts {:contracts smart-contracts-prod/smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
    :web3-chain {:chain-id "42161"
-                :rpc-urls ["https://arbitrum-mainnet.infura.io"]
+                :rpc-urls ["https://arb1.arbitrum.io/rpc"]
                 :chain-name "Arbitrum One"
                 :native-currency {:name "ETH"
                                   :symbol "ETH"
