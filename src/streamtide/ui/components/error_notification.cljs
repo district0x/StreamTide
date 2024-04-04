@@ -23,7 +23,8 @@
 
 (defn- parse-error [js-error]
   (let [js-error (unwrap-error js-error)]
-    (let [{:keys [:message :error :code :status]} (js->clj js-error :keywordize-keys true)]
+    (let [{:keys [:message :error :code :status]} (js->clj js-error :keywordize-keys true)
+          message (or message (.-message js-error))]
       (if (or (and code (< code 0) message) (= status :tx.status/error))
         "Transaction reverted"
         (or message error)))))

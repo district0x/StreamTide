@@ -4,10 +4,12 @@
     [bignumber.core :as bn]
     [camel-snake-kebab.core :as camel-snake-kebab]
     [cljsjs.bignumber]
-    [cljs-web3-next.eth :as web3-eth]
     [cljs-web3-next.core :as web3-core]
+    [cljs-web3-next.eth :as web3-eth]
+    [cljs-web3-next.helpers :refer [zero-address]]
     [cljs.core.async :as async :refer [<! go]]
     [cljs.core.async.impl.protocols :refer [ReadPort]]
+    [clojure.string :as string]
     [district.shared.async-helpers :refer [<? safe-go]]
     [district.server.smart-contracts :as smart-contracts]
     [district.server.web3-events :as web3-events]
@@ -17,7 +19,7 @@
     [mount.core :as mount :refer [defstate]]
     [streamtide.server.notifiers.notifiers :as notifiers]
     [streamtide.server.db :as db]
-    [streamtide.shared.utils :as shared-utils]
+    [streamtide.shared.utils :as shared-utils :refer [abi-reduced-erc20]]
     [taoensso.timbre :as log]))
 
 
@@ -117,7 +119,7 @@
                       :donation/receiver patron-address
                       :donation/date timestamp
                       :donation/amount value
-                      :donation/coin (name :eth)
+                      :donation/coin zero-address
                       :round/id round-id}]
         (db/upsert-user-info! {:user/address sender})
         (db/add-donation! donation)
@@ -127,29 +129,66 @@
             (db/add-user-content-permission! {:user/source-user sender
                                               :user/target-user patron-address})))))))
 
+(defn update-matching-pool [{:keys [:value :round-id :token]}]
+  (when (bn/> (js/BigNumber. value) (js/BigNumber. 0))
+    (let [matching-pool (db/get-matching-pool round-id token)
+          amount (bn/+ (js/BigNumber. (or (:matching-pool/amount matching-pool) 0)) (js/BigNumber. value))]
+      (db/upsert-matching-pool!
+        {:round/id round-id
+         :matching-pool/coin (string/lower-case token)
+         :matching-pool/amount (bn/fixed amount)}))))
+
+(defn nullify-err [v]
+  (if (cljs.core/instance? js/Error v) nil v))
+
+(defn fetch-coin-info [coin-address]
+  (safe-go
+    (let [contract (web3-eth/contract-at @web3 abi-reduced-erc20 coin-address)
+          decimals (<! (smart-contracts/contract-call contract "decimals"))
+          symbol (nullify-err (<! (smart-contracts/contract-call contract "symbol")))
+          name (nullify-err (<! (smart-contracts/contract-call contract "name")))]
+      {:coin/address (string/lower-case coin-address)
+       :coin/symbol symbol
+       :coin/name name
+       :coin/decimals decimals})))
+
+(defn ensure-coin-exists! [coin-address]
+  (safe-go
+    (let [coin (db/get-coin coin-address)]
+      (when-not (:coin/address coin)
+        (let [coin-info (<? (fetch-coin-info coin-address))]
+          (db/add-coin! coin-info))))))
+
+(defn matching-pool-donation-token-event [_ {:keys [:args]}]
+  (let [{:keys [:sender :value :round-id :token]} args]
+    (safe-go
+      (do
+        (<? (ensure-coin-exists! token))
+        (update-matching-pool args)))))
+
 (defn matching-pool-donation-event [_ {:keys [:args]}]
   (let [{:keys [:sender :value :round-id]} args]
     (safe-go
-      (let [round (db/get-round round-id)
-            matching-pool (bn/+ (js/BigNumber. (:round/matching-pool round)) (js/BigNumber. value))]
-        (db/update-round! {:round/id round-id :round/matching-pool (bn/fixed matching-pool)})))))
+      (update-matching-pool (merge args {:token zero-address})))))
 
 (defn distribute-event [_ {:keys [:args]}]
-  (let [{:keys [:to :amount :timestamp :round-id]} args]
+  (let [{:keys [:to :amount :timestamp :round-id :token]} args]
     (safe-go
       (db/add-matching! {:matching/receiver to
                          :matching/amount amount
                          :matching/date timestamp
-                         :matching/coin (name :eth)
+                         :matching/coin (string/lower-case token)
                          :round/id round-id}))))
 
 (defn distribute-round-event [_ {:keys [:args]}]
-  (let [{:keys [:round-id :amount :timestamp]} args]
+  (let [{:keys [:round-id :amount :token]} args]
     (safe-go
-      (let [round (db/get-round round-id)
-            distributed-amount (bn/+ (js/BigNumber. (:round/distributed round)) (js/BigNumber. amount))]
-        (db/update-round! {:round/id round-id
-                           :round/distributed (bn/fixed distributed-amount)})))))
+      (let [matching-pool (db/get-matching-pool round-id token)
+            distributed-amount (bn/+ (js/BigNumber. (or (:matching-pool/distributed matching-pool) 0)) (js/BigNumber. amount))]
+        (db/upsert-matching-pool!
+          {:round/id round-id
+           :matching-pool/coin (string/lower-case token)
+           :matching-pool/distributed (bn/fixed distributed-amount)})))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -241,6 +280,7 @@
                              :streamtide/round-started-event round-started-event
                              :streamtide/round-closed-event round-closed-event
                              :streamtide/matching-pool-donation-event matching-pool-donation-event
+                             :streamtide/matching-pool-donation-token-event matching-pool-donation-token-event
                              :streamtide/distribute-event distribute-event
                              :streamtide/distribute-round-event distribute-round-event
                              :streamtide/donate-event donate-event}

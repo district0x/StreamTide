@@ -1,6 +1,7 @@
 (ns tests.contract.syncer-test
   (:require [cljs-web3-next.eth :as web3-eth]
             [cljs-web3-next.evm :as web3-evm]
+            [cljs-web3-next.helpers :refer [zero-address]]
             [cljs.core.async :refer [<! go timeout]]
             [cljs.test :refer-macros [deftest is testing async]]
             [district.server.db :as district.server.db]
@@ -87,24 +88,33 @@
 
             (let [rounds (:items (db/get-rounds {:first 6}))
                   round (first rounds)
-                  round-id (:round/id round)]
+                  round-id (:round/id round)
+                  matching-pool (db/get-matching-pool round-id zero-address)]
               (is (= (count rounds) 1))
               (is (> round-id 0))
-              (is (= (:round/matching-pool round) "1000"))
-              (is (= (:round/distributed round) "0"))
+              (is (= (:matching-pool/amount matching-pool) "1000"))
+              (is (or (= (:matching-pool/distributed matching-pool) "0")
+                      (= (:matching-pool/distributed matching-pool) nil)))
               (is (> (:round/start round) 0))
 
               (<! (web3-eth/send-transaction! @web3 {:from admin :to (smart-contracts/contract-address :streamtide-fwd) :value 1000}))
               (<! (wait-event :matching-pool-donation))
               (let [rounds (:items (db/get-rounds {:first 6}))
-                    round (first rounds)]
+                    round (first rounds)
+                    matching-pool (db/get-matching-pool round-id zero-address)]
                 (is (= (count rounds) 1))
                 (is (= round-id (:round/id round)))
-                (is (= (:round/matching-pool round) "2000"))))
+                (is (= (:matching-pool/amount matching-pool) "2000"))))
 
             (<! (web3-eth/send-transaction! @web3 {:from admin :to (smart-contracts/contract-address :streamtide-fwd) :value 1500}))
             (<! (wait-event :matching-pool-donation))
-            (is (= (:round/matching-pool (first (:items (db/get-rounds {:first 6})))) "3500"))
+            (is (= (-> (db/get-rounds {:first 6})
+                       :items
+                       first
+                       :round/id
+                       (db/get-matching-pool zero-address)
+                       :matching-pool/amount)
+                   "3500"))
 
             (db/upsert-user-info! {:user/address user
                                    :user/min-donation "300"})
@@ -121,7 +131,7 @@
               (is (= (:donation/receiver donation) user))
               (is (= (str (:donation/amount donation)) "250"))
               (is (> (:donation/date donation) 0))
-              (is (= (:donation/coin donation) "eth"))
+              (is (= (:donation/coin donation) zero-address))
               (is (= (:round/id donation) round-id)))
 
             (web3-evm/increase-time!
@@ -140,23 +150,24 @@
                     (is (= (:donation/receiver donation) user))
                     (is (= (str (:donation/amount donation)) "500"))
                     (is (> (:donation/date donation) 0))
-                    (is (= (:donation/coin donation) "eth"))
+                    (is (= (:donation/coin donation) zero-address))
                     (is (nil? (:round/id donation))))
 
-                  (<! (smart-contracts/contract-send :streamtide-fwd :distribute [[user]["1000"]] {:from admin}))
+                  (<! (smart-contracts/contract-send :streamtide-fwd :distribute [[user] ["1000"] zero-address] {:from admin}))
                   (<! (wait-event :distribute))
 
                   (let [matchings (:items (db/get-matchings {:sender user2 :receiver user :first 6}))
                         matching (last matchings)
                         round (first (:items (db/get-rounds {:first 1})))
-                        round-id (:round/id round)]
+                        round-id (:round/id round)
+                        matching-pool (db/get-matching-pool round-id zero-address)]
                     (is (= (count matchings) 1))
                     (is (= (:matching/receiver matching) user))
                     (is (= (str (:matching/amount matching)) "1000"))
                     (is (> (:matching/date matching) 0))
-                    (is (= (:matching/coin matching) "eth"))
+                    (is (= (:matching/coin matching) zero-address))
                     (is (= (:round/id matching) round-id))
-                    (is (= (:round/distributed round) "1000")))
+                    (is (= (:matching-pool/distributed matching-pool) "1000")))
 
                   (<! (smart-contracts/contract-send :streamtide-fwd :start-round [1000] {:from admin :value "1000"}))
                   (<! (wait-event :round-started))

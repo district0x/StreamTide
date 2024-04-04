@@ -64,7 +64,7 @@
         notification {:title "Donation received"
                       :body (gstring/format "You have received a donation from %s of a value of %s"
                                             (if (string/blank? (:user/name sender)) (:donation/sender donation) (:user/name sender))
-                                            (shared-utils/format-price (:donation/amount donation)))}
+                                            (shared-utils/format-price (:donation/amount donation) {:coin/decimals 18 :coin/symbol "ETH"}))}
         notification-entries (stdb/get-notification-categories {:user/address (:donation/receiver donation)
                                                                 :notification/category (name :notification-category/donations)
                                                                 :notification/enable true})]

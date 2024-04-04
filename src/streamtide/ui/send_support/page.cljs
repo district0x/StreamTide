@@ -103,7 +103,7 @@
        [:span (ui-utils/format-graphql-time date)]]
       [:li
        [:h4.d-lg-none "Amount"]
-       [:span (shared-utils/format-price amount)]]]]))
+       [:span (shared-utils/format-price amount {:coin/decimals 18 :coin/symbol "ETH"})]]]]))
 
 (defn donations []
   (let [active-account (subscribe [::accounts-subs/active-account])]
@@ -175,7 +175,7 @@
                                   :disabled (or @donate-tx-pending? @donate-tx-success? @waiting-wallet?
                                                 (empty? @form-data)
                                                 (some #(or (zero? %) (nil? %)) (map :amount (vals @form-data))))
-                                  :class (str "btBasic btBasic-light btCheckout" (when-not @donate-tx-success? " checkedOut"))
+                                  :class (str "btBasic btBasic-light btCheckout" (when @donate-tx-success? " checkedOut"))
                                   :on-click (fn [e]
                                               (.stopPropagation e)
                                               (dispatch [::ss-events/send-support {:donations @form-data

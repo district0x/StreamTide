@@ -110,6 +110,10 @@
   (log/debug "donation->sender-resolver args" user-donation)
   (logic/get-user (user-id current-user) sender))
 
+(defn donation->coin-resolver [{:keys [:donation/coin] :as donation-coin} _ {:keys [:current-user]}]
+  (log/debug "donation->coin-resolver args" donation-coin)
+  (logic/get-coin (user-id current-user) coin))
+
 (defn donation->receiver-resolver [{:keys [:donation/receiver] :as user-donation}]
   (log/debug "donation->receiver-resolver args" user-donation)
   user-donation)
@@ -117,6 +121,18 @@
 (defn matching->receiver-resolver [{:keys [:matching/receiver] :as user-donation}]
   (log/debug "matching->receiver-resolver args" user-donation)
   user-donation)
+
+(defn matching->coin-resolver [{:keys [:matching/coin] :as matching-coin} _ {:keys [:current-user]}]
+  (log/debug "matching->coin-resolver args" matching-coin)
+  (logic/get-coin (user-id current-user) coin))
+
+(defn matching-pool->coin-resolver [{:keys [:matching-pool/coin] :as matching-pool-coin} _ {:keys [:current-user]}]
+  (log/debug "matching-pool->coin-resolver args" matching-pool-coin)
+  (logic/get-coin (user-id current-user) coin))
+
+(defn coin-amount->coin-resolver [{:keys [:coin] :as coin-amount} _ {:keys [:current-user]}]
+  (log/debug "coin-amount->coin-resolver args" coin-amount)
+  (logic/get-coin (user-id current-user) coin))
 
 (defn leader->receiver-resolver [{:keys [:leader/receiver] :as user-donation}]
   (log/debug "leader->receiver-resolver args" user-donation)
@@ -373,8 +389,12 @@
    :Content {:content/user content->user-resolver
              :content/type content->type-resolver}
    :Donation {:donation/receiver donation->receiver-resolver
-              :donation/sender donation->sender-resolver}
-   :Matching {:matching/receiver matching->receiver-resolver}
+              :donation/sender donation->sender-resolver
+              :donation/coin donation->coin-resolver}
+   :Matching {:matching/receiver matching->receiver-resolver
+              :matching/coin matching->coin-resolver}
    :Leader {:leader/receiver leader->receiver-resolver}
+   :MatchingPool {:matching-pool/coin matching-pool->coin-resolver}
+   :CoinAmount {:coin coin-amount->coin-resolver}
 
    })

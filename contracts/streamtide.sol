@@ -5,11 +5,11 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
-
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 
 contract MVPCLR is OwnableUpgradeable {
-  
+
     event AdminAdded(address _admin);
     event AdminRemoved(address _admin);
     event BlacklistedAdded(address _blacklisted);
@@ -21,9 +21,10 @@ contract MVPCLR is OwnableUpgradeable {
     event RoundStarted(uint256 roundStart, uint256 roundId, uint256 roundDuration);
     event RoundClosed(uint256 roundId); // Added event
     event MatchingPoolDonation(address sender, uint256 value, uint256 roundId);
-    event Distribute(address to, uint256 amount, uint256 roundId);
-    event DistributeRound(uint256 roundId, uint256 amount);
-    
+    event MatchingPoolDonationToken(address sender, uint256 value, uint256 roundId, address token);
+    event Distribute(address to, uint256 amount, uint256 roundId, address token);
+    event DistributeRound(uint256 roundId, uint256 amount, address token);
+
 
     event Donate(
         address sender,
@@ -48,35 +49,43 @@ contract MVPCLR is OwnableUpgradeable {
     mapping(address => bool) public isAdmin;
     mapping(address => bool) public isPatron;
     mapping(address => bool) public isBlacklisted;
-    
+
     address public multisigAddress;
 
     function construct(address _multisigAddress) external initializer {
-    __Ownable_init(); // Add this line to initialize the OwnableUpgradeable contract
-    multisigAddress = _multisigAddress;
-    roundId = 0;
-    lastActiveRoundId = 0;
-}
+        __Ownable_init(); // Add this line to initialize the OwnableUpgradeable contract
+        multisigAddress = _multisigAddress;
+        roundId = 0;
+        lastActiveRoundId = 0;
+    }
 
     function setMultisigAddress(address _multisigAddress) external onlyMultisig {
-    multisigAddress = _multisigAddress;
-}
+        multisigAddress = _multisigAddress;
+    }
 
     function fillUpMatchingPool() public payable onlyAdmin {
-    require(msg.value > 0, "MVPCLR:fillUpMatchingPool - No value provided");
-    emit MatchingPoolDonation(msg.sender, msg.value, roundId);
-}
+        require(msg.value > 0, "MVPCLR:fillUpMatchingPool - No value provided");
+        emit MatchingPoolDonation(msg.sender, msg.value, roundId);
+    }
 
+    function fillUpMatchingPoolToken(address from, address token, uint amount) public onlyAdmin {
+        require(!roundIsClosed());
+        require(amount > 0, "MVPCLR:fillUpMatchingPoolToken - No amount provided");
+
+        IERC20(token).transferFrom(from, address(this), amount);
+
+        emit MatchingPoolDonationToken(from, amount, roundId, token);
+    }
 
     function closeRound() public onlyAdmin {
         roundDuration = 0;
 //        roundId = 0;
         emit RoundClosed(lastActiveRoundId); // Added event emission
-}
+    }
 
     function roundIsClosed() public view returns (bool) {
         return roundDuration == 0 || roundStart + roundDuration <= getBlockTimestamp();
-}
+    }
 
     function startRound(uint256 _roundDuration) public payable onlyAdmin {
         require(roundIsClosed(), "MVPCLR: startRound - Previous round not yet closed");
@@ -88,34 +97,34 @@ contract MVPCLR is OwnableUpgradeable {
         emit RoundStarted(roundStart, roundId, roundDuration);
         emit MatchingPoolDonation(msg.sender, msg.value, roundId); // Emit event for the added funds
 
-}
+    }
 
     function addAdmin(address _admin) public onlyOwner {
         isAdmin[_admin] = true;
         emit AdminAdded(_admin);
-}
+    }
 
     function removeAdmin(address _admin) public onlyOwner {
         require(isAdmin[_admin], "Admin not found"); // check if the address is an admin
         delete isAdmin[_admin];
         emit AdminRemoved(_admin);
-}
+    }
 
     function getBlockTimestamp() public view returns (uint256) {
         return block.timestamp;
-}
+    }
 
     function addBlacklisted(address _address) public onlyAdmin {
         isBlacklisted[_address] = true;
         emit BlacklistedAdded(_address);
-}
+    }
 
 
     function removeBlacklisted(address _address) public onlyAdmin {
         require(isBlacklisted[_address], "Address not blacklisted");
         delete isBlacklisted[_address];
         emit BlacklistedRemoved(_address);
-}
+    }
 
     function addPatrons(address payable[] calldata addresses) public onlyAdmin {
         for (uint256 i = 0; i < addresses.length; i++) {
@@ -124,67 +133,68 @@ contract MVPCLR is OwnableUpgradeable {
             isPatron[addr] = true;
         }
         emit PatronsAdded(addresses);
-}
+    }
 
     function donate(address[] memory patronAddresses, uint256[] memory amounts) public payable {
-    require(patronAddresses.length == amounts.length, "CLR:donate - Mismatch between number of patrons and amounts");
-    uint256 totalAmount = 0;
-    uint256 donationRoundId = roundIsClosed() ? 0 : roundId;
-    for (uint256 i = 0; i < patronAddresses.length; i++) {
-        address patronAddress = patronAddresses[i];
-        uint256 amount = amounts[i];
-        totalAmount += amount;
-        require(!isBlacklisted[_msgSender()], "Sender address is blacklisted");
-        require(isPatron[patronAddress], "CLR:donate - Not a valid recipient");
-        emit Donate(_msgSender(), amount, patronAddress, donationRoundId);
-        bool success = payable(patronAddress).send(amount);
-        require(success, "CLR:donate - Failed to send funds to recipient");
+        require(patronAddresses.length == amounts.length, "CLR:donate - Mismatch between number of patrons and amounts");
+        uint256 totalAmount = 0;
+        uint256 donationRoundId = roundIsClosed() ? 0 : roundId;
+        for (uint256 i = 0; i < patronAddresses.length; i++) {
+            address patronAddress = patronAddresses[i];
+            uint256 amount = amounts[i];
+            totalAmount += amount;
+            require(!isBlacklisted[_msgSender()], "Sender address is blacklisted");
+            require(isPatron[patronAddress], "CLR:donate - Not a valid recipient");
+            emit Donate(_msgSender(), amount, patronAddress, donationRoundId);
+            bool success = payable(patronAddress).send(amount);
+            require(success, "CLR:donate - Failed to send funds to recipient");
+        }
+
+        require(totalAmount <= msg.value, "CLR:donate - Total amount donated is greater than the value sent");
+        // transfer the donated funds to the contract
+        // payable(address(this)).transfer(msg.value);
     }
 
-    require(totalAmount <= msg.value, "CLR:donate - Total amount donated is greater than the value sent");
-    // transfer the donated funds to the contract
-    // payable(address(this)).transfer(msg.value);
-}
 
+    function distribute(address payable[] memory patrons, uint[] memory amounts, address token) public onlyAdmin {
+        require(patrons.length == amounts.length, "Length of patrons and amounts must be the same");
+        uint256 totalAmount = 0; // Store total amount to be distributed
 
-    function distribute(address payable[] memory patrons, uint[] memory amounts) public onlyAdmin {
-    require(patrons.length == amounts.length, "Length of patrons and amounts must be the same");
-    uint256 totalAmount = 0; // Store total amount to be distributed
-
-    // Loop through the list of patrons and distribute the funds to each address
-    for (uint i = 0; i < patrons.length; i++) {
-        // Make sure the recipient address is a valid patron address
-        require(isPatron[patrons[i]], "CLR:distribute - Not a valid recipient");
-        patrons[i].transfer(amounts[i]); // Reverts transaction if transfer fails
-        emit Distribute(patrons[i], amounts[i], roundId);
-        totalAmount += amounts[i];  // Add the amount to totalAmount
-    }
+        // Loop through the list of patrons and distribute the funds to each address
+        for (uint i = 0; i < patrons.length; i++) {
+            // Make sure the recipient address is a valid patron address
+            require(isPatron[patrons[i]], "CLR:distribute - Not a valid recipient");
+            if (token == address(0))
+                patrons[i].transfer(amounts[i]); // Reverts transaction if transfer fails
+            else
+                IERC20(token).transfer(patrons[i], amounts[i]);
+            emit Distribute(patrons[i], amounts[i], roundId, token);
+            totalAmount += amounts[i];  // Add the amount to totalAmount
+        }
 //    matchingPool -= totalAmount; // Subtract the total distributed amount from the matching pool
-    emit DistributeRound(roundId, totalAmount);
-}
-    
+        emit DistributeRound(roundId, totalAmount, token);
+    }
+
     //only designated multisig address can call this function
     function withdrawFunds(uint256 amount) external onlyMultisig {
-    require(address(this).balance >= amount, "Insufficient funds in contract");
-    payable(multisigAddress).transfer(amount);
-}
-
-
+        require(address(this).balance >= amount, "Insufficient funds in contract");
+        payable(multisigAddress).transfer(amount);
+    }
 
     // receive donation for the matching pool
     receive() external payable {
-    require(roundStart == 0 || getBlockTimestamp() < roundStart + roundDuration,"CLR:receive closed");
-    emit MatchingPoolDonation(_msgSender(), msg.value, roundId);
-}
+        require(roundStart == 0 || getBlockTimestamp() < roundStart + roundDuration, "CLR:receive closed");
+        emit MatchingPoolDonation(_msgSender(), msg.value, roundId);
+    }
 
     modifier onlyAdmin() {
-    require(isAdmin[msg.sender] == true, "Not an admin");
-    _;
-}
+        require(isAdmin[msg.sender] == true, "Not an admin");
+        _;
+    }
 
     modifier onlyMultisig() {
-    require(msg.sender == multisigAddress, "Not authorized");
-    _;
-}
+        require(msg.sender == multisigAddress, "Not authorized");
+        _;
+    }
 
 }

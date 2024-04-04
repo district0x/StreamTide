@@ -3,26 +3,39 @@
 		.fillPoolForm {
 
 			display: flex;
-			justify-content: space-between;
+			column-gap: 5px;
+			flex-wrap: wrap;
 
 			margin-top: 15px;
+			margin-bottom: 15px;
 
 			.inputField {
+				> span {
+					white-space: nowrap;
+				}
+
 				span {
 					font-size: 18px;
 					margin-right: 18px;
 					letter-spacing: normal;
 				}
 
-				.help-block {
-					display: none;
+				width: 100%;
+
+				&.coin {
+					width: calc(100% - 165px);
+					max-width: 580px;
+					input {
+						font-size: 16px;
+					}
 				}
-
-				width: calc(82% - 10px);
 			}
-
-			.input-group {
-				width: unset;
+			.btValidateCoin {
+				height: 56px;
+				&:disabled {
+					pointer-events: none;
+					background-color: $bgDisabled;
+				}
 			}
 
 			label.inputField {
@@ -42,28 +55,56 @@
 				}
 			}
 
+			.custom-select.selectForm {
+				width: 160px;
+				.select__value-container {
+					font-weight: bold;
+				}
+			}
+
+			.coin-symbol {
+				height: 56px;
+				display: inline-flex;
+				align-items: center;
+				border: 3px solid $lilac;
+				padding: 10px;
+				background: $bgDisabled;
+				border-radius: 7px;
+				font-weight: bold;
+			}
+		}
+		.btBasic {
+			height: 56px;
+
+			&:disabled {
+				pointer-events: none;
+				background-color: $bgDisabled;
+			}
+		}
+		.buttons {
+			display: flex;
+			justify-content: space-between;
+
 			.btBasic {
 				width: calc(18% - 10px);
-				height: 56px;
-
+			}
+			.btMatchPool, .btCloseRound {
+				min-width: 210px;
+			}
+			.btCloseRound {
+				background: chocolate;
 				&:disabled {
 					pointer-events: none;
-					background-color: $bgDisabled;
+					background-color: darksalmon;
 				}
 			}
 		}
-		.closeRoundForm {
+		.matching, .distributed {
 			display: flex;
-			justify-content: right;
-		}
-		.btMatchPool, .btCloseRound {
-			min-width: 210px;
-		}
-		.btCloseRound {
-			background: chocolate;
-			&:disabled {
-				pointer-events: none;
-				background-color: darksalmon;
+			column-gap: 5px;
+			.amounts {
+				display: flex;
+				flex-direction: column;
 			}
 		}
 	}
@@ -86,6 +127,33 @@
 			&:disabled {
 				pointer-events: none;
 				background-color: $bgDisabled;
+			}
+		}
+		.coin-container {
+			display: flex;
+			align-items: center;
+			column-gap: 10px;
+
+			.coin {
+				width: 160px;
+				margin: 8px 0;
+
+			}
+			.custom-select.selectForm {
+				.select__value-container {
+					font-weight: bold;
+				}
+			}
+
+			.inputField {
+				height: 44px;
+				line-height: 38px;
+				padding: 0 17px;
+				font-size: 13px;
+
+				&.disabled {
+					background: $disabled;
+				}
 			}
 		}
 	}

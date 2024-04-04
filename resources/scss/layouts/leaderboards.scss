@@ -17,6 +17,9 @@
 			margin-right: 21.05px;
 		}
 		.data {
+			a {
+				width: 100%;
+			}
 			width: calc(100% - 80px);
 			font-size: 16px;
 			line-height: 22px;
@@ -31,16 +34,21 @@
 			li {
 				width: 100%;
 				display: flex;
-				align-items: center;
 				justify-content: space-between;
 				font-size: 16px;
-				line-height: 28px;
+				line-height: 22px;
+				margin-bottom: 8px;
 				h4 {
 					font-weight: $bold;
 					color: $blackWhite;
 				}
 				&:last-child {
 					margin-bottom: 0;
+				}
+
+				.amounts {
+					display: flex;
+					flex-direction: column;
 				}
 			}
 		}
@@ -84,7 +92,7 @@
 			margin-bottom: 11.62px;
 			display: flex;
 			flex-wrap: nowrap;
-			padding: 13.36px 13.83px 18.83px;
+			padding: 13.83px 13.83px 13.83px;
 			.user {
 				width: 56px;
 				margin-right: 23.66px;
@@ -115,6 +123,7 @@
 					width: 33.33%;
 					display: block;
 					text-align: center;
+					margin-bottom: 0px;
 				}
 			}
 		}
@@ -160,7 +169,7 @@
 			margin-bottom: 11.62px;
 			display: flex;
 			flex-wrap: nowrap;
-			padding: 13.36px 13.83px 18.83px;
+			padding: 13.83px 13.83px 13.83px;
 			.user {
 				width: 56px;
 				margin-right: 23.66px;
