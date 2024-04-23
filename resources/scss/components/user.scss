@@ -33,7 +33,6 @@
 			position: absolute;
 			bottom: 0;
 			right: -9.5px;
-			z-index: 10;
 		}
 	}
 	&.lb {
@@ -71,7 +70,6 @@
 			position: absolute;
 			top: 6px;
 			right: 6px;
-			z-index: 10;
 		}
 	}
 }
@@ -87,7 +85,6 @@
 			position: absolute;
 			top: -2px;
 			right: -3px;
-			z-index: 10;
 		}
 	}
 	@include media-breakpoint-up(md) {

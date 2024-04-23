@@ -56,3 +56,6 @@
     {:maxPriorityFeePerGas nil
      :maxFeePerGas nil}
     opts))
+
+(defn valid-address-format? [address]
+  (re-matches #"^0x[a-fA-F0-9]{40}$" address))

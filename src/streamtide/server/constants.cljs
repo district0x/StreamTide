@@ -9,6 +9,7 @@
    :streamtide/round-started-event [:streamtide-fwd :RoundStarted]
    :streamtide/round-closed-event [:streamtide-fwd :RoundClosed]
    :streamtide/matching-pool-donation-event [:streamtide-fwd :MatchingPoolDonation]
+   :streamtide/matching-pool-donation-token-event [:streamtide-fwd :MatchingPoolDonationToken]
    :streamtide/distribute-event [:streamtide-fwd :Distribute]
    :streamtide/distribute-round-event [:streamtide-fwd :DistributeRound]
    :streamtide/donate-event [:streamtide-fwd :Donate]})

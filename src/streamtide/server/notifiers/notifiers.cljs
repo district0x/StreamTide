@@ -1,6 +1,7 @@
 (ns streamtide.server.notifiers.notifiers
   (:require
     [clojure.string :as string]
+    [district.server.config :refer [config]]
     [goog.string :as gstring]
     [streamtide.server.db :as stdb]
     [streamtide.shared.utils :as shared-utils]))
@@ -31,12 +32,13 @@
   (js/Error. (str "Notification type not supported: " type)))
 
 (defn- notify-all-types [notification-setting-entries notification]
-  (let [notification-by-type (->> notification-setting-entries
-                                  (map #(update % :notification/type keyword))
-                                  (group-by :notification/type))]
-    (doseq [[type users] notification-by-type]
-      (let [ids (get-ids type (map :user/address users))]
-        (notify type ids notification)))))
+  (when-not (-> @config :notifiers :disable)
+    (let [notification-by-type (->> notification-setting-entries
+                                    (map #(update % :notification/type keyword))
+                                    (group-by :notification/type))]
+      (doseq [[type users] notification-by-type]
+        (let [ids (get-ids type (map :user/address users))]
+          (notify type ids notification))))))
 
 (defn notify-announcement [announcement]
   "Sends a notification to all subscribers when there is a new announcement"
@@ -64,7 +66,7 @@
         notification {:title "Donation received"
                       :body (gstring/format "You have received a donation from %s of a value of %s"
                                             (if (string/blank? (:user/name sender)) (:donation/sender donation) (:user/name sender))
-                                            (shared-utils/format-price (:donation/amount donation)))}
+                                            (shared-utils/format-price (:donation/amount donation) {:coin/decimals 18 :coin/symbol "ETH"}))}
         notification-entries (stdb/get-notification-categories {:user/address (:donation/receiver donation)
                                                                 :notification/category (name :notification-category/donations)
                                                                 :notification/enable true})]

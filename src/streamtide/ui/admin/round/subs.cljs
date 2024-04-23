@@ -21,3 +21,8 @@
   ::all-donations
   (fn [db [_]]
     (get db :donations)))
+
+(re-frame/reg-sub
+  ::coin-info
+  (fn [db [_ coin-address]]
+    (get-in db [:coin-info coin-address])))

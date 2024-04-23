@@ -33,36 +33,42 @@
     [:items [:round/id
              :round/start
              :round/duration
-             :round/matching-pool
-             :round/distributed]]]])
+             [:round/matching-pools [[:matching-pool/coin [:coin/symbol
+                                                           :coin/decimals]]
+                                     :matching-pool/amount
+                                     :matching-pool/distributed]]]]]])
 
-(defn round-entry [{:keys [:round/id :round/start :round/matching-pool :round/duration :round/distributed] :as round}]
+(defn round-entry [{:keys [:round/id :round/start :round/duration :round/matching-pools] :as round}]
   (let [nav (partial nav-anchor {:route :route.admin/round :params {:round id}})
         active? (shared-utils/active-round? round (shared-utils/now-secs))]
-    [:div.contentRound
+    [nav [:div.contentRound
      (when active? {:class "active"})
      [:div.cel.name
       [:h4.d-lg-none "ID"]
-      [nav [:h4 id]]]
+      [:h4 id]]
      [:div.cel.start
       [:h4.d-lg-none "Start Date"]
-      [nav [:span (ui-utils/format-graphql-time start)]]]
+      [:span (ui-utils/format-graphql-time start)]]
      [:div.cel.duration
       [:h4.d-lg-none "End Date"]
-      [nav [:span (ui-utils/format-graphql-time (+ start duration))]]]
+      [:span (ui-utils/format-graphql-time (+ start duration))]]
      [:div.cel.matching-pool
       [:h4.d-lg-none "Matching Pool"]
-      [nav [:span (shared-utils/format-price matching-pool)]]]
+      [:div.amounts
+       (map (fn [mp]
+              [:span {:key (-> mp :matching-pool/coin :coin/symbol)} (shared-utils/format-price (:matching-pool/amount mp) (:matching-pool/coin mp))]) matching-pools)]]
      [:div.cel.distributed
       [:h4.d-lg-none "Distributed"]
-      [nav [:span (shared-utils/format-price distributed)]]]]))
+      [:div.amounts
+       (map (fn [mp]
+              [:span {:key (-> mp :matching-pool/coin :coin/symbol)}(shared-utils/format-price (:matching-pool/distributed mp) (:matching-pool/coin mp))]) matching-pools)]]]]))
 
 
 (defn round-entries [rounds-search]
   (let [all-rounds (->> @rounds-search
                        (mapcat (fn [r] (-> r :search-rounds :items)))
                         distinct
-                        (sort-by #(:round/id %))
+                        (sort-by #(int (:round/id %)))
                         reverse)
         loading? (:graphql/loading? (last @rounds-search))
         has-more? (-> (last @rounds-search) :search-rounds :has-next-page)]

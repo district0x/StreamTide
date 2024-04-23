@@ -114,6 +114,10 @@
   "Gets all the rounds info"
   (stdb/get-rounds args))
 
+(defn get-coin [_current-user address]
+  "Gets coin info from its ETH address"
+  (stdb/get-coin address))
+
 (defn verify-social! [current-user {:keys [:state] :as args}]
   "Verify a social network, for example checking the authentication code coming from user authentication is valid.
   This returns a channel"

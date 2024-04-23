@@ -1,6 +1,8 @@
 (ns streamtide.server.db
   "Module for defining database structure and managing and abstracting queries to the database"
-  (:require [district.server.config :refer [config]]
+  (:require [cljs-web3-next.helpers :refer [zero-address]]
+            [clojure.string :as string]
+            [district.server.config :refer [config]]
             [district.server.db :as db]
             [district.server.db.column-types :refer [address default-nil default-zero default-false not-nil primary-key]]
             [honeysql-postgres.helpers :as psqlh]
@@ -19,12 +21,9 @@
           :stop (stop))
 
 ; columns holding big numbers
-(def big-numbers-fields [:round/matching-pool
-                         :round/distributed
+(def big-numbers-fields [:matching-pool/amount
+                         :matching-pool/distributed
                          :matching/amount
-                         :leader/donation-amount
-                         :leader/matching-amount
-                         :leader/total-amount
                          :donation/amount
                          :user/min-donation])
 
@@ -127,6 +126,7 @@
    [:round/id :unsigned :integer]
    [(sql/call :foreign-key :donation/sender) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
    [(sql/call :foreign-key :donation/receiver) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
+   [(sql/call :foreign-key :donation/coin) (sql/call :references :coin :coin/address)]
    [(sql/call :foreign-key :round/id) (sql/call :references :round :round/id)]])
 
 (def matching-columns
@@ -137,6 +137,7 @@
    [:matching/coin address not-nil]
    [:round/id :unsigned :integer]
    [(sql/call :foreign-key :matching/receiver) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
+   [(sql/call :foreign-key :matching/coin) (sql/call :references :coin :coin/address)]
    [(sql/call :foreign-key :round/id) (sql/call :references :round :round/id)]])
 
 (def user-roles-columns
@@ -166,9 +167,22 @@
 (def round-columns
   [[:round/id :integer primary-key not-nil]
    [:round/start :timestamp not-nil]
-   [:round/duration :unsigned :integer not-nil]
-   [:round/matching-pool :unsigned :integer not-nil]   ;; TODO use string to avoid precision errors? order-by is important
-   [:round/distributed :unsigned :integer]])
+   [:round/duration :unsigned :integer not-nil]])
+
+(def matching-pool-columns
+  [[:round/id :unsigned :integer]
+   [:matching-pool/coin :address not-nil]
+   [:matching-pool/amount :unsigned :integer]   ;; TODO use string to avoid precision errors? order-by is important
+   [:matching-pool/distributed :unsigned :integer]
+   [(sql/call :primary-key :round/id :matching-pool/coin)]
+   [(sql/call :foreign-key :matching-pool/coin) (sql/call :references :coin :coin/address)]
+   [(sql/call :foreign-key :round/id) (sql/call :references :round :round/id)]])
+
+(def coin-columns
+  [[:coin/address address primary-key not-nil]
+   [:coin/name :varchar default-nil]
+   [:coin/symbol :varchar default-nil]
+   [:coin/decimals :unsigned :integer default-nil]])
 
 (def events-columns
   [[:event/contract-key :varchar not-nil]
@@ -194,6 +208,8 @@
 (def user-content-permission-column-names (filter keyword? (map first user-content-permission-columns)))
 (def announcement-column-names (filter keyword? (map first announcement-columns)))
 (def round-column-names (filter keyword? (map first round-columns)))
+(def matching-pool-column-names (filter keyword? (map first matching-pool-columns)))
+(def coin-column-names (filter keyword? (map first coin-columns)))
 (def events-column-names (filter keyword? (map first events-columns)))
 
 
@@ -390,20 +406,42 @@
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))
 
+(defn group-leaders [leaders]
+  (vals (reduce
+          (fn [ret x]
+            (let [k (:user/address x)]
+              (assoc ret k (merge (select-keys x (merge user-column-names :leader/donation-amount))
+                                  (let [ma (get-in ret [k :leader/matching-amounts] [])
+                                        ta (get-in ret [k :leader/total-amounts] [])]
+                                    {:leader/matching-amounts (if (:matching/coin x)
+                                                             (conj ma (clojure.set/rename-keys (select-keys x [:matching/coin :leader/matching-amount])
+                                                                                               {:matching/coin :coin :leader/matching-amount :amount}))
+                                                             ma)
+                                     :leader/total-amounts (if (:matching/coin x)
+                                                             (conj ta (clojure.set/rename-keys (select-keys x [:matching/coin :leader/total-amount])
+                                                                                               {:matching/coin :coin :leader/total-amount :amount}))
+                                                             ta)})))))
+          {} leaders)))
+
 (defn get-leaders [{:keys [:round :search-term :order-by :order-dir :first :after] :as args}]
   (let [page-start-idx (when after (js/parseInt after))
         page-size first
         sub-query-donations (cond-> {:select [:donation/receiver [(sql/call :sum :donation/amount) :donations]]
                                      :from [:donation] :group-by [:donation/receiver]}
                                     round (sqlh/merge-where [:= :donation.round/id round]))
-        sub-query-matchings (cond-> {:select [:matching/receiver [(sql/call :sum :matching/amount) :matchings]]
-                                     :from [:matching] :group-by [:matching/receiver]}
+        sub-query-matchings (cond-> {:select [:matching/receiver :matching/coin [(sql/call :sum :matching/amount) :matchings]]
+                                     :from [:matching] :group-by [:matching/receiver :matching/coin]}
                                     round (sqlh/merge-where [:= :matching.round/id round]))
         query (cond->
                 {:select [:u.*
+                          :m.matching/coin
                           [(sql/call :coalesce :donations 0) :leader/donation-amount]
                           [(sql/call :coalesce :matchings 0) :leader/matching-amount]
-                          [(sql/call :+ (sql/call :coalesce :donations 0) (sql/call :coalesce :matchings 0)) :leader/total-amount]]
+                          [(sql/call :case
+                                     (sql/call := :matching/coin zero-address)
+                                     (sql/call :+ (sql/call :coalesce :donations 0) (sql/call :coalesce :matchings 0))
+                                     :else (sql/call :coalesce :matchings 0))
+                           :leader/total-amount]]
                  :from [[:user :u]]
                  :left-join [[sub-query-donations :d]
                              [:= :d.donation/receiver :u.user/address]
@@ -417,26 +455,60 @@
                                                       :leaders.order-by/matching-amount :leader/matching-amount
                                                       :leaders.order-by/total-amount :leader/total-amount}
                                                      order-by)
-                                                (or (keyword order-dir) :asc)]]))]
-    (paged-query query page-size page-start-idx)))
+                                                (or (keyword order-dir) :asc)]]))
+        leaders (paged-query query page-size page-start-idx)]
+    (update leaders :items group-leaders)))
+
+(defn group-rounds [rounds]
+  (vals (reduce
+          (fn [ret x]
+            (let [k (:round/id x)]
+              (assoc ret k (merge
+                             (get ret k)
+                             (select-keys x [:round/id :round/start :round/duration])
+                             (let [mp (get-in ret [k :round/matching-pools] [])]
+                               {:round/matching-pools (if (:matching-pool/coin x)
+                                                        (conj mp (select-keys x [:matching-pool/coin :matching-pool/amount :matching-pool/distributed]))
+                                                        mp)})))))
+          {} rounds)))
 
 (defn get-round [round-id]
-  (db-get {:select [:*]
-           :from [:round]
-           :where [:= round-id :round.round/id]}))
+  (let [rounds (db-all {:select [:r.* :mp.matching-pool/coin
+                                 [(sql/call :coalesce :mp.matching-pool/amount 0) :matching-pool/amount]
+                                 [(sql/call :coalesce :mp.matching-pool/distributed 0) :matching-pool/distributed]]
+           :from [[:round :r]]
+           :left-join [[:matching-pool :mp] [:= :r.round/id :mp.round/id]]
+           :where [:= round-id :r.round/id]})]
+    (first (group-rounds rounds))))
 
 (defn get-rounds [{:keys [:order-by :order-dir :first :after] :as args}]
   (let [page-start-idx (when after (js/parseInt after))
         page-size first
-        query (cond->
-                {:select [:r.*]
+        round-query (cond->
+                {:select [:*]
                  :from [[:round :r]]}
                 order-by (sqlh/merge-order-by [[(get {:rounds.order-by/date :r.round/start
-                                                      :rounds.order-by/matching-pool :r.round/matching-pool
                                                       :rounds.order-by/id :r.round/id}
                                                      order-by)
-                                                (or (keyword order-dir) :asc)]]))]
-    (paged-query query page-size page-start-idx)))
+                                                (or (keyword order-dir) :asc)]]))
+        rounds (paged-query round-query page-size page-start-idx)
+        mp-query {:select [:*]
+                  :from [[:matching-pool :mp]]
+                  :where [:in :mp.round/id (map #(:round/id %) (:items rounds))]}
+        mps (db-all mp-query)]
+    (update rounds :items #(group-rounds (apply merge % mps)))))
+
+(defn get-matching-pool [round-id coin-address]
+  (db-get {:select [:*]
+           :from [[:matching-pool :mp]]
+           :where [:and
+                   [:= round-id :mp.round/id]
+                   [:= coin-address :mp.matching-pool/coin]]}))
+
+(defn get-coin [address]
+  (db-get {:select [:*]
+           :from [:coin]
+           :where [:= (string/lower-case address) :coin.coin/address]}))
 
 (defn get-user-timestamps [{:keys [:user/address]}]
   (db-get {:select [:*]
@@ -612,6 +684,21 @@
               :set round-info
               :where [:= :round/id id]})))
 
+(defn upsert-matching-pool! [{:keys [:round/id :matching-pool/coin] :as args}]
+  (log/debug "update-matching-pool" args)
+  (let [matching-pool (select-keys args matching-pool-column-names)]
+    (db-run! {:insert-into :matching-pool
+              :values [matching-pool]
+              :upsert {:on-conflict [:round/id :matching-pool/coin]
+                       :do-update-set (keys matching-pool)}})))
+
+(defn add-coin! [args]
+  (log/debug "add-coin" args)
+  (db-run! {:insert-into :coin
+            :values [(update (select-keys args coin-column-names) :coin/address string/lower-case)]
+            :upsert {:on-conflict [:coin/address]
+                     :do-nothing []}}))
+
 (defn blacklisted? [{:keys [:user/address] :as args}]
   (let [bl (:user/blacklisted (db-get {:select [:user/blacklisted]
                                       :from [:user]
@@ -758,6 +845,17 @@
 
   (db-run! (-> (psqlh/create-table :round :if-not-exists)
                (psqlh/with-columns round-columns)))
+
+  (db-run! (-> (psqlh/create-table :matching-pool :if-not-exists)
+               (psqlh/with-columns matching-pool-columns)))
+
+  (db-run! (-> (psqlh/create-table :coin :if-not-exists)
+               (psqlh/with-columns coin-columns)))
+
+  (add-coin! {:coin/address zero-address
+                       :coin/decimals 18
+                       :coin/symbol "ETH"
+                       :coin/name "Ether"})
 
   (db-run! (-> (psqlh/create-table :events :if-not-exists)
                (psqlh/with-columns events-columns))))
