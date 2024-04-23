@@ -46,7 +46,8 @@
     [:items [:donation/id
              :donation/date
              :donation/amount
-             :donation/coin
+             ;[:donation/coin [:coin/symbol
+             ;                 :coin/decimals]]
              [:donation/receiver [:user/address
                                   :user/name
                                   :user/photo]]]]]])
@@ -142,7 +143,9 @@
 
 (defmethod page :route.send-support/index []
   (let [cart (subscribe [::st-subs/cart])
-        form-data (r/atom {})
+        form-data (r/atom
+                    (reduce (fn [aggr [address _]]
+                              (merge aggr {address nil})) {} @cart))
         errors (reaction {:local
                           (reduce (fn [aggr [addr {:keys [:amount]}]]
                                     (if (and amount (or (not (re-matches #"^\d+(\.\d{0,18})?$" amount))
@@ -162,12 +165,12 @@
             [:div.headerSendSupport
               [:h1.titlePage "Simping"]]
             [:div.cart
-             (if (empty? @cart)
+             (if (empty? @form-data)
                [no-items-found {:message "Your cart is empty 😢"}]
                [:div.contentSendSupport
                 [support-seal]
                 (doall
-                  (for [[address _] @cart]
+                  (for [[address _] @form-data]
                     ^{:key address} [send-support-card address form-data errors]))])
                 [:div.buttons
                  [pending-button {:pending? (or @donate-tx-pending? @waiting-wallet?)
