@@ -1,6 +1,7 @@
 (ns streamtide.server.notifiers.notifiers
   (:require
     [clojure.string :as string]
+    [district.server.config :refer [config]]
     [goog.string :as gstring]
     [streamtide.server.db :as stdb]
     [streamtide.shared.utils :as shared-utils]))
@@ -31,12 +32,13 @@
   (js/Error. (str "Notification type not supported: " type)))
 
 (defn- notify-all-types [notification-setting-entries notification]
-  (let [notification-by-type (->> notification-setting-entries
-                                  (map #(update % :notification/type keyword))
-                                  (group-by :notification/type))]
-    (doseq [[type users] notification-by-type]
-      (let [ids (get-ids type (map :user/address users))]
-        (notify type ids notification)))))
+  (when-not (-> @config :notifiers :disable)
+    (let [notification-by-type (->> notification-setting-entries
+                                    (map #(update % :notification/type keyword))
+                                    (group-by :notification/type))]
+      (doseq [[type users] notification-by-type]
+        (let [ids (get-ids type (map :user/address users))]
+          (notify type ids notification))))))
 
 (defn notify-announcement [announcement]
   "Sends a notification to all subscribers when there is a new announcement"
