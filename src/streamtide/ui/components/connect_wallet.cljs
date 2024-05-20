@@ -1,7 +1,5 @@
 (ns streamtide.ui.components.connect-wallet
-  (:require ["@thirdweb-dev/react" :refer [ConnectWallet ThirdwebProvider NetworkSelector metamaskWallet coinbaseWallet walletConnect
-                                           ;rainbowWallet trustWallet
-                                           ]]
+  (:require ["@thirdweb-dev/react" :refer [ConnectWallet ThirdwebProvider NetworkSelector metamaskWallet coinbaseWallet walletConnect rabbyWallet]]
             ["@thirdweb-dev/chains" :refer [Ethereum, Polygon, Localhost]]
             ["@thirdweb-dev/react-core" :refer [useWallet useAddress useConnectionStatus]]
             ["react" :as react]
@@ -61,9 +59,7 @@
                                 :clientId "f478f4123340f16303e57df57b6e26ef"
                                 :supportedWallets [(metamaskWallet #js {:recommended true})
                                                    (coinbaseWallet)
-                                                   (walletConnect)
-                                                   ;(rainbowWallet)
-                                                   ;(trustWallet)
-                                                   ]
+                                                   (rabbyWallet)
+                                                   (walletConnect)]
                                 :supportedChains []})
                       (r/as-element [:f> connect-wallet opts])))
