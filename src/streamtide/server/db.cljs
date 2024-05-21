@@ -410,10 +410,14 @@
   (vals (reduce
           (fn [ret x]
             (let [k (:user/address x)]
-              (assoc ret k (merge (select-keys x (merge user-column-names :leader/donation-amount))
-                                  (let [ma (get-in ret [k :leader/matching-amounts] [])
+              (assoc ret k (merge (select-keys x user-column-names)
+                                  (let [da (get-in ret [k :leader/donation-amount] 0)
+                                        ma (get-in ret [k :leader/matching-amounts] [])
                                         ta (get-in ret [k :leader/total-amounts] [])]
-                                    {:leader/matching-amounts (if (:matching/coin x)
+                                    {:leader/donation-amount (if (:leader/donation-amount x)
+                                                               (:leader/donation-amount x)
+                                                               da)
+                                     :leader/matching-amounts (if (:matching/coin x)
                                                              (conj ma (clojure.set/rename-keys (select-keys x [:matching/coin :leader/matching-amount])
                                                                                                {:matching/coin :coin :leader/matching-amount :amount}))
                                                              ma)
@@ -429,18 +433,15 @@
         sub-query-donations (cond-> {:select [:donation/receiver [(sql/call :sum :donation/amount) :donations]]
                                      :from [:donation] :group-by [:donation/receiver]}
                                     round (sqlh/merge-where [:= :donation.round/id round]))
-        sub-query-matchings (cond-> {:select [:matching/receiver :matching/coin [(sql/call :sum :matching/amount) :matchings]]
-                                     :from [:matching] :group-by [:matching/receiver :matching/coin]}
+        sub-query-matchings (cond-> {:select [:matching/receiver [(sql/call :sum :matching/amount) :matchings]]
+                                     :from [:matching] :where [:= :matching/coin zero-address] :group-by [:matching/receiver]}
                                     round (sqlh/merge-where [:= :matching.round/id round]))
         query (cond->
                 {:select [:u.*
-                          :m.matching/coin
+                          [zero-address :matching/coin]
                           [(sql/call :coalesce :donations 0) :leader/donation-amount]
                           [(sql/call :coalesce :matchings 0) :leader/matching-amount]
-                          [(sql/call :case
-                                     (sql/call := :matching/coin zero-address)
-                                     (sql/call :+ (sql/call :coalesce :donations 0) (sql/call :coalesce :matchings 0))
-                                     :else (sql/call :coalesce :matchings 0))
+                          [(sql/call :+ (sql/call :coalesce :donations 0) (sql/call :coalesce :matchings 0))
                            :leader/total-amount]]
                  :from [[:user :u]]
                  :left-join [[sub-query-donations :d]
@@ -456,7 +457,17 @@
                                                       :leaders.order-by/total-amount :leader/total-amount}
                                                      order-by)
                                                 (or (keyword order-dir) :asc)]]))
-        leaders (paged-query query page-size page-start-idx)]
+        leaders (paged-query query page-size page-start-idx)
+        other-coins-query {:select [:u.*
+                                    :m.matching/coin
+                                    [(sql/call :sum :m.matching/amount) :leader/matching-amount]
+                                    [(sql/call :sum :m.matching/amount) :leader/total-amount]]
+                           :from [[:user :u]]
+                           :join [[:matching :m] [:= :m.matching/receiver :u.user/address]]
+                           :where [:and [:in :u.user/address (map :user/address (:items leaders))]
+                                   [:!= :m.matching/coin zero-address]]
+                           :group-by [:m.matching/receiver :m.matching/coin]}
+        leaders (update leaders :items #(concat % (db-all other-coins-query)))]
     (update leaders :items group-leaders)))
 
 (defn group-rounds [rounds]
