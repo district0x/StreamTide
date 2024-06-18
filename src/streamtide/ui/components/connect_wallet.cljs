@@ -1,65 +1,111 @@
 (ns streamtide.ui.components.connect-wallet
-  (:require ["@thirdweb-dev/react" :refer [ConnectWallet ThirdwebProvider NetworkSelector metamaskWallet coinbaseWallet walletConnect rabbyWallet]]
-            ["@thirdweb-dev/chains" :refer [Ethereum, Polygon, Localhost]]
-            ["@thirdweb-dev/react-core" :refer [useWallet useAddress useConnectionStatus]]
-            ["react" :as react]
-            [district.ui.web3-accounts.subs :as accounts-subs]
-            [district.ui.web3-accounts.events :as accounts-events]
-            [district.ui.web3.events :as web3-events]
-            [district.ui.web3.subs :as web3-subs]
-            [cljs-web3-next.core :as web3-next]
-            [re-frame.core :refer [subscribe dispatch]]
-            [reagent.core :as r]
-            [streamtide.ui.subs :as st-subs]
-            [streamtide.ui.config :refer [config-map]]))
+  (:require
+    ["thirdweb/react" :refer [ConnectButton ThirdwebProvider useActiveWallet useActiveAccount useConnect useActiveWalletChain]]
+    ["thirdweb/wallets" :refer [createWallet inAppWallet]]
+    ["thirdweb" :refer [createThirdwebClient defineChain]]
+    ["react" :as react]
+    [district.ui.web3-accounts.subs :as accounts-subs]
+    [district.ui.web3-accounts.events :as accounts-events]
+    [district.ui.web3-chain.events :as chain-events]
+    [district.ui.web3-chain.subs :as chain-subs]
+    [district.ui.web3.events :as web3-events]
+    [cljs-web3-next.core :as web3-next]
+    [re-frame.core :refer [subscribe dispatch]]
+    [reagent.core :as r]
+    [streamtide.ui.subs :as st-subs]
+    [streamtide.ui.config :refer [config-map]]))
+
+
+(defn build-chain-info []
+  (clj->js (-> config-map
+               :web3-chain
+               (update :chain-id int)
+               (update :rpc-urls first)
+               (clojure.set/rename-keys {:chain-id :id
+                                         :rpc-urls :rpc
+                                         :chain-name :name
+                                         :native-currency :nativeCurrency}))))
+
+(defn create-provider [^js wallet]
+  #js {:request (fn [^js args]
+                  (case (.-method args)
+                    "eth_chainId" (js/Promise. (fn [] (-> wallet .getChain .-id)))
+                    "eth_sendTransaction" (let [chainId (-> wallet .getChain .-id)
+                                                params (js->clj (aget (.-params args) 0) :keywordize-keys true)
+                                                params (merge params {:chainId chainId})
+                                                params (dissoc params :gasPrice :gas)
+                                                params (clj->js params)]
+                                            (-> wallet .getAccount (.sendTransaction params )))
+                    "personal_sign" (let [account (aget (.-params args) 1)
+                                          data-raw (aget (.-params args) 0)
+                                          data (web3-next/to-ascii data-raw)
+                                          params (clj->js {:account account
+                                                           :message {:raw data}})
+                                          response (-> wallet .getAccount (.signMessage params))]
+                                      response)
+                    ;"eth_requestAccounts" ""
+                    "wallet_switchEthereumChain" (.switchChain wallet (build-chain-info))
+                    (js/Error. (str "Method not implemented: " (.-method args)))))})
+
 
 
 (defn connect-wallet [{:keys [:class]}]
-  (let [day-night (subscribe [::st-subs/day-night-switch])
+  (let [
+        day-night (subscribe [::st-subs/day-night-switch])
         active-account (subscribe [::accounts-subs/active-account])
-        active-web3-provider (subscribe [::web3-subs/web3])
-        active-wallet (useWallet)
-        loaded? (not= "unknown" (useConnectionStatus))
-        account (useAddress)]
-  (react/useEffect (fn []
+        active-chain (subscribe [::chain-subs/chain])
+        active-wallet (useActiveWallet)
+        loaded? (not (.-isConnecting (useConnect)))
+        account (useActiveAccount)
+        chain (useActiveWalletChain)
+        client (createThirdwebClient #js {:clientId "f478f4123340f16303e57df57b6e26ef"})]
+    (react/useEffect (fn []
                      (when (and loaded? active-wallet)
-                       (-> active-wallet .-connector .getProvider
-                           (.then (fn [provider]
-                                    (when (or (not @active-web3-provider) (not= provider (web3-next/current-provider @active-web3-provider)))
-                                      (dispatch [::web3-events/create-web3-with-user-permitted-provider {} provider]))))))
+                       (let [provider (create-provider active-wallet)]
+                         (set! (.-ethereum js/window) provider)
+                         (dispatch [::web3-events/create-web3-with-user-permitted-provider {} provider])
+                         (dispatch [::chain-events/set-chain (-> active-wallet .getChain .-id)])
+                         (dispatch [::accounts-events/set-accounts [(-> active-wallet .getAccount .-address)]])
+                       ))
                        js/undefined)
                    (array active-wallet))
   (react/useEffect (fn []
-                     (when loaded?
-                       (if account
-                         (when (not= account @active-account)
-                           (dispatch [::accounts-events/set-accounts [account]]))
-                         (when @active-account
-                           (dispatch [::accounts-events/set-accounts []]))))
+                     (when (and loaded?)
+                       (let [account-address (if account (.-address account) nil)]
+                         (if account-address
+                           (when (not= account-address @active-account)
+                             (dispatch [::accounts-events/set-accounts [account-address]]))
+                           (when @active-account
+                             (dispatch [::accounts-events/set-accounts []])))))
                        js/undefined)
                    (array account))
-  (r/create-element ConnectWallet
-                    #js {:className class
-                         :theme (if (= @day-night "day") "light" "dark")
-                         ;:switchToActiveChain true
-                         :modalSize "wide"})))
+  (react/useEffect (fn []
+                     (when (and loaded? chain)
+                       (let [chain-id (.-id chain)]
+                           (when (not= chain-id @active-chain)
+                             (dispatch [::chain-events/set-chain chain-id]))))
+                       js/undefined)
+                   (array chain))
+  (r/create-element ConnectButton
+                    (clj->js {
+                              :connectButton {:className class}
+                              :detailsButton {:className class}
+                              :switchButton {:className class}
+                              :client client
+                              :theme (if (= @day-night "day") "light" "dark")
+                              :wallets [
+                                        (createWallet "io.metamask")
+                                        (createWallet "com.coinbase.wallet")
+                                        (createWallet "io.rabby")
+                                        (createWallet "walletConnect")
+                                        (inAppWallet {:auth {:options ["email" "google" "apple" "facebook" "phone"]}})
+                                        ]
+                              :showAllWallets false
+                              :chain (build-chain-info)
+                         :switchToActiveChain true
+                         }))))
 
 
 (defn connect-wallet-btn [{:keys [:class] :as opts}]
     (r/create-element ThirdwebProvider
-                      (clj->js {:activeChain (-> config-map
-                                                 :web3-chain
-                                                 (merge {:slug ""})
-                                                 (update :chain-id int)
-                                                 (clojure.set/rename-keys {:chain-id :chainId
-                                                                           :rpc-urls :rpc
-                                                                           :chain-name :name
-                                                                           :native-currency :nativeCurrency})
-                                                 clj->js)
-                                :clientId "f478f4123340f16303e57df57b6e26ef"
-                                :supportedWallets [(metamaskWallet #js {:recommended true})
-                                                   (coinbaseWallet)
-                                                   (rabbyWallet)
-                                                   (walletConnect)]
-                                :supportedChains []})
-                      (r/as-element [:f> connect-wallet opts])))
+      #js {} (r/as-element [:f> connect-wallet opts])))

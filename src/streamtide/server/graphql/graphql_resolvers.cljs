@@ -7,6 +7,7 @@
             [district.graphql-utils :as graphql-utils]
             [district.shared.async-helpers :refer [safe-go <?]]
             [district.shared.error-handling :refer [try-catch-throw]]
+            [eip55.core :as eip55]
             [streamtide.server.business-logic :as logic]
             [streamtide.server.graphql.authorization :as authorization]
             [streamtide.shared.utils :as shared-utils]
@@ -232,7 +233,7 @@
       (logic/update-user-info! user-id input config)
       (logic/get-user user-id user-id))))
 
-(defn sign-in-mutation [_ {:keys [:data-signature :data] :as args} {:keys [config]}]
+(defn sign-in-mutation [_ {:keys [:data-signature :data :user/address] :as args} {:keys [config]}]
   (log/debug "sign-in-mutation" args)
   (try-catch-throw
     (let [{:keys [sign-in-secret expires-in]} (-> config :graphql)

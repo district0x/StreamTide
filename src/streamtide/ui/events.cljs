@@ -150,7 +150,7 @@
        {:web3 (web3-queries/web3 db)
         :data-str data-str
         :from active-account
-        :on-success [:user/-authenticate {:data-str data-str}]
+        :on-success [:user/-authenticate {:data-str data-str :user/address active-account}]
         :on-error [::dispatch-n
                    [[::error-notification/show-error "Error signing with current account"]
                     [::logging/error "Error Signing with Active Ethereum Account."]]]}})))
@@ -159,21 +159,25 @@
   :user/-authenticate
   ; Having the data signed with the user's wallet, it sends a GraphQL mutation request with the data signed
   ; so the server can validate it and produce a JWT
-  (fn [_ [_ {:keys [data-str]} data-signature]]
+  (fn [_ [_ {:keys [data-str user/address]} data-signature]]
     (let [query
           {:queries [[:sign-in {:data-signature :$dataSignature
-                                :data           :$data}
+                                :data           :$data
+                                :user/address   :$address}
                       [:jwt
                        :user/address]]]
            :variables [{:variable/name :$dataSignature
                         :variable/type :String!}
                        {:variable/name :$data
-                        :variable/type :String!}]}]
+                        :variable/type :String!}
+                       {:variable/name :$address
+                        :variable/type :ID!}]}]
       {:dispatch
        [::gql-events/mutation
         {:query query
          :variables {:dataSignature data-signature
-                     :data data-str}
+                     :data data-str
+                     :address address}
          :on-success [:authentication-success]
          :on-error [:authentication-error]}]})))
 

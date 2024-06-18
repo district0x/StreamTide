@@ -1,24 +1,29 @@
 (ns streamtide.server.graphql.authorization
   "Graphql utils for handling authentication. Takes signed data and generates a JWT"
-  (:require [cljs.nodejs :as nodejs]
+  (:require [cljs.core.async :refer [<! go]]
+            [cljs.nodejs :as nodejs]
             [cljs-web3-next.core :as web3-next]
-            [eip55.core :as eip55]
+            [district.server.config :as config]
+            [district.shared.async-helpers :refer [safe-go <?]]
             [goog.string :as gstring]
             [streamtide.shared.utils :as shared-utils]
             [taoensso.timbre :as log]))
 
 (defonce JsonWebToken (nodejs/require "jsonwebtoken"))
-(defonce EthSigUtil (nodejs/require "@metamask/eth-sig-util"))
-
+(defonce viem (nodejs/require "viem"))
 (def otp-length 20)
 (def otp-time-step 120)   ; OTP validity: 2 minutes
 
 (def signed-data-regex (re-pattern (gstring/format shared-utils/auth-data-msg (str "([a-zA-Z0-9_]{" otp-length "})"))))
 
-(defn recover-personal-signature [data data-signature]
-  "From a piece of data and its signature, gets the ETH account which signed it"
-  (-> (js-invoke EthSigUtil "recoverPersonalSignature" #js {:data data :signature data-signature})
-      eip55/address->checksum))
+(defn validate-signature [data data-signature address]
+  "Validates the given address has signed the given piece of data"
+  (safe-go
+    (let [public-client (.createPublicClient viem #js {:transport (new (.-webSocket viem) (-> @config/config :web3 :url))})
+          isValid (<! (.verifyMessage public-client #js {:address address
+                                                         :message data
+                                                         :signature data-signature}))]
+      (when-not isValid (throw (js/Error. "Invalid signature"))))))
 
 (defn generate-otp
   "Generates a One-Time Password (OTP) for authenticating the user"
