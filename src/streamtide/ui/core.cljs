@@ -2,8 +2,7 @@
   "Main entry point of the Frontend.
   Loads the config and load all required modules.
   It also load the content of the persistent storage into the re-frame db"
-  (:require ["@thirdweb-dev/react-core" :refer [useWallet useAddress]]
-            [akiroz.re-frame.storage :as storage]
+  (:require [akiroz.re-frame.storage :as storage]
             [cljsjs.jquery]
             [cljsjs.jwt-decode]
             [district.cljs-utils :as cljs-utils]

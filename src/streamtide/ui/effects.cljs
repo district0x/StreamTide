@@ -11,3 +11,9 @@
                                              (if err
                                                (re/dispatch (conj on-error err))
                                                (re/dispatch (conj on-success result)))))))
+
+(re/reg-fx
+  :callback
+  ; executes a callback function
+  (fn [{:keys [:fn :error :result]}]
+    (fn error result)))

@@ -4,13 +4,16 @@
     ["thirdweb/wallets" :refer [createWallet inAppWallet]]
     ["thirdweb" :refer [createThirdwebClient defineChain]]
     ["react" :as react]
+    [camel-snake-kebab.core :as csk]
+    [camel-snake-kebab.extras :refer [transform-keys]]
+    [cljs-web3-next.core :as web3-next]
     [district.ui.web3-accounts.subs :as accounts-subs]
     [district.ui.web3-accounts.events :as accounts-events]
     [district.ui.web3-chain.events :as chain-events]
     [district.ui.web3-chain.subs :as chain-subs]
     [district.ui.web3.events :as web3-events]
-    [cljs-web3-next.core :as web3-next]
-    [re-frame.core :refer [subscribe dispatch]]
+    [eip55.core :as eip55]
+    [re-frame.core :as re-frame :refer [subscribe dispatch]]
     [reagent.core :as r]
     [streamtide.ui.subs :as st-subs]
     [streamtide.ui.config :refer [config-map]]))
@@ -47,7 +50,12 @@
                     "wallet_switchEthereumChain" (.switchChain wallet (build-chain-info))
                     (js/Error. (str "Method not implemented: " (.-method args)))))})
 
-
+(re-frame/reg-event-fx
+  :logged-in?
+  (fn [{:keys [db]} [_ {:keys [:user/address :callback]}]]
+    (let [active-session (get db :active-session)]
+      {:callback {:fn callback
+                  :result (= address (:user/address active-session))}})))
 
 (defn connect-wallet [{:keys [:class]}]
   (let [
@@ -65,8 +73,7 @@
                          (set! (.-ethereum js/window) provider)
                          (dispatch [::web3-events/create-web3-with-user-permitted-provider {} provider])
                          (dispatch [::chain-events/set-chain (-> active-wallet .getChain .-id)])
-                         (dispatch [::accounts-events/set-accounts [(-> active-wallet .getAccount .-address)]])
-                       ))
+                         (dispatch [::accounts-events/set-accounts [(-> active-wallet .getAccount .-address)]])))
                        js/undefined)
                    (array active-wallet))
   (react/useEffect (fn []
@@ -88,22 +95,56 @@
                    (array chain))
   (r/create-element ConnectButton
                     (clj->js {
+                              :auth {
+                                     :doLogin (fn [^js signedPayload]
+                                                (js/Promise. (fn [resolve reject]
+                                                               (dispatch [:user/-authenticate
+                                                                          {:payload (transform-keys csk/->kebab-case (js->clj (.-payload signedPayload) :keywordize-keys true))
+                                                                           :signature (.-signature signedPayload)
+                                                                           :callback (fn [err res]
+                                                                                       (if err
+                                                                                         (reject err)
+                                                                                         (resolve res)))}]))))
+                                     :getLoginPayload (fn [^js account]
+                                                        (js/Promise.
+                                                          (fn [resolve reject]
+                                                            (dispatch [:user/request-login-payload
+                                                                       {:address (eip55/address->checksum (.-address account))
+                                                                        :chain-id (.-chainId account)
+                                                                        :callback
+                                                                        (fn [err res]
+                                                                          (if err
+                                                                            (reject err)
+                                                                            (resolve (clj->js
+                                                                                       (into {}
+                                                                                             (filter (fn [[_ v]]
+                                                                                                       (some? v))
+                                                                                                     (transform-keys csk/->snake_case res)))))))}]))))
+                                     :isLoggedIn (fn [address]
+                                                   (js/Promise. (fn [resolve reject]
+                                                                  (dispatch [:logged-in? {:user/address (eip55/address->checksum address)
+                                                                                          :callback (fn [err res]
+                                                                                                      (if err
+                                                                                                        (reject err)
+                                                                                                        (resolve res)))}]))))
+                                     :doLogout (fn []
+                                                 (js/Promise. (fn [resolve]
+                                                                (dispatch [:user/sign-out {:callback (fn []
+                                                                                                       (resolve))}]))))}
                               :connectButton {:className class}
                               :detailsButton {:className class}
                               :switchButton {:className class}
+                              :signInButton {:className class}
                               :client client
                               :theme (if (= @day-night "day") "light" "dark")
                               :wallets [
                                         (createWallet "io.metamask")
                                         (createWallet "com.coinbase.wallet")
                                         (createWallet "io.rabby")
-                                        (createWallet "walletConnect")
-                                        (inAppWallet {:auth {:options ["email" "google" "apple" "facebook" "phone"]}})
-                                        ]
+                                        (createWallet "walletConnect")]
                               :showAllWallets false
                               :chain (build-chain-info)
-                         :switchToActiveChain true
-                         }))))
+                         :switchToActiveChain true}))))
 
 
 (defn connect-wallet-btn [{:keys [:class] :as opts}]

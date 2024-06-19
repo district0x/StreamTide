@@ -43,6 +43,7 @@
     "react-native-quick-crypto": "^0.6.1",
     "react-select": "5.7.4",
     "shamir-secret-sharing": "^0.0.3",
+    "siwe": "^2.3.2",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
     "thirdweb": "5.24.0",

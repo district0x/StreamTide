@@ -13,6 +13,11 @@
             [streamtide.shared.utils :as shared-utils]
             [taoensso.timbre :as log]))
 
+(defn wrap-as-promise
+  [chanl]
+  (js/Promise. (fn [resolve _]
+                 (safe-go (resolve (<! chanl))))))
+
 (def enum graphql-utils/kw->gql-name)
 
 (defn- user-id [user]
@@ -233,20 +238,32 @@
       (logic/update-user-info! user-id input config)
       (logic/get-user user-id user-id))))
 
-(defn sign-in-mutation [_ {:keys [:data-signature :data :user/address] :as args} {:keys [config]}]
+(defn sign-in-mutation [_ {:keys [:signature :payload] :as args} {:keys [config]}]
   (log/debug "sign-in-mutation" args)
   (try-catch-throw
-    (let [{:keys [sign-in-secret expires-in]} (-> config :graphql)
-          user-address (authorization/recover-personal-signature data data-signature)]
-      (authorization/validate-data data sign-in-secret user-address)
-      (logic/validate-sign-in user-address)
-      (let [jwt (authorization/create-jwt user-address sign-in-secret expires-in)]
-        {:jwt jwt :user/address user-address}))))
+    (wrap-as-promise
+      (safe-go
+        (let [{:keys [sign-in-secret expires-in]} (-> config :graphql)
+              address (eip55/address->checksum (:address payload))]
+          (<? (authorization/validate-signature payload signature))
+          (authorization/validate-payload payload sign-in-secret)
+          (logic/validate-sign-in address)
+          (let [jwt (authorization/create-jwt address sign-in-secret expires-in)]
+            {:jwt jwt :user/address address}))))))
 
-(defn generate-otp-mutation [_ {:keys [:user/address] :as args} {:keys [config]}]
-  (log/debug "generate-otp-mutation" args)
+(defn generate-login-payload-mutation [_ {:keys [:user/address :chain-id] :as args} {:keys [config]}]
+  (log/debug "generate-login-payload-mutation" args)
   (try-catch-throw
-    (authorization/generate-otp (-> config :graphql :sign-in-secret) address)))
+    (when (not= (str chain-id) (str (-> config :siwe-payload :chain-id)))
+      (throw (js/Error. (str "Invalid chain id. Expected: " (-> config :siwe-payload :chain-id) ". Found: " chain-id))))
+    (let [nonce (authorization/generate-otp (-> config :graphql :sign-in-secret) address)
+          now (.toISOString (js/Date.))
+          expire (.toISOString (js/Date. (+ (* authorization/otp-time-step 1000) (.getTime (js/Date.)))))]
+      (merge (-> config :siwe-payload)
+        {:address address
+         :nonce nonce
+         :issued-at now
+         :expiration-time expire}))))
 
 (defn roles-query-resolver [_ _ {:keys [:current-user]}]
   (log/debug "roles resolver" current-user)
@@ -317,11 +334,6 @@
     (logic/set-content-pinned! (user-id current-user) (select-keys args [:content/id :content/pinned]))
     true))
 
-(defn wrap-as-promise
-  [chanl]
-  (js/Promise. (fn [resolve _]
-                    (safe-go (resolve (<! chanl))))))
-
 (defn verify-social-mutation [_ {:keys [:code :state] :as args} {:keys [:current-user]}]
   (log/debug "verify-social args" args)
   (try-catch-throw
@@ -371,7 +383,7 @@
               :set-content-visibility set-content-visibility-mutation
               :set-content-pinned set-content-pinned-mutation
               :sign-in sign-in-mutation
-              :generate-otp generate-otp-mutation
+              :generate-login-payload generate-login-payload-mutation
               :verify-social verify-social-mutation
               :generate-twitter-oauth-url generate-twitter-oauth-url-mutation
               :add-notification-type add-notification-type-mutation}

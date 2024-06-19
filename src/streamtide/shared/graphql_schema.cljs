@@ -126,14 +126,14 @@ type Mutation {
         content_pinned: Boolean!
     ): Boolean
 
-    generateOtp(
+    generateLoginPayload(
         user_address: ID!
-    ): String!
+        chainId: String
+    ): LoginPayload!
 
     signIn(
-        dataSignature: String!
-        data: String!
-        user_address: ID!
+        signature: String!
+        payload: LoginPayloadInput!
     ): signInPayload!
 
     blacklist(
@@ -176,6 +176,38 @@ input UserInput {
     user_socials: [SocialLinkInput!]
     user_notificationCategories: [NotificationCategorySettingInput!]
     user_notificationTypes: [NotificationTypeSettingInput!]
+}
+
+type LoginPayload {
+    scheme: String
+    domain: String!
+    address: String!
+    statement: String
+    uri: String!
+    version: String!
+    chainId: String!
+    nonce: String!
+    issuedAt: String!
+    expirationTime: String
+    notBefore: String
+    requestId: String
+    resources: [String]
+}
+
+input LoginPayloadInput {
+    scheme: String
+    domain: String!
+    address: String!
+    statement: String
+    uri: String!
+    version: String!
+    chainId: String!
+    nonce: String!
+    issuedAt: String!
+    expirationTime: String
+    notBefore: String
+    requestId: String
+    resources: [String]
 }
 
 type signInPayload {
