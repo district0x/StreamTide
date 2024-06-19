@@ -3,15 +3,23 @@
   (:require [cljs-web3-next.helpers :refer [zero-address]]
             [clojure.string :as string]
             [district.server.config :refer [config]]
-            [district.server.db :as db]
+            [cljs.core.async :refer [go <! go-loop] :as async]
+            [district.shared.async-helpers :refer [<? safe-go]]
+            [district.server.db-async :as db]
             [district.server.db.column-types :refer [address default-nil default-zero default-false not-nil primary-key]]
             [honeysql-postgres.helpers :as psqlh]
             [honeysql.core :as sql]
             [honeysql.helpers :as sqlh]
             [mount.core :as mount :refer [defstate]]
             [streamtide.shared.utils :as shared-utils]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
 
+
+            [honeysql.format :as sql-format :refer [to-sql paren-wrap]]
+            ))
+
+(defonce db-state (atom nil))
+(defonce db-client (atom nil))
 (declare start)
 (declare stop)
 
@@ -41,12 +49,36 @@
       (f results))))
 
 (def db-get (fn [query]
-              (-> (db/get query {:format-opts {:allow-namespaced-names? true}})
-                  fix-exp-numbers)))
+              (go
+                (-> (db/get query {:format-opts (merge {:allow-namespaced-names? true} (when (= @db-client :postgresql) {:parameterizer :postgresql} ))})
+                    <!
+                    fix-exp-numbers))))
 (def db-all (fn [query]
-              (-> (db/all query {:format-opts {:allow-namespaced-names? true}})
-                  fix-exp-numbers)))
-(def db-run! #(db/run! %1 {:format-opts {:allow-namespaced-names? true}}))
+              (go
+                (-> (db/all query {:format-opts (merge {:allow-namespaced-names? true} (when (= @db-client :postgresql) {:parameterizer :postgresql} )) })
+                    <!
+                    fix-exp-numbers))))
+
+(def db-run! #(db/run! %1 {:format-opts (merge {:allow-namespaced-names? true} (when (= @db-client :postgresql) {:parameterizer :postgresql} ))}))
+
+(def db-types {:sqlite {:amount [:unsigned :integer]
+                        :bool [:tinyint]
+                        :serial [:integer]}
+               :postgresql {:amount [:numeric (sql/raw "(78,0)")]
+                            :autoincrement []
+                            :unsigned []
+                            :timestamp [:bigint]}})
+
+(defn mod-types [columns]
+  (let [db-client (or (-> @config :db :db-client) :sqlite)]
+    (map (fn [column]
+           (reduce (fn [acc property]
+                     (if-let [mod (-> db-types db-client (get property))]
+                       (into acc mod)
+                       (conj acc property))
+                     ) [] column)
+           ) columns)
+    ))
 
 ;; DATABASE Schema
 
@@ -59,40 +91,40 @@
    [:user/tagline :varchar default-nil]
    [:user/handle :varchar default-nil]
    [:user/url :varchar default-nil]
-   [:user/min-donation :unsigned :integer default-nil]
+   [:user/min-donation :amount default-nil]
    [:user/creation-date :timestamp not-nil]
-   [:user/blacklisted :tinyint default-false]])
+   [:user/blacklisted :bool default-false]])
 
 (def social-link-columns
   [[:user/address address not-nil]
    [:social/network :varchar not-nil]
    [:social/url :varchar not-nil]
-   [:social/verified :tinyint]
+   [:social/verified :bool]
    [(sql/call :primary-key :user/address :social/network)]
-   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+   [(sql/call :foreign-key :user/address) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
 (def perks-columns
   [[:user/address address primary-key not-nil]
    [:user/perks :varchar default-nil]
-   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+   [(sql/call :foreign-key :user/address) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
 (def notifications-category-columns
   [[:user/address address not-nil]
    [:notification/category :varchar not-nil]
    [:notification/type :varchar not-nil]
-   [:notification/enable :tinyint]
+   [:notification/enable :bool]
    [(sql/call :primary-key :user/address :notification/category :notification/type)]
-   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+   [(sql/call :foreign-key :user/address) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
 (def notifications-type-columns
   [[:user/address address not-nil]
    [:notification/type :varchar not-nil]
    [:notification/user-id :varchar]
    [(sql/call :primary-key :user/address :notification/type)]
-   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+   [(sql/call :foreign-key :user/address) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
 (def notifications-type-many-columns
-  [[:notification/id :integer primary-key :autoincrement]
+  [[:notification/id :serial primary-key :autoincrement]
    [:user/address address not-nil]
    [:notification/type :varchar not-nil]
    [:notification/user-id :varchar]
@@ -100,68 +132,68 @@
 
 (def grant-columns
   [[:user/address address not-nil]
-   [:grant/status :smallint not-nil]
+   [:grant/status :varchar not-nil]
    [:grant/request-date :timestamp not-nil]
    [:grant/decision-date :timestamp default-nil]
    [(sql/call :primary-key :user/address)]
-   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+   [(sql/call :foreign-key :user/address) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
 (def content-columns
-  [[:content/id :integer primary-key :autoincrement]
+  [[:content/id :serial primary-key :autoincrement]
    [:user/address address not-nil]
-   [:content/public :tinyint not-nil]
-   [:content/pinned :tinyint not-nil]
+   [:content/public :bool not-nil]
+   [:content/pinned :bool not-nil]
    [:content/creation-date :timestamp not-nil]
    [:content/type :varchar not-nil]
    [:content/url :varchar not-nil]
-   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+   [(sql/call :foreign-key :user/address) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
 (def donation-columns
-  [[:donation/id :integer primary-key :autoincrement]
+  [[:donation/id :serial primary-key :autoincrement]
    [:donation/sender address not-nil]
    [:donation/receiver address not-nil]
    [:donation/date :timestamp not-nil]
-   [:donation/amount :unsigned :integer not-nil]  ;; TODO use string to avoid precision errors? order-by is important
+   [:donation/amount :amount not-nil]  ;; TODO use string to avoid precision errors? order-by is important
    [:donation/coin address not-nil]
    [:round/id :unsigned :integer]
-   [(sql/call :foreign-key :donation/sender) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
-   [(sql/call :foreign-key :donation/receiver) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
+   [(sql/call :foreign-key :donation/sender) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]
+   [(sql/call :foreign-key :donation/receiver) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]
    [(sql/call :foreign-key :donation/coin) (sql/call :references :coin :coin/address)]
    [(sql/call :foreign-key :round/id) (sql/call :references :round :round/id)]])
 
 (def matching-columns
-  [[:matching/id :integer primary-key :autoincrement]
+  [[:matching/id :serial primary-key :autoincrement]
    [:matching/receiver address not-nil]
    [:matching/date :timestamp not-nil]
-   [:matching/amount :unsigned :integer not-nil]  ;; TODO use string to avoid precision errors? order-by is important
+   [:matching/amount :amount not-nil]  ;; TODO use string to avoid precision errors? order-by is important
    [:matching/coin address not-nil]
    [:round/id :unsigned :integer]
-   [(sql/call :foreign-key :matching/receiver) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
+   [(sql/call :foreign-key :matching/receiver) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]
    [(sql/call :foreign-key :matching/coin) (sql/call :references :coin :coin/address)]
    [(sql/call :foreign-key :round/id) (sql/call :references :round :round/id)]])
 
 (def user-roles-columns
-  [[:role/id :integer primary-key :autoincrement]
+  [[:role/id :serial primary-key :autoincrement]
    [:user/address address not-nil]
-   [:role/role :string not-nil]
-   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
+   [:role/role :varchar not-nil]
+   [(sql/call :foreign-key :user/address) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]
    [(sql/call :unique :user/address :role/role)]])
 
 (def user-timestamp-columns
   [[:user/address address primary-key not-nil]
-   [:timestamp/last-seen :timestamp :default-nil]
-   [:timestamp/last-modification :timestamp :default-nil]
-   [(sql/call :foreign-key :user/address) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+   [:timestamp/last-seen :timestamp default-nil]
+   [:timestamp/last-modification :timestamp default-nil]
+   [(sql/call :foreign-key :user/address) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
 (def user-content-permission-columns
   [[:user/source-user address not-nil]
    [:user/target-user address not-nil]
    [(sql/call :primary-key :user/source-user :user/target-user)]
-   [(sql/call :foreign-key :user/source-user) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]
-   [(sql/call :foreign-key :user/target-user) (sql/call :references :user :user/address) (sql/raw "ON DELETE CASCADE")]])
+   [(sql/call :foreign-key :user/source-user) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]
+   [(sql/call :foreign-key :user/target-user) (sql/call :references :st-user :user/address) (sql/raw "ON DELETE CASCADE")]])
 
 (def announcement-columns
-  [[:announcement/id :integer primary-key :autoincrement]
+  [[:announcement/id :serial primary-key :autoincrement]
    [:announcement/text :varchar not-nil]])
 
 (def round-columns
@@ -171,9 +203,9 @@
 
 (def matching-pool-columns
   [[:round/id :unsigned :integer]
-   [:matching-pool/coin :address not-nil]
-   [:matching-pool/amount :unsigned :integer]   ;; TODO use string to avoid precision errors? order-by is important
-   [:matching-pool/distributed :unsigned :integer]
+   [:matching-pool/coin address not-nil]
+   [:matching-pool/amount :amount]   ;; TODO use string to avoid precision errors? order-by is important
+   [:matching-pool/distributed :amount]
    [(sql/call :primary-key :round/id :matching-pool/coin)]
    [(sql/call :foreign-key :matching-pool/coin) (sql/call :references :coin :coin/address)]
    [(sql/call :foreign-key :round/id) (sql/call :references :round :round/id)]])
@@ -222,23 +254,24 @@
   page-start-idx: a int
   Returns a map with [:items :total-count :end-cursor :has-next-page]"
   [query page-size page-start-idx]
-  (let [paged-query (cond-> query
-                            page-size (assoc :limit page-size)
-                            page-start-idx (assoc :offset page-start-idx))
-        total-count (count (db-all query))
-        result (db-all paged-query)
-        last-idx (cond-> (count result)
-                         page-start-idx (+ page-start-idx))]
-    (log/debug "Paged query result" result)
-    {:items result
-     :total-count total-count
-     :end-cursor (str last-idx)
-     :has-next-page (< last-idx total-count)}))
+  (go
+    (let [paged-query (cond-> query
+                              page-size (assoc :limit page-size)
+                              page-start-idx (assoc :offset page-start-idx))
+          total-count (count (<! (db-all query)))
+          result (<! (db-all paged-query))
+          last-idx (cond-> (count result)
+                           page-start-idx (+ page-start-idx))]
+      (log/debug "Paged query result" result)
+      {:items result
+       :total-count total-count
+       :end-cursor (str last-idx)
+       :has-next-page (< last-idx total-count)})))
 
 (defn get-user [user-address]
   (db-get {:select [:*]
-           :from [:user]
-           :where [:= user-address :user.user/address]}))
+           :from [:st-user]
+           :where [:= user-address :st-user.user/address]}))
 
 (defn get-user-socials [{:keys [:user/address :user/addresses :social/network :social/verified]}]
   (db-all (cond-> {:select [:*]
@@ -251,7 +284,7 @@
 (defn get-user-perks [current-user {:keys [:user/address]}]
   (db-get {:select [:p.*]
            :from [[:perks :p]]
-           :join [[:user :u] [:= :p.user/address :u.user/address]]
+           :join [[:st-user :u] [:= :p.user/address :u.user/address]]
            :where [:and
                    [:= :p.user/address address]
                    [:or
@@ -265,7 +298,7 @@
 (defn get-notification-categories [{:keys [:user/address :user/addresses :notification/category :notification/type :notification/enable]}]
   (db-all (cond-> {:select [:nc.*]
                    :from [[:notification-category :nc]]
-                   :join [[:user :u] [:= :nc.user/address :u.user/address]]
+                   :join [[:st-user :u] [:= :nc.user/address :u.user/address]]
                    :where [:= :u.user/blacklisted false]}
                   address (sqlh/merge-where [:= :nc.user/address address])
                   addresses (sqlh/merge-where [:in :nc.user/address addresses])
@@ -291,24 +324,24 @@
 
 (defn get-grant [user-address]
   (db-get {:select [:*]
-           :from [:grant]
-           :join [:user [:= :grant.user/address :user.user/address]]
-           :where [:= user-address :user.user/address]}))
+           :from [:st-grant]
+           :join [:st-user [:= :st-grant.user/address :st-user.user/address]]
+           :where [:= user-address :st-user.user/address]}))
 
 (defn get-grants [{:keys [:statuses :search-term :order-by :order-dir :first :after] :as args}]
   (let [statuses-set (when statuses (set statuses))
         page-start-idx (when after (js/parseInt after))
         page-size first
         query (cond->
-                {:select [:grant.* :user.*]
-                 :from [:grant]
-                 :join [:user [:= :grant.user/address :user.user/address]]
+                {:select [:st-grant.* :st-user.*]
+                 :from [:st-grant]
+                 :join [:st-user [:= :st-grant.user/address :st-user.user/address]]
                  :where [:!= :user/blacklisted true]}
-                statuses-set (sqlh/merge-where [:in :grant.grant/status statuses-set])
-                search-term  (sqlh/merge-where [:like :user.user/name (str "%" search-term "%")])
-                order-by (sqlh/merge-order-by [[(get {:grants.order-by/request-date :grant.grant/request-date
-                                                      :grants.order-by/decision-date :grant.grant/decision-date
-                                                      :grants.order-by/username [:user.user/name [:collate :nocase]]}
+                statuses-set (sqlh/merge-where [:in :st-grant.grant/status statuses-set])
+                search-term  (sqlh/merge-where [:like :st-user.user/name (str "%" search-term "%")])
+                order-by (sqlh/merge-order-by [[(get {:grants.order-by/request-date :st-grant.grant/request-date
+                                                      :grants.order-by/decision-date :st-grant.grant/decision-date
+                                                      :grants.order-by/username [:st-user.user/name [:collate :nocase]]}
                                                      order-by)
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))
@@ -318,23 +351,23 @@
         page-size first
         query (cond->
                 {:select [:*]
-                 :from [:user]}
+                 :from [:st-user]}
                 (or
                   (= order-by :users.order-by/last-seen)
                   (= order-by :users.order-by/last-modification))
                 (sqlh/merge-left-join
-                  :user-timestamp [:= :user.user/address :user-timestamp.user/address])
+                  :user-timestamp [:= :st-user.user/address :user-timestamp.user/address])
                 (some? blacklisted) (sqlh/merge-where [:= :user/blacklisted blacklisted])
-                name (sqlh/merge-where [:like :user.user/name (str "%" name "%")])
-                address (sqlh/merge-where [:like :user.user/address (str "%" address "%")])
+                name (sqlh/merge-where [:like :st-user.user/name (str "%" name "%")])
+                address (sqlh/merge-where [:like :st-user.user/address (str "%" address "%")])
                 search-term (sqlh/merge-where [:or
-                                               [:like :user.user/name (str "%" search-term "%")]
-                                               [:like :user.user/address (str "%" search-term "%")]])
-                order-by (sqlh/merge-order-by [[(get {:users.order-by/address [:user.user/address [:collate :nocase]]
-                                                      :users.order-by/username [:user.user/name [:collate :nocase]]
-                                                      :users.order-by/creation-date :user.user/creation-date
-                                                      :users.order-by/last-seen :user-timestamp.timestamp/last-seen
-                                                      :users.order-by/last-modification :user-timestamp.timestamp/last-modification}
+                                               [:like :st-user.user/name (str "%" search-term "%")]
+                                               [:like :st-user.user/address (str "%" search-term "%")]])
+                order-by (sqlh/merge-order-by [[(get {:users.order-by/address [:st-user.user/address [:collate :nocase]]
+                                                      :users.order-by/username [:st-user.user/name [:collate :nocase]]
+                                                      :users.order-by/creation-date :st-user.user/creation-date
+                                                      :users.order-by/last-seen :st-user-timestamp.timestamp/last-seen
+                                                      :users.order-by/last-modification :st-user-timestamp.timestamp/last-modification}
                                                      order-by)
                                                 (or (keyword order-dir) :asc)]]))]
     (paged-query query page-size page-start-idx)))
@@ -353,7 +386,7 @@
           query (cond->
                   {:select [:c.* :u.*]
                    :from [[:content :c]]
-                   :join [[:user :u] [:= :c.user/address :u.user/address]]
+                   :join [[:st-user :u] [:= :c.user/address :u.user/address]]
                    :where [:and
                            [:or
                             [:= :c.content/public 1] ; get content if is public ...
@@ -377,7 +410,7 @@
         query (cond->
                 {:select [:d.* :u.*]
                  :from [[:donation :d]]
-                 :join [[:user :u] [:= :d.donation/receiver :u.user/address]]}
+                 :join [[:st-user :u] [:= :d.donation/receiver :u.user/address]]}
                 search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
                 sender (sqlh/merge-where [:= :d.donation/sender sender])
                 receiver (sqlh/merge-where [:= :d.donation/receiver receiver])
@@ -395,7 +428,7 @@
         query (cond->
                 {:select [:m.* :u.*]
                  :from [[:matching :m]]
-                 :join [[:user :u] [:= :m.matching/receiver :u.user/address]]}
+                 :join [[:st-user :u] [:= :m.matching/receiver :u.user/address]]}
                 search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
                 receiver (sqlh/merge-where [:= :m.matching/receiver receiver])
                 round (sqlh/merge-where [:= :m.round/id round])
@@ -428,47 +461,49 @@
           {} leaders)))
 
 (defn get-leaders [{:keys [:round :search-term :order-by :order-dir :first :after] :as args}]
-  (let [page-start-idx (when after (js/parseInt after))
-        page-size first
-        sub-query-donations (cond-> {:select [:donation/receiver [(sql/call :sum :donation/amount) :donations]]
-                                     :from [:donation] :group-by [:donation/receiver]}
-                                    round (sqlh/merge-where [:= :donation.round/id round]))
-        sub-query-matchings (cond-> {:select [:matching/receiver [(sql/call :sum :matching/amount) :matchings]]
-                                     :from [:matching] :where [:= :matching/coin zero-address] :group-by [:matching/receiver]}
-                                    round (sqlh/merge-where [:= :matching.round/id round]))
-        query (cond->
-                {:select [:u.*
-                          [zero-address :matching/coin]
-                          [(sql/call :coalesce :donations 0) :leader/donation-amount]
-                          [(sql/call :coalesce :matchings 0) :leader/matching-amount]
-                          [(sql/call :+ (sql/call :coalesce :donations 0) (sql/call :coalesce :matchings 0))
-                           :leader/total-amount]]
-                 :from [[:user :u]]
-                 :left-join [[sub-query-donations :d]
-                             [:= :d.donation/receiver :u.user/address]
-                             [sub-query-matchings :m]
-                             [:= :m.matching/receiver :u.user/address]]
-                 :where [:and [:> :leader/total-amount 0]
-                         [:= :user/blacklisted false]]}
-                search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
-                order-by (sqlh/merge-order-by [[(get {:leaders.order-by/username [:u.user/name [:collate :nocase]]
-                                                      :leaders.order-by/donation-amount :leader/donation-amount
-                                                      :leaders.order-by/matching-amount :leader/matching-amount
-                                                      :leaders.order-by/total-amount :leader/total-amount}
-                                                     order-by)
-                                                (or (keyword order-dir) :asc)]]))
-        leaders (paged-query query page-size page-start-idx)
-        other-coins-query {:select [:u.*
-                                    :m.matching/coin
-                                    [(sql/call :sum :m.matching/amount) :leader/matching-amount]
-                                    [(sql/call :sum :m.matching/amount) :leader/total-amount]]
-                           :from [[:user :u]]
-                           :join [[:matching :m] [:= :m.matching/receiver :u.user/address]]
-                           :where [:and [:in :u.user/address (map :user/address (:items leaders))]
-                                   [:!= :m.matching/coin zero-address]]
-                           :group-by [:m.matching/receiver :m.matching/coin]}
-        leaders (update leaders :items #(concat % (db-all other-coins-query)))]
-    (update leaders :items group-leaders)))
+  (go
+    (let [page-start-idx (when after (js/parseInt after))
+          page-size first
+          sub-query-donations (cond-> {:select [:donation/receiver [(sql/call :sum :donation/amount) :donations]]
+                                       :from [:donation] :group-by [:donation/receiver]}
+                                      round (sqlh/merge-where [:= :donation.round/id round]))
+          sub-query-matchings (cond-> {:select [:matching/receiver [(sql/call :sum :matching/amount) :matchings]]
+                                       :from [:matching] :where [:= :matching/coin zero-address] :group-by [:matching/receiver]}
+                                      round (sqlh/merge-where [:= :matching.round/id round]))
+          query (cond->
+                  {:select [:u.*
+                            [zero-address :matching/coin]
+                            [(sql/call :coalesce :donations 0) :leader/donation-amount]
+                            [(sql/call :coalesce :matchings 0) :leader/matching-amount]
+                            [(sql/call :+ (sql/call :coalesce :donations 0) (sql/call :coalesce :matchings 0))
+                             :leader/total-amount]]
+                   :from [[:st-user :u]]
+                   :left-join [[sub-query-donations :d]
+                               [:= :d.donation/receiver :u.user/address]
+                               [sub-query-matchings :m]
+                               [:= :m.matching/receiver :u.user/address]]
+                   :where [:and [:> :donations 0]
+                           [:= :user/blacklisted false]]}
+                  search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
+                  order-by (sqlh/merge-order-by [[(get {:leaders.order-by/username [:u.user/name [:collate :nocase]]
+                                                        :leaders.order-by/donation-amount :leader/donation-amount
+                                                        :leaders.order-by/matching-amount :leader/matching-amount
+                                                        :leaders.order-by/total-amount :leader/total-amount}
+                                                       order-by)
+                                                  (or (keyword order-dir) :asc)]]))
+          leaders (<! (paged-query query page-size page-start-idx))
+          other-coins-query {:select [:u.*
+                                      :m.matching/coin
+                                      [(sql/call :sum :m.matching/amount) :leader/matching-amount]
+                                      [(sql/call :sum :m.matching/amount) :leader/total-amount]]
+                             :from [[:st-user :u]]
+                             :join [[:matching :m] [:= :m.matching/receiver :u.user/address]]
+                             :where [:and [:in :u.user/address (map :user/address (:items leaders))]
+                                     [:!= :m.matching/coin zero-address]]
+                             :group-by [:u.user/address :m.matching/receiver :m.matching/coin]}
+          res (<! (db-all other-coins-query))
+          leaders (update leaders :items #(concat % res))]
+      (update leaders :items group-leaders))))
 
 (defn group-rounds [rounds]
   (vals (reduce
@@ -484,30 +519,32 @@
           {} rounds)))
 
 (defn get-round [round-id]
-  (let [rounds (db-all {:select [:r.* :mp.matching-pool/coin
-                                 [(sql/call :coalesce :mp.matching-pool/amount 0) :matching-pool/amount]
-                                 [(sql/call :coalesce :mp.matching-pool/distributed 0) :matching-pool/distributed]]
-           :from [[:round :r]]
-           :left-join [[:matching-pool :mp] [:= :r.round/id :mp.round/id]]
-           :where [:= round-id :r.round/id]})]
-    (first (group-rounds rounds))))
+  (go
+    (let [rounds (<! (db-all {:select [:r.* :mp.matching-pool/coin
+                                   [(sql/call :coalesce :mp.matching-pool/amount 0) :matching-pool/amount]
+                                   [(sql/call :coalesce :mp.matching-pool/distributed 0) :matching-pool/distributed]]
+             :from [[:round :r]]
+             :left-join [[:matching-pool :mp] [:= :r.round/id :mp.round/id]]
+             :where [:= round-id :r.round/id]}))]
+      (first (group-rounds rounds)))))
 
 (defn get-rounds [{:keys [:order-by :order-dir :first :after] :as args}]
-  (let [page-start-idx (when after (js/parseInt after))
-        page-size first
-        round-query (cond->
-                {:select [:*]
-                 :from [[:round :r]]}
-                order-by (sqlh/merge-order-by [[(get {:rounds.order-by/date :r.round/start
-                                                      :rounds.order-by/id :r.round/id}
-                                                     order-by)
-                                                (or (keyword order-dir) :asc)]]))
-        rounds (paged-query round-query page-size page-start-idx)
-        mp-query {:select [:*]
-                  :from [[:matching-pool :mp]]
-                  :where [:in :mp.round/id (map #(:round/id %) (:items rounds))]}
-        mps (db-all mp-query)]
-    (update rounds :items #(group-rounds (apply merge % mps)))))
+  (go
+    (let [page-start-idx (when after (js/parseInt after))
+          page-size first
+          round-query (cond->
+                  {:select [:*]
+                   :from [[:round :r]]}
+                  order-by (sqlh/merge-order-by [[(get {:rounds.order-by/date :r.round/start
+                                                        :rounds.order-by/id :r.round/id}
+                                                       order-by)
+                                                  (or (keyword order-dir) :asc)]]))
+          rounds (<! (paged-query round-query page-size page-start-idx))
+          mp-query {:select [:*]
+                    :from [[:matching-pool :mp]]
+                    :where [:in :mp.round/id (map #(:round/id %) (:items rounds))]}
+          mps (<! (db-all mp-query))]
+      (update rounds :items #(group-rounds (apply merge % mps))))))
 
 (defn get-matching-pool [round-id coin-address]
   (db-get {:select [:*]
@@ -534,25 +571,27 @@
             target-user (sqlh/merge-where [:= :ucp.user/target-user target-user]))))
 
 (defn has-private-content? [{:keys [:user/address]}]
-  (not (empty? (db-get {:select [1]
-           :from [[:content :c]]
-           :where [:and
-                   [:= :c.user/address address]
-                   [:= :c.content/public false]]
-           :limit 1}))))
+  (go
+    (not (empty? (<! (db-get {:select [1]
+             :from [[:content :c]]
+             :where [:and
+                     [:= :c.user/address address]
+                     [:= :c.content/public false]]
+             :limit 1}))))))
 
 (defn has-permission? [{:keys [:user/source-user :user/target-user]}]
-  (not (empty? (db-get {:select [1]
-           :from [[:user :u]]
-           :where [:and
-                   [:= :u.user/address target-user]
-                   [:or
-                    [:= :u.user/address source-user] ; ... or is the owner
-                    [:exists {:select [1] :from [[:user-roles :ur]] :where [:and [:= :ur.user/address source-user] [:= :ur.role/role "admin"]]}] ; ... or is an admin
-                    [:in target-user {:select [:ucp.user/target-user] :from [[:user-content-permissions :ucp]] :where [:= :ucp.user/source-user source-user]}] ; ... or has explicit permission to it
-                    ]
-                   [:= :u.user/blacklisted false]]
-           :limit 1}))))
+  (go
+    (not (empty? (<! (db-get {:select [1]
+             :from [[:st-user :u]]
+             :where [:and
+                     [:= :u.user/address target-user]
+                     [:or
+                      [:= :u.user/address source-user] ; ... or is the owner
+                      [:exists {:select [1] :from [[:user-roles :ur]] :where [:and [:= :ur.user/address source-user] [:= :ur.role/role "admin"]]}] ; ... or is an admin
+                      [:in target-user {:select [:ucp.user/target-user] :from [[:user-content-permissions :ucp]] :where [:= :ucp.user/source-user source-user]}] ; ... or has explicit permission to it
+                      ]
+                     [:= :u.user/blacklisted false]]
+             :limit 1}))))))
 
 (defn get-roles [user-address]
   (db-all {:select [:user-roles.role/role]
@@ -570,7 +609,7 @@
 
 (defn upsert-user-info! [args]
   (let [user-info (select-keys args user-column-names)]
-    (db-run! {:insert-into :user
+    (db-run! {:insert-into :st-user
               :values [(merge {:user/creation-date (shared-utils/now-secs)}
                               user-info)]
               :upsert {:on-conflict [:user/address]
@@ -582,7 +621,7 @@
                           {:user/address address
                            :user/creation-date (shared-utils/now-secs)})
                         addresses)]
-    (db-run! {:insert-into :user
+    (db-run! {:insert-into :st-user
               :values user-infos
               :upsert {:on-conflict [:user/address]
                        :do-nothing []}})))
@@ -664,7 +703,7 @@
 (defn upsert-grants! [{:keys [:user/addresses :grant/status :grant/decision-date] :as args}]
   "Insert new grants for given users or update them if the users already requested a grant"
   (log/debug "insert-grants" args)
-  (db-run! {:insert-into :grant
+  (db-run! {:insert-into :st-grant
             :values (map (fn [address]
                            {:user/address address
                             :grant/status status
@@ -711,18 +750,19 @@
                      :do-nothing []}}))
 
 (defn blacklisted? [{:keys [:user/address] :as args}]
-  (let [bl (:user/blacklisted (db-get {:select [:user/blacklisted]
-                                      :from [:user]
-                                      :where [:= :user/address address]}))]
-    (not (or (nil? bl) (zero? bl)))))
+  (go
+    (let [bl (:user/blacklisted (<! (db-get {:select [:user/blacklisted]
+                                        :from [:st-user]
+                                        :where [:= :user/address address]})))]
+      (not (or (nil? bl) (zero? bl))))))
 
 (defn add-to-blacklist! [{:keys [:user/address]}]
-  (db-run! {:update :user
+  (db-run! {:update :st-user
             :set {:user/blacklisted true}
             :where [:= :user/address address]}))
 
 (defn remove-from-blacklist! [{:keys [:user/address]}]
-  (db-run! {:update :user
+  (db-run! {:update :st-user
             :set {:user/blacklisted false}
             :where [:= :user/address address]}))
 
@@ -799,83 +839,91 @@
                      :do-update-set [:event/last-log-index :event/last-block-number :event/count]}}))
 
 
+(defn create-tables! []
+  (safe-go
 
-(defn clean-db []
-  (let [tables []
-        drop-table-if-exists (fn [t]
-                               (psqlh/drop-table :if-exists t))]
-    (doall
-      (map (fn [t]
-             (log/debug (str "Dropping table " t))
-             (db-run! (drop-table-if-exists t)))
-           tables))))
+    (<? (db-run! (-> (psqlh/create-table :st-user :if-not-exists)
+                 (psqlh/with-columns (mod-types user-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :social-link :if-not-exists)
+                 (psqlh/with-columns (mod-types social-link-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :perks :if-not-exists)
+                 (psqlh/with-columns (mod-types perks-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :notification-category :if-not-exists)
+                 (psqlh/with-columns (mod-types notifications-category-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :notification-type :if-not-exists)
+                 (psqlh/with-columns (mod-types notifications-type-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :notification-type-many :if-not-exists)
+                 (psqlh/with-columns (mod-types notifications-type-many-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :st-grant :if-not-exists)
+                 (psqlh/with-columns (mod-types grant-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :content :if-not-exists)
+                 (psqlh/with-columns (mod-types content-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :coin :if-not-exists)
+                     (psqlh/with-columns (mod-types coin-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :round :if-not-exists)
+                     (psqlh/with-columns (mod-types round-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :donation :if-not-exists)
+                 (psqlh/with-columns (mod-types donation-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :matching :if-not-exists)
+                 (psqlh/with-columns (mod-types matching-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :user-roles :if-not-exists)
+                 (psqlh/with-columns (mod-types user-roles-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :user-timestamp :if-not-exists)
+                 (psqlh/with-columns (mod-types user-timestamp-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :user-content-permissions :if-not-exists)
+                 (psqlh/with-columns (mod-types user-content-permission-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :announcement :if-not-exists)
+                 (psqlh/with-columns (mod-types announcement-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :matching-pool :if-not-exists)
+                 (psqlh/with-columns (mod-types matching-pool-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :events :if-not-exists)
+                 (psqlh/with-columns (mod-types events-columns)))))
+
+    (<? (add-coin! {:coin/address zero-address
+                    :coin/decimals 18
+                    :coin/symbol "ETH"
+                    :coin/name "Ether"}))
+    ))
 
 
-(defn create-tables []
-  (db-run! (-> (psqlh/create-table :user :if-not-exists)
-               (psqlh/with-columns user-columns)))
-
-  (db-run! (-> (psqlh/create-table :social-link :if-not-exists)
-               (psqlh/with-columns social-link-columns)))
-
-  (db-run! (-> (psqlh/create-table :perks :if-not-exists)
-               (psqlh/with-columns perks-columns)))
-
-  (db-run! (-> (psqlh/create-table :notification-category :if-not-exists)
-               (psqlh/with-columns notifications-category-columns)))
-
-  (db-run! (-> (psqlh/create-table :notification-type :if-not-exists)
-               (psqlh/with-columns notifications-type-columns)))
-
-  (db-run! (-> (psqlh/create-table :notification-type-many :if-not-exists)
-               (psqlh/with-columns notifications-type-many-columns)))
-
-  (db-run! (-> (psqlh/create-table :grant :if-not-exists)
-               (psqlh/with-columns grant-columns)))
-
-  (db-run! (-> (psqlh/create-table :content :if-not-exists)
-               (psqlh/with-columns content-columns)))
-
-  (db-run! (-> (psqlh/create-table :donation :if-not-exists)
-               (psqlh/with-columns donation-columns)))
-
-  (db-run! (-> (psqlh/create-table :matching :if-not-exists)
-               (psqlh/with-columns matching-columns)))
-
-  (db-run! (-> (psqlh/create-table :user-roles :if-not-exists)
-               (psqlh/with-columns user-roles-columns)))
-
-  (db-run! (-> (psqlh/create-table :user-timestamp :if-not-exists)
-               (psqlh/with-columns user-timestamp-columns)))
-
-  (db-run! (-> (psqlh/create-table :user-content-permissions :if-not-exists)
-               (psqlh/with-columns user-content-permission-columns)))
-
-  (db-run! (-> (psqlh/create-table :announcement :if-not-exists)
-               (psqlh/with-columns announcement-columns)))
-
-  (db-run! (-> (psqlh/create-table :round :if-not-exists)
-               (psqlh/with-columns round-columns)))
-
-  (db-run! (-> (psqlh/create-table :matching-pool :if-not-exists)
-               (psqlh/with-columns matching-pool-columns)))
-
-  (db-run! (-> (psqlh/create-table :coin :if-not-exists)
-               (psqlh/with-columns coin-columns)))
-
-  (add-coin! {:coin/address zero-address
-                       :coin/decimals 18
-                       :coin/symbol "ETH"
-                       :coin/name "Ether"})
-
-  (db-run! (-> (psqlh/create-table :events :if-not-exists)
-               (psqlh/with-columns events-columns))))
-
+(defn wait-until-ready [max-wait-time]
+  (go-loop [time-left max-wait-time]
+           (let [ready? (= :db/ready @db-state)
+                 error? (= :db/error @db-state)]
+             (if (or ready? error? (<= time-left 0))
+               @db-state
+               (do
+                 (<! (async/timeout 1000))
+                 (recur (- time-left 1000)))))))
 
 (defn start [args]
-  (create-tables)
+  (reset! db-state :db/init)
+  (reset! db-client (-> @config :db :db-client))
+  (go
+    (try
+      (<? (create-tables!))
+      (reset! db-state :db/ready)
+      (catch :default _ (reset! db-state :db/error))))
 
   ::started)
 
 (defn stop []
+  (reset! db-state :db/stopped)
   ::stopped)

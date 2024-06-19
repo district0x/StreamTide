@@ -1,9 +1,10 @@
 (ns streamtide.server.core
   "Main entry point of the server. Reads the config and starts all modules with mount"
   (:require [cljs.nodejs :as nodejs]
+            [clojure.string :as str]
             [district.graphql-utils :as graphql-utils]
             [district.server.config :as district.server.config]
-            [district.server.db :as district.server.db]
+            [district.server.db-async :as district.server.db]
             [district.server.graphql :as district.server.graphql]
             [district.server.graphql.utils :as graph-utils]
             [district.server.logging :as district.server.logging]
@@ -75,6 +76,7 @@
                                                        formatted-error))
                                       :context-fn     user-context-fn
                                       :graphiql       false}
+                            :db {:transform-result-keys-fn (comp keyword demunge #(str/replace % #"_slash_" "_SLASH_"))}
                             :avatar-images {:fs-path "resources/public/img/avatar/"
                                             :url-path "/img/avatar/"}
                             :verifiers {:twitter {:consumer-key "PLACEHOLDER"
