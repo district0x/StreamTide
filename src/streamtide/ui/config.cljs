@@ -21,6 +21,7 @@
                                   :symbol "ETH"
                                   :decimals 18}}
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
+   :thirdweb {:client-id "."}
    })
 
 (def qa-config
@@ -37,6 +38,7 @@
                                   :decimals 18}
                 :block-explorer-urls ["https://sepolia.arbiscan.io/"]}
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
+   :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
    })
 
 (def production-config
@@ -53,6 +55,7 @@
                                   :decimals 18}
                 :block-explorer-urls ["https://explorer.arbitrum.io"]}
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
+   :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
    })
 
 (def config-map
