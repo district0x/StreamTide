@@ -26,7 +26,7 @@
     "expo-modules-core": "^1.12.15",
     "expo-web-browser": "^13.0.3",
     "express": "4.18.2",
-    "graphql": "16.6.0",
+    "graphql": "16.8.2",
     "graphql-fields": "2.0.3",
     "graphql-tools": "8.3.14",
     "highlight.js": "11.5.1",
@@ -55,8 +55,8 @@
     "xregexp": "5.1.1"
   },
   "resolutions": {
-    "graphql": "^16.6.0",
-    "**/graphql": "^16.6.0"
+    "graphql": "16.8.2",
+    "**/graphql": "16.8.2"
   },
   "devDependencies": {
     "@openzeppelin/contracts": "4.8.2",

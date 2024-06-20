@@ -28,6 +28,7 @@ module.exports = {
             "crypto": false,
             "buffer": require.resolve("buffer"),
             "process/browser": require.resolve('process/browser'),
+            "vm": false
         }
     },
     module: {

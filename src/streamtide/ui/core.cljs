@@ -117,9 +117,9 @@
                       {:register :on-navigate
                        :events #{::router-events/navigate}
                        :dispatch-to [::close-mobile-menu]}
-                      {:register :web3-created
-                       :events #{::web3-events/web3-created}
-                       :dispatch-to [::st-events/web3-created]}
+                      ;{:register :web3-created
+                      ; :events #{::web3-events/web3-created}
+                      ; :dispatch-to [::st-events/web3-created]}
                       {:register :web3-creation-failed
                        :events #{::web3-events/web3-creation-failed}
                        :dispatch-to [::st-events/web3-creation-failed]}
@@ -142,6 +142,7 @@
                        :web3-accounts {:eip55? true
                                        :disable-loading-at-start? true
                                        :disable-polling? true}
+                       :web3-chain {:disable-loading-at-start? true}
                        :smart-contracts {:format :truffle-json
                                          :contracts-path "/contracts/build/"}
                        :web3-tx {:disable-loading-recommended-gas-prices? true}

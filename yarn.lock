@@ -4499,9 +4499,9 @@
     "@types/range-parser" "*"
 
 "@types/express-serve-static-core@^4.17.18", "@types/express-serve-static-core@^4.17.30", "@types/express-serve-static-core@^4.17.33":
-  version "4.19.3"
-  resolved "https://registry.yarnpkg.com/@types/express-serve-static-core/-/express-serve-static-core-4.19.3.tgz#e469a13e4186c9e1c0418fb17be8bc8ff1b19a7a"
-  integrity sha512-KOzM7MhcBFlmnlr/fzISFF5vGWVSvN6fTd4T+ExOt08bA/dA5kpSzY52nMsI1KDFmUREpJelPYyuslLRSjjgCg==
+  version "4.19.5"
+  resolved "https://registry.yarnpkg.com/@types/express-serve-static-core/-/express-serve-static-core-4.19.5.tgz#218064e321126fcf9048d1ca25dd2465da55d9c6"
+  integrity sha512-y6W03tvrACO72aijJ5uF02FRq5cgDR9lUxddQ8vyF+GvmjJQqbzDcJngEjURc+ZsG31VI3hODNZJ2URj86pzmg==
   dependencies:
     "@types/node" "*"
     "@types/qs" "*"
@@ -4574,9 +4574,9 @@
     form-data "^4.0.0"
 
 "@types/node@*", "@types/node@>=10.0.0":
-  version "20.14.5"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.14.5.tgz#fe35e3022ebe58b8f201580eb24e1fcfc0f2487d"
-  integrity sha512-aoRR+fJkZT2l0aGOJhuA8frnCSoNX6W7U2mpNq63+BxBIj5BQFt8rHy627kijCmm63ijdSdwvGgpUsU6MBsZZA==
+  version "20.14.6"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-20.14.6.tgz#f3c19ffc98c2220e18de259bb172dd4d892a6075"
+  integrity sha512-JbA0XIJPL1IiNnU7PFxDXyfAwcwVVrOoqyzzyQTyMeVhBzkJVMSkC1LlVsRQ2lpqiY4n6Bb9oCS6lzDKVQxbZw==
   dependencies:
     undici-types "~5.26.4"
 
@@ -7178,9 +7178,9 @@ ee-first@1.1.1:
   integrity sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==
 
 electron-to-chromium@^1.4.796:
-  version "1.4.806"
-  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.806.tgz#2cb046631cbabceb26fc72be68d273fa183e36bc"
-  integrity sha512-nkoEX2QIB8kwCOtvtgwhXWy2IHVcOLQZu9Qo36uaGB835mdX/h8uLRlosL6QIhLVUnAiicXRW00PwaPZC74Nrg==
+  version "1.4.807"
+  resolved "https://registry.yarnpkg.com/electron-to-chromium/-/electron-to-chromium-1.4.807.tgz#4d6c5ea1516f0164ac5bfd487ccd4ee9507c8f01"
+  integrity sha512-kSmJl2ZwhNf/bcIuCH/imtNOKlpkLDn2jqT5FJ+/0CXjhnFaOa9cOe9gHKKy71eM49izwuQjZhKk+lWQ1JxB7A==
 
 element-resize-detector@^1.1.9:
   version "1.2.4"
@@ -8716,15 +8716,10 @@ graphql-tools@8.3.14:
   optionalDependencies:
     "@apollo/client" "~3.2.5 || ~3.3.0 || ~3.4.0 || ~3.5.0 || ~3.6.0 || ~3.7.0"
 
-graphql@15.8.0, graphql@^15.3.0, graphql@^16.6.0:
+graphql@15.8.0, graphql@16.8.2, graphql@^15.3.0:
   version "16.8.2"
   resolved "https://registry.yarnpkg.com/graphql/-/graphql-16.8.2.tgz#54771c7ff195da913f5e70af8044a026d32eca2a"
   integrity sha512-cvVIBILwuoSyD54U4cF/UXDh5yAobhNV/tPygI4lZhgOIJQE/WLWC4waBRb4I6bDVYb3OVx3lfHbaQOEoUD5sg==
-
-graphql@16.6.0:
-  version "16.6.0"
-  resolved "https://registry.yarnpkg.com/graphql/-/graphql-16.6.0.tgz#c2dcffa4649db149f6282af726c8c83f1c7c5fdb"
-  integrity sha512-KPIBPDlW7NxrbT/eh4qPXz5FiFdL5UbaA0XUNz2Rp3Z3hqBSkbj0GVjwFDztsWVauZUWsbKHgMg++sk8UX0bkw==
 
 h3@^1.10.2, h3@^1.11.1:
   version "1.11.1"

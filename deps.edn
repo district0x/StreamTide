@@ -25,7 +25,8 @@
   district0x/district-ui-window-size {:mvn/version "1.0.1"}
   is.d0x/cljs-web3-next {:mvn/version "23.3.1"}
   is.d0x/district-server-config {:mvn/version "23.4.7"}
-  is.d0x/district-server-db {:mvn/version "24.6.19"}
+  ;is.d0x/district-server-db {:mvn/version "24.6.19"}
+  is.d0x/district-server-db {:local/root "../d0x-libs/server/district-server-db"}
   is.d0x/district-server-web3-events {:mvn/version "23.5.22"}
   is.d0x/re-frame-web3-fx {:mvn/version "23.5.3"}
   is.d0x/district-sendgrid {:mvn/version "23.9.25"}
