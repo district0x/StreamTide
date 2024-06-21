@@ -4,22 +4,23 @@
     ["thirdweb/wallets" :refer [createWallet]]
     ["thirdweb" :refer [createThirdwebClient waitForReceipt]]
     ["thirdweb/utils" :refer [toHex]]
-    ["thirdweb/rpc" :refer [getRpcClient, eth_getTransactionByHash eth_getTransactionReceipt eth_blockNumber eth_getBlockByNumber]]
+    ["thirdweb/rpc" :refer [getRpcClient eth_getTransactionByHash eth_getTransactionReceipt eth_blockNumber eth_getBlockByNumber]]
     ["react" :as react]
     [camel-snake-kebab.core :as csk]
     [camel-snake-kebab.extras :refer [transform-keys]]
-    [cljs-web3-next.core :as web3-next]
     [district.ui.web3-accounts.subs :as accounts-subs]
     [district.ui.web3-accounts.events :as accounts-events]
     [district.ui.web3-chain.events :as chain-events]
     [district.ui.web3-chain.subs :as chain-subs]
     [district.ui.web3.events :as web3-events]
+    [district.ui.web3.subs :as web3-subs]
     [eip55.core :as eip55]
     [re-frame.core :as re-frame :refer [subscribe dispatch]]
     [reagent.core :as r]
     [streamtide.ui.subs :as st-subs]
     [streamtide.ui.config :refer [config-map]]))
 
+(defonce wallet (atom nil))
 
 (defn build-chain-info []
   (clj->js (-> config-map
@@ -53,71 +54,62 @@
                                                           "0x0"))) (:typeHex receipt))
             true clj->js)))
 
-(defn create-provider [^js wallet ^js connectModal ^js connect-config]
-  #js {:request (fn [^js args]
-                  (print args)
-                  (case (.-method args)
-                    "eth_chainId" (js/Promise. (fn [] (-> wallet .getChain .-id)))
-                    "eth_sendTransaction" (if (nil? wallet)
-                                            ((.-connect connectModal) connect-config)
-                                            (js/Promise. (fn [resolve reject]
-                                                           (let [chainId (-> wallet .getChain .-id)
-                                                                 params (js->clj (aget (.-params args) 0) :keywordize-keys true)
-                                                                 params (merge params {:chainId chainId})
-                                                                 params (dissoc params :gasPrice :gas)
-                                                                 params (clj->js params)]
-                                                             (-> wallet .getAccount (.sendTransaction params)
-                                                                 (.then (fn [res]
-                                                                          (resolve (.-transactionHash res))))
-                                                                 (.catch (fn [err]
-                                                                           (reject err))))))))
-                    "personal_sign" (if (nil? wallet)
-                                      ((.-connect connectModal) connect-config)
-                                      (let [account (aget (.-params args) 1)
-                                            data-raw (aget (.-params args) 0)
-                                            data (web3-next/to-ascii data-raw)
-                                            params (clj->js {:account account
-                                                             :message {:raw data}})]
-                                        (-> wallet .getAccount (.signMessage params))))
-                    "eth_getTransactionReceipt" (js/Promise. (fn [resolve reject]
-                                                               (let [rpc-client (getRpcClient #js {:client (.-client connect-config)
-                                                                                                   :chain  (build-chain-info)})]
-                                                                 (-> (eth_getTransactionReceipt rpc-client #js {:hash (-> args .-params (aget 0))})
-                                                                     (.then (fn [res]
-                                                                              (resolve (parse-tx res))))
-                                                                     (.catch (fn [err]
-                                                                               (reject err)))))))
-                    "eth_getTransactionByHash" (js/Promise. (fn [resolve reject]
-                                                              (let [rpc-client (getRpcClient #js {:client (.-client connect-config)
-                                                                                                  :chain  (build-chain-info)})]
-                                                                (-> (eth_getTransactionByHash rpc-client #js {:hash (-> args .-params (aget 0))})
-                                                                    (.then (fn [res]
-                                                                             (resolve (parse-tx res))))
-                                                                    (.catch (fn [err]
-                                                                              (reject err)))))))
-                    "wallet_switchEthereumChain" (.switchChain wallet (build-chain-info))
-                    "eth_blockNumber" (js/Promise. (fn [resolve reject]
-                                                     (let [rpc-client (getRpcClient #js {:client (.-client connect-config)
-                                                                                         :chain  (build-chain-info)})]
-                                                       (-> (eth_blockNumber rpc-client)
-                                                           (.then (fn [res]
-                                                                    (resolve (toHex res))))
-                                                           (.catch (fn [err]
-                                                                     (reject err)))))))
-                    "eth_requestAccounts" (if (nil? wallet)
-                                            ((.-connect connectModal) connect-config)
-                                            (js/Promise. (fn [resolve reject]
-                                                           (resolve [(-> wallet .getAccount .-address)]))))
-                    "eth_getBlockByNumber" (js/Promise. (fn [resolve reject]
-                                                          (let [rpc-client (getRpcClient #js {:client (.-client connect-config)
-                                                                                              :chain  (build-chain-info)})]
-                                                            (-> (eth_getBlockByNumber rpc-client {:blockNumber         (-> args .-params (aget 0))
-                                                                                                  :includeTransactions (-> args .-params (aget 1))})
-                                                                (.then (fn [res]
-                                                                         (resolve (parse-tx res))))
-                                                                (.catch (fn [err]
-                                                                          (reject err)))))))
-                    (js/Promise.reject (str "Method not implemented: " (.-method args)))))})
+(defn create-provider [^js connectModal ^js connect-config]
+  #js {:request
+       (fn [^js args]
+         (let [wallet @wallet
+               rpc-call (fn [rpc-method params-map parse-fn]
+                          (js/Promise. (fn [resolve reject]
+                                         (let [rpc-client# (getRpcClient #js {:client (.-client connect-config)
+                                                                              :chain  (build-chain-info)})]
+                                           (-> (rpc-method rpc-client# (clj->js params-map))
+                                               (.then (fn [res#]
+                                                        (resolve (parse-fn res#))))
+                                               (.catch (fn [err#]
+                                                         (reject err#))))))))]
+           (case (.-method args)
+             "eth_chainId" (if (nil? wallet)
+                             (js/Promise.reject "Wallet not connected")
+                             (js/Promise. (fn [resolve] (resolve (-> wallet .getChain .-id)))))
+             "eth_requestAccounts" (if (nil? wallet)
+                                     ((.-connect connectModal) connect-config)
+                                     (js/Promise. (fn [resolve]
+                                                    (resolve [(-> wallet .getAccount .-address)]))))
+             "wallet_switchEthereumChain" (.switchChain wallet (build-chain-info))
+             "eth_sendTransaction" (if (nil? wallet)
+                                     ((.-connect connectModal) connect-config)
+                                     (js/Promise. (fn [resolve reject]
+                                                    (let [chainId (-> wallet .getChain .-id)
+                                                          params (js->clj (aget (.-params args) 0) :keywordize-keys true)
+                                                          params (merge params {:chainId chainId})
+                                                          params (dissoc params :gasPrice :gas)
+                                                          params (clj->js params)]
+                                                      (-> wallet .getAccount (.sendTransaction params)
+                                                          (.then (fn [res]
+                                                                   (resolve (.-transactionHash res))))
+                                                          (.catch (fn [err]
+                                                                    (reject err))))))))
+             "personal_sign" (if (nil? wallet)
+                               ((.-connect connectModal) connect-config)
+                               (let [account (aget (.-params args) 1)
+                                     data-raw (aget (.-params args) 0)
+                                     params (clj->js {:account account
+                                                      :message {:raw data-raw}})]
+                                 (-> wallet .getAccount (.signMessage params))))
+             "eth_getTransactionReceipt" (rpc-call eth_getTransactionReceipt
+                                                   {:hash (-> args .-params (aget 0))}
+                                                   parse-tx)
+             "eth_getTransactionByHash" (rpc-call eth_getTransactionByHash
+                                                  {:hash (-> args .-params (aget 0))}
+                                                  parse-tx)
+             "eth_blockNumber" (rpc-call eth_blockNumber
+                                         nil
+                                         toHex)
+             "eth_getBlockByNumber" (rpc-call eth_getBlockByNumber
+                                              {:blockNumber         (-> args .-params (aget 0))
+                                               :includeTransactions (-> args .-params (aget 1))}
+                                              parse-tx)
+             (js/Promise.reject (str "Method not implemented: " (.-method args))))))})
 
 (re-frame/reg-event-fx
   :logged-in?
@@ -176,8 +168,7 @@
                                  :signInButton {:className class}
                                  :client client
                                  :theme (if (= @day-night "day") "light" "dark")
-                                 :wallets [
-                                           (createWallet "io.metamask")
+                                 :wallets [(createWallet "io.metamask")
                                            (createWallet "com.coinbase.wallet")
                                            (createWallet "io.rabby")
                                            (createWallet "walletConnect")]
@@ -185,15 +176,17 @@
                                  :chain (build-chain-info)
                                  :switchToActiveChain true})
         connectModal (useConnectModal)
-        provider (create-provider active-wallet connectModal connect-config)]
+        active-web3-provider (subscribe [::web3-subs/web3])
+        provider (create-provider connectModal connect-config)]
     ;; some libraries assume the provider is in window.ethereum, so we set our wrapper in there to intercept any call
-
-    (set! (.-ethereum js/window) provider)
-    (dispatch [::web3-events/create-web3-with-user-permitted-provider {} provider])
+    (when-not @active-web3-provider
+      (set! (.-ethereum js/window) provider)
+      (dispatch [::web3-events/create-web3-with-user-permitted-provider {} provider]))
     (react/useEffect (fn []
                        (when (and loaded? active-wallet)
                          (dispatch [::chain-events/set-chain (-> active-wallet .getChain .-id)])
-                         (dispatch [::accounts-events/set-accounts [(-> active-wallet .getAccount .-address)]]))
+                         (dispatch [::accounts-events/set-accounts [(-> active-wallet .getAccount .-address)]])
+                         (reset! wallet active-wallet))
                          js/undefined)
                    (array active-wallet))
   (react/useEffect (fn []
