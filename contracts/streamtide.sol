@@ -41,9 +41,7 @@ contract MVPCLR is OwnableUpgradeable {
 
     uint256 public roundStart;
     uint256 public roundDuration;
-    uint256 public matchingPool;
     uint256 roundId;
-    uint256 public lastActiveRoundId;
 
 
     mapping(address => bool) public isAdmin;
@@ -52,11 +50,10 @@ contract MVPCLR is OwnableUpgradeable {
 
     address public multisigAddress;
 
-    function construct(address _multisigAddress) external initializer {
+    function construct(address _multisigAddress, uint _lastRound) external initializer {
         __Ownable_init(); // Add this line to initialize the OwnableUpgradeable contract
         multisigAddress = _multisigAddress;
-        roundId = 0;
-        lastActiveRoundId = 0;
+        roundId = _lastRound;
     }
 
     function setMultisigAddress(address _multisigAddress) external onlyMultisig {
@@ -64,12 +61,13 @@ contract MVPCLR is OwnableUpgradeable {
     }
 
     function fillUpMatchingPool() public payable onlyAdmin {
+        require(!roundIsClosed(), "Round Closed");
         require(msg.value > 0, "MVPCLR:fillUpMatchingPool - No value provided");
         emit MatchingPoolDonation(msg.sender, msg.value, roundId);
     }
 
     function fillUpMatchingPoolToken(address from, address token, uint amount) public onlyAdmin {
-        require(!roundIsClosed());
+        require(!roundIsClosed(), "Round Closed");
         require(amount > 0, "MVPCLR:fillUpMatchingPoolToken - No amount provided");
 
         IERC20(token).transferFrom(from, address(this), amount);
@@ -79,8 +77,7 @@ contract MVPCLR is OwnableUpgradeable {
 
     function closeRound() public onlyAdmin {
         roundDuration = 0;
-//        roundId = 0;
-        emit RoundClosed(lastActiveRoundId); // Added event emission
+        emit RoundClosed(roundId); // Added event emission
     }
 
     function roundIsClosed() public view returns (bool) {
@@ -89,14 +86,12 @@ contract MVPCLR is OwnableUpgradeable {
 
     function startRound(uint256 _roundDuration) public payable onlyAdmin {
         require(roundIsClosed(), "MVPCLR: startRound - Previous round not yet closed");
-        lastActiveRoundId += 1;
-        roundId = lastActiveRoundId;
+        roundId++;
         require(_roundDuration < 31536000, "MVPCLR: round duration too long");
         roundDuration = _roundDuration;
         roundStart = getBlockTimestamp();
         emit RoundStarted(roundStart, roundId, roundDuration);
         emit MatchingPoolDonation(msg.sender, msg.value, roundId); // Emit event for the added funds
-
     }
 
     function addAdmin(address _admin) public onlyOwner {
@@ -151,8 +146,6 @@ contract MVPCLR is OwnableUpgradeable {
         }
 
         require(totalAmount <= msg.value, "CLR:donate - Total amount donated is greater than the value sent");
-        // transfer the donated funds to the contract
-        // payable(address(this)).transfer(msg.value);
     }
 
 
@@ -171,7 +164,6 @@ contract MVPCLR is OwnableUpgradeable {
             emit Distribute(patrons[i], amounts[i], roundId, token);
             totalAmount += amounts[i];  // Add the amount to totalAmount
         }
-//    matchingPool -= totalAmount; // Subtract the total distributed amount from the matching pool
         emit DistributeRound(roundId, totalAmount, token);
     }
 
@@ -183,7 +175,7 @@ contract MVPCLR is OwnableUpgradeable {
 
     // receive donation for the matching pool
     receive() external payable {
-        require(roundStart == 0 || getBlockTimestamp() < roundStart + roundDuration, "CLR:receive closed");
+        require(!roundIsClosed(), "Round Closed");
         emit MatchingPoolDonation(_msgSender(), msg.value, roundId);
     }
 

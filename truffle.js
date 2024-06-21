@@ -12,8 +12,13 @@ const smartContractsPaths = {
 
 let parameters = {
     "dev" : {
-        multiSig: "0x4c3F13898913F15F12F902d6480178484063A6Fb",
-        admins: ["0xaFcF1a2bc71AcF041c93012A2E552e31026dFEAB"]
+        multiSig: "0x694D22629793B210e0C90324b4F9e571A25BD633",
+        admins: ["0x694D22629793B210e0C90324b4F9e571A25BD633"],
+        lastRound: 15,
+        patrons: [
+            "0xFB55734bACBca7d943994cA51c8049e0577A5c7f",
+            "0x694D22629793B210e0C90324b4F9e571A25BD633",
+            "0x11b23AE13EBACc03Fa0af256fdED729439A45ab5"]
     },
     "qa" : {
         multiSig: "0x11b23AE13EBACc03Fa0af256fdED729439A45ab5",
@@ -21,7 +26,10 @@ let parameters = {
             "0x11b23AE13EBACc03Fa0af256fdED729439A45ab5",
             "0xb078844477A5420cB627C1961B30ED33E0126973",
             "0x0A0A8610F57fE41EC26D5163d1Eb986cE598dc5F",
-            "0x0940f7D6E7ad832e0085533DD2a114b424d5E83A"]
+            "0x0940f7D6E7ad832e0085533DD2a114b424d5E83A",
+            "0xF256222EB43fdB2CFAD1f8Be72575F6b01Dae295"
+        ],
+        lastRound: 6
     },
     "prod" : {
         multiSig: "0xf7190fa8c89F7c57ff77b8Bc0Da85e9a2daF70Ad",
@@ -29,7 +37,8 @@ let parameters = {
             "0xf7190fa8c89F7c57ff77b8Bc0Da85e9a2daF70Ad",
             "0xb078844477A5420cB627C1961B30ED33E0126973",
             "0x0A0A8610F57fE41EC26D5163d1Eb986cE598dc5F",
-            "0x0940f7D6E7ad832e0085533DD2a114b424d5E83A"]
+            "0x0940f7D6E7ad832e0085533DD2a114b424d5E83A"],
+        lastRound: 0
     }
 };
 
@@ -40,22 +49,22 @@ module.exports = {
     parameters : parameters [STREAMTIDE_ENV],
     networks: {
         "ganache": {
-            host: 'localhost',
+            host: '127.0.0.1',
             port: 8545,
             gas: 6e6, // gas limit
             gasPrice: 20e9, // 20 gwei, default for ganache
             network_id: '*'
         },
-        "alchemy-arbitrum-sepolia": {
-            provider: () => new HDWalletProvider(process.env.ARBITRUM_SEPOLIA_PRIV_KEY, "https://arb-sepolia.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY),
-            network_id: 421614,
+        "alchemy-base-sepolia": {
+            provider: () => new HDWalletProvider(process.env.BASE_SEPOLIA_PRIV_KEY, "https://base-sepolia.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY),
+            network_id: 84532,
             gas: 6e6,
             gasPrice: 1e9,
             skipDryRun: true
         },
-        "alchemy-arbitrum-mainnet": {
-            provider: () => new HDWalletProvider(process.env.ARBITRUM_PRIV_KEY, "https://arb-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY),
-            network_id: 42161,
+        "alchemy-base-mainnet": {
+            provider: () => new HDWalletProvider(process.env.BASE_PRIV_KEY, "https://base-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY),
+            network_id: 8453,
             gas: 6e7,
             gasPrice: 3e8,
             skipDryRun: true

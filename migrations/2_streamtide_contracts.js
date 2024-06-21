@@ -43,7 +43,7 @@ module.exports = async(deployer, network, accounts) => {
         const streamtideForwarderAddr = status.getValue(sk.streamtideForwarderAddr);
 
         const streamtideForwarder = await Streamtide.at(streamtideForwarderAddr);
-        await streamtideForwarder.construct(parameters.multiSig);
+        await streamtideForwarder.construct(parameters.multiSig, parameters.lastRound);
     });
 
     var smartContracts = edn.encode(
