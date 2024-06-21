@@ -4,7 +4,7 @@
     ["thirdweb/wallets" :refer [createWallet]]
     ["thirdweb" :refer [createThirdwebClient waitForReceipt]]
     ["thirdweb/utils" :refer [toHex]]
-    ["thirdweb/rpc" :refer [getRpcClient eth_getTransactionByHash eth_getTransactionReceipt eth_blockNumber eth_getBlockByNumber]]
+    ["thirdweb/rpc" :refer [getRpcClient eth_getTransactionByHash eth_getTransactionReceipt eth_blockNumber eth_getBlockByNumber eth_call]]
     ["react" :as react]
     [camel-snake-kebab.core :as csk]
     [camel-snake-kebab.extras :refer [transform-keys]]
@@ -57,7 +57,7 @@
 (defn create-provider [^js connectModal ^js connect-config]
   #js {:request
        (fn [^js args]
-         (let [wallet @wallet
+         (let [^js wallet @wallet
                rpc-call (fn [rpc-method params-map parse-fn]
                           (js/Promise. (fn [resolve reject]
                                          (let [rpc-client# (getRpcClient #js {:client (.-client connect-config)
@@ -85,7 +85,7 @@
                                                           params (dissoc params :gasPrice :gas)
                                                           params (clj->js params)]
                                                       (-> wallet .getAccount (.sendTransaction params)
-                                                          (.then (fn [res]
+                                                          (.then (fn [^js res]
                                                                    (resolve (.-transactionHash res))))
                                                           (.catch (fn [err]
                                                                     (reject err))))))))
@@ -96,6 +96,9 @@
                                      params (clj->js {:account account
                                                       :message {:raw data-raw}})]
                                  (-> wallet .getAccount (.signMessage params))))
+             "eth_call" (rpc-call eth_call
+                                  (-> args .-params (aget 0))
+                                  identity)
              "eth_getTransactionReceipt" (rpc-call eth_getTransactionReceipt
                                                    {:hash (-> args .-params (aget 0))}
                                                    parse-tx)
