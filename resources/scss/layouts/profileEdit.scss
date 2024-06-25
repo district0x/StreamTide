@@ -132,7 +132,7 @@
 				width: calc(100% - 6px);
 				border-radius: 7px;
 				overflow: hidden;
-				box-shadow: 0px 0px 0px 3px #a478f9;
+				box-shadow: 0px 0px 0px 3px $lilac;
 				.input-group {
 					height: 100%;
 				}
@@ -231,7 +231,7 @@
 				margin-bottom: 5px;
 			}
 			.collapsible-header {
-				background-color: #a478f9;
+				background-color: $lilac;
 				height: 52.77px;
 				width: 100%;
 				display: flex;
@@ -247,7 +247,7 @@
 			.collapsible-content {
 				border-bottom-left-radius: 7px;
 				border-bottom-right-radius: 7px;
-				border: 3px solid #a478f9;
+				border: 3px solid $lilac;
 				padding: 0 15.75px;
 			}
 			.categories {

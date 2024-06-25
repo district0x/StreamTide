@@ -126,13 +126,14 @@ type Mutation {
         content_pinned: Boolean!
     ): Boolean
 
-    generateOtp(
+    generateLoginPayload(
         user_address: ID!
-    ): String!
+        chainId: String
+    ): LoginPayload!
 
     signIn(
-        dataSignature: String!
-        data: String!
+        signature: String!
+        payload: LoginPayloadInput!
     ): signInPayload!
 
     blacklist(
@@ -175,6 +176,38 @@ input UserInput {
     user_socials: [SocialLinkInput!]
     user_notificationCategories: [NotificationCategorySettingInput!]
     user_notificationTypes: [NotificationTypeSettingInput!]
+}
+
+type LoginPayload {
+    scheme: String
+    domain: String!
+    address: String!
+    statement: String
+    uri: String!
+    version: String!
+    chainId: String!
+    nonce: String!
+    issuedAt: String!
+    expirationTime: String
+    notBefore: String
+    requestId: String
+    resources: [String]
+}
+
+input LoginPayloadInput {
+    scheme: String
+    domain: String!
+    address: String!
+    statement: String
+    uri: String!
+    version: String!
+    chainId: String!
+    nonce: String!
+    issuedAt: String!
+    expirationTime: String
+    notBefore: String
+    requestId: String
+    resources: [String]
 }
 
 type signInPayload {
@@ -309,7 +342,7 @@ type Donation {
     donation_receiver: User!
     donation_date: Date
     donation_amount: String
-    donation_coin: ID
+    donation_coin: Coin
     donation_round: Round
 }
 
@@ -325,7 +358,7 @@ type Matching {
     matching_receiver: User!
     matching_date: Date
     matching_amount: String
-    matching_coin: ID
+    matching_coin: Coin
     matching_round: Round
 }
 
@@ -339,8 +372,13 @@ type MatchingList {
 type Leader {
     leader_receiver: User!
     leader_donationAmount: String
-    leader_matchingAmount: String
-    leader_totalAmount: String
+    leader_matchingAmounts: [CoinAmount]
+    leader_totalAmounts: [CoinAmount]
+}
+
+type CoinAmount {
+    coin: Coin
+    amount: String
 }
 
 type LeaderList {
@@ -354,8 +392,20 @@ type Round {
     round_id: ID!
     round_start: Date
     round_duration: Int
-    round_matchingPool: String
-    round_distributed: String
+    round_matchingPools: [MatchingPool]
+}
+
+type MatchingPool {
+    matchingPool_coin: Coin
+    matchingPool_amount: String
+    matchingPool_distributed: String
+}
+
+type Coin {
+    coin_address: String!
+    coin_name: String
+    coin_symbol: String
+    coin_decimals: Int
 }
 
 type RoundList {
@@ -443,7 +493,6 @@ enum LeadersOrderBy {
 
 enum RoundOrderBy {
     rounds_orderBy_id
-    rounds_orderBy_matchingPool
     rounds_orderBy_date
 }
 

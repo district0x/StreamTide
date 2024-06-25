@@ -8,6 +8,7 @@
 /resources/public/img/avatar/*
 !resources/public/img/avatar/profile_placeholder.svg
 /resources/public/contracts/build/
+/resources/public/fonts/Kitten*
 /node_modules/
 /.cpcache/
 /.shadow-cljs/

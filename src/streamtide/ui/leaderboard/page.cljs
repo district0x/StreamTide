@@ -39,8 +39,12 @@
       :end-cursor
       :has-next-page
       [:items [:leader/donation-amount
-               :leader/matching-amount
-               :leader/total-amount
+               [:leader/matching-amounts [:amount
+                                          [:coin [:coin/symbol
+                                                  :coin/decimals]]]]
+               [:leader/total-amounts [:amount
+                                       [:coin [:coin/symbol
+                                               :coin/decimals]]]]
                [:leader/receiver [:user/address
                                   :user/name
                                   :user/photo
@@ -51,7 +55,7 @@
    {:first 100}
    [[:items [:round/id]]]])
 
-(defn leaderboard-entry [{:keys [:leader/receiver :leader/donation-amount :leader/matching-amount :leader/total-amount]}]
+(defn leaderboard-entry [{:keys [:leader/receiver :leader/donation-amount :leader/matching-amounts :leader/total-amounts]}]
   (let [nav (partial nav-anchor {:route :route.profile/index :params {:address (:user/address receiver)}})]
     [:div.leaderboard
      [nav [user-photo {:class (str "lb" (when (:user/unlocked receiver) " star")) :src (:user/photo receiver)}]]
@@ -60,13 +64,18 @@
      [:ul.score
       [:li
        [:h4.d-md-none "Amount Granted"]
-       [:span (shared-utils/format-price donation-amount)]]
+       [:span (shared-utils/format-price donation-amount {:coin/decimals 18 :coin/symbol "ETH"})]]
       [:li
        [:h4.d-md-none "Matching Received"]
-       [:span (shared-utils/format-price matching-amount)]]
+
+       [:div.amounts
+        (map (fn [mp]
+               [:span {:key (-> mp :coin :coin/symbol)} (shared-utils/format-price (:amount mp) (:coin mp))]) matching-amounts)]]
       [:li
        [:h4.d-md-none "Total Received"]
-       [:span (shared-utils/format-price total-amount)]]]]))
+       [:div.amounts
+        (map (fn [mp]
+               [:span {:key (-> mp :coin :coin/symbol)} (shared-utils/format-price (:amount mp) (:coin mp))]) total-amounts)]]]]))
 
 (defn leaderboard-entries [form-data leaders-search]
   (let [active-session (subscribe [::st-subs/active-session])

@@ -3,6 +3,7 @@
   (:require [cljs.reader :refer [read-string]]
             [clojure.string :as string]
             [district.server.config :as config]
+            [district.shared.async-helpers :refer [<? safe-go]]
             [streamtide.server.db :as stdb]
             [streamtide.server.graphql.authorization :as authorization]
             [streamtide.shared.utils :as shared-utils]
@@ -35,10 +36,11 @@
       (fn []
         (try
           (when (not-empty @users-interacted)
-            (let [[users _] (swap-vals! users-interacted (fn [] #{}))]
-              (stdb/ensure-users-exist! users)
-              (stdb/set-user-timestamp! {:user-addresses users
-                                         :timestamp/last-seen (- (shared-utils/now-secs) (/ interval 1000))})))
+            (safe-go
+              (let [[users _] (swap-vals! users-interacted (fn [] #{}))]
+                (<? (stdb/ensure-users-exist! users))
+                (<? (stdb/set-user-timestamp! {:user-addresses users
+                                               :timestamp/last-seen (- (shared-utils/now-secs) (/ interval 1000))})))))
           (catch :default e
             (log/error "Failed to store user timestamps" {:error e}))))
       interval)

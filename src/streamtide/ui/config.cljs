@@ -21,6 +21,7 @@
                                   :symbol "ETH"
                                   :decimals 18}}
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
+   :thirdweb {:client-id "."}
    })
 
 (def qa-config
@@ -29,14 +30,15 @@
    :graphql {:url "https://api.streamtide.qa.district0x.io/graphql"}
    :smart-contracts {:contracts smart-contracts-qa/smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
-   :web3-chain {:chain-id "421614"
-                :rpc-urls ["https://sepolia-rollup.arbitrum.io/rpc"]
-                :chain-name "Arbitrum Sepolia"
+   :web3-chain {:chain-id "84532"
+                :rpc-urls ["https://sepolia.base.org"]
+                :chain-name "Base Sepolia"
                 :native-currency {:name "ETH"
                                   :symbol "ETH"
                                   :decimals 18}
-                :block-explorer-urls ["https://sepolia.arbiscan.io/"]}
+                :block-explorer-urls ["https://sepolia-explorer.base.org"]}
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
+   :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
    })
 
 (def production-config
@@ -45,14 +47,15 @@
    :graphql {:url "https://api.streamtide.io/graphql"}
    :smart-contracts {:contracts smart-contracts-prod/smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
-   :web3-chain {:chain-id "42161"
-                :rpc-urls ["https://arb1.arbitrum.io/rpc"]
-                :chain-name "Arbitrum One"
+   :web3-chain {:chain-id "8453"
+                :rpc-urls ["https://mainnet.base.org"]
+                :chain-name "Base Mainnet"
                 :native-currency {:name "ETH"
                                   :symbol "ETH"
                                   :decimals 18}
-                :block-explorer-urls ["https://explorer.arbitrum.io"]}
+                :block-explorer-urls ["https://base.blockscout.com"]}
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
+   :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
    })
 
 (def config-map

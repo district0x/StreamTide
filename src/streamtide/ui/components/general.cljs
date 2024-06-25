@@ -2,9 +2,7 @@
   (:require
     [clojure.string :as str]
     [district.ui.router.events :as router-events]
-    [district.ui.web3-accounts.subs :as accounts-subs]
     [re-frame.core :refer [dispatch subscribe]]
-    [streamtide.ui.subs :as streamtide-subs]
     [streamtide.ui.components.connect-wallet :refer [connect-wallet-btn]]))
 
 
@@ -33,21 +31,8 @@
 
 (defn sign-in-button [{:keys [:class]}]
   "Button to trigger the user's login or logout"
-  (let [active-session? (subscribe [::streamtide-subs/active-account-has-session?])
-        current-account (subscribe [::accounts-subs/active-account])]
-    (fn []
-      [:<>
-       [:div.btLoginContainer
-       (when @current-account
-         (if @active-session?
-           [:button.btLogin.btBasic.btBasic-light
-            {:class class
-             :on-click #(dispatch [:user/sign-out])}
-            (str "Log out")]
-           [:button.btLogin.btBasic.btBasic-light
-            {:class class
-             :on-click #(dispatch [:user/sign-in])}
-            (str "WEB3 LOGIN")]))]
-       [:div.connectWalletContainer
-        {:class class}
-        [connect-wallet-btn {:class "btLogin connectWallet"}]]])))
+  (fn []
+    [:<>
+     [:div.connectWalletContainer
+      {:class class}
+      [connect-wallet-btn {:class "btLogin connectWallet"}]]]))

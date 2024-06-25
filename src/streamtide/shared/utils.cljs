@@ -7,6 +7,8 @@
     [clojure.string :as string])
   (:require-macros [streamtide.shared.utils]))
 
+(def abi-reduced-erc20 (js/JSON.parse "[{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"))
+
 (defn now []
   "Gets current time in millisecons"
   (.getTime (js/Date.)))
@@ -33,11 +35,29 @@
   ([amount unit]
    (web3/from-wei (str amount) unit)))
 
-(defn format-price [price]
-  (let [price (from-wei price :ether)
+(defn to-base-amount [amount decimals]
+  (let [[int-part decimal-part] (clojure.string/split amount #"\.")
+        decimal-part (if (> (count decimal-part) decimals) (subs decimal-part 0 decimals) decimal-part)
+        zeros-to-append (- decimals (count decimal-part))
+        zeros (apply str (repeat zeros-to-append "0"))
+        base-amount (str int-part (or decimal-part "") zeros)]
+    (clojure.string/replace-first base-amount #"^0+" "")))
+
+(defn from-base-amount [base-amount decimals]
+  (clojure.string/replace
+    (let [base-amount-len (count base-amount)]
+      (if (< decimals base-amount-len)
+        (let [int-part (subs base-amount 0 (- base-amount-len decimals))
+              decimal-part (subs base-amount (- base-amount-len decimals))]
+          (str int-part "." decimal-part))
+        (str "0." (apply str (repeat (- decimals base-amount-len) "0")) base-amount)))
+    #"\.?0*$" ""))
+
+(defn format-price [price {:keys [:coin/symbol :coin/decimals]}]
+  (let [price (from-base-amount price decimals)
         min-fraction-digits (if (= "0" price) 0 4)]
     (format/format-token (bn/number price) {:max-fraction-digits 5
-                                            :token "ETH"
+                                            :token symbol
                                             :min-fraction-digits min-fraction-digits})))
 
 (def auth-data-msg

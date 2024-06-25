@@ -5,7 +5,7 @@ jobs:
    working_directory: ~/streamtide
    docker:
      # primary container to run all steps
-     - image: 487920318758.dkr.ecr.us-west-2.amazonaws.com/cljs-web3-ci:node-18.7.0
+     - image: 487920318758.dkr.ecr.us-west-2.amazonaws.com/cljs-web3-ci:node-18.17.0
        aws_auth:
          aws_access_key_id: $AWS_ACCESS_KEY_ID
          aws_secret_access_key: $AWS_SECRET_ACCESS_KEY

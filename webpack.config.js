@@ -8,7 +8,13 @@ module.exports = {
         filename: 'libs.js',
         path: path.resolve(__dirname, 'resources', 'public', 'js'),
     },
+    externals: {
+        "react-native": true,
+    },
     resolve: {
+        alias: {
+            '../react/web/ui/MediaRenderer/MediaRenderer.js' : false,
+        },
         fallback: {
             "fs": false,
             "tls": false,
@@ -22,7 +28,23 @@ module.exports = {
             "crypto": false,
             "buffer": require.resolve("buffer"),
             "process/browser": require.resolve('process/browser'),
+            "vm": false
         }
+    },
+    module: {
+        rules: [
+            {
+                test: /NetworkSelector\.js$/,
+                loader: 'string-replace-loader',
+                options: {
+                    search: '(const fuse_js_1 =.*)',
+                    replace(match, p1) {
+                        return `${p1} fuse_js_1.default = fuse_js_1;`
+                    },
+                    flags: 'g'
+                }
+            }
+        ]
     },
     plugins: [
         new webpack.ProvidePlugin({

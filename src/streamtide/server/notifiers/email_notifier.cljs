@@ -14,15 +14,16 @@
 (def notifier-type (name notifier-type-kw))
 
 (defn set-email [user-address email]
-  (if (string/blank? email)
-    (stdb/remove-notification-type! {:user/address user-address
-                                    :notification/type notifier-type})
-    (do
-      (when-not (valid-email? email)
-        (throw (str "Invalid Email: " email)))
-      (stdb/upsert-notification-type! {:user/address user-address
-                                       :notification/user-id email
-                                       :notification/type notifier-type}))))
+  (safe-go
+    (if (string/blank? email)
+      (<? (stdb/remove-notification-type! {:user/address user-address
+                                           :notification/type notifier-type}))
+      (do
+        (when-not (valid-email? email)
+          (throw (str "Invalid Email: " email)))
+        (<? (stdb/upsert-notification-type! {:user/address user-address
+                                             :notification/user-id email
+                                             :notification/type notifier-type}))))))
 
 (defn get-emails [addresses]
   (stdb/get-notification-types {:user/addresses addresses

@@ -180,7 +180,7 @@
 			width: calc(100% - 6px);
 			border-radius: 7px;
 			overflow: hidden;
-			box-shadow: 0px 0px 0px 3px #a478f9;
+			box-shadow: 0px 0px 0px 3px $lilac;
 			height: 277px;
 			margin-bottom: 11px;
 			text-align: left;
@@ -281,7 +281,7 @@
 			a {
 				text-decoration: underline;
 				text-decoration-thickness: 2px;
-				color: #a478f9;
+				color: $lilac;
 				&:hover {
 					color: #3b1d56;
 				}

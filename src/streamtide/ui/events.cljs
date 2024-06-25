@@ -1,6 +1,8 @@
 (ns streamtide.ui.events
   "Streamtide common events"
-  (:require [district.ui.graphql.events :as gql-events]
+  (:require [camel-snake-kebab.core :as csk]
+            [camel-snake-kebab.extras :refer [transform-keys]]
+            [district.ui.graphql.events :as gql-events]
             [district.ui.logging.events :as logging]
             [district.ui.notification.events :as notification-events]
             [district.ui.web3-accounts.queries :as account-queries]
@@ -8,7 +10,6 @@
             [district.ui.web3.events :as web3-events]
             [district.ui.web3-chain.queries :as chain-queries]
             [district.ui.web3-chain.events :as chain-events]
-            [goog.string :as gstring]
             [re-frame.core :as re-frame]
             [streamtide.ui.components.error-notification :as error-notification]
             [streamtide.shared.utils :as shared-utils]
@@ -119,90 +120,110 @@
 (def wallet-chain-interceptors [connect-wallet check-chain])
 
 (re-frame/reg-event-fx
-  :user/sign-in
-  ; To log-in, the user first requests an OTP to the server.
+  :user/request-login-payload
+  ; To log-in, the user first requests the payload to the server, including an OTP (nonce) to the server.
   ; Then it sign a message (containing the OTP) with its wallet and send it to the server.
   ; The server will produce a JWT which is stored in the browser to be sent on each request.
-  [connect-wallet]
-  (fn [{:keys [db]} _]
-    (let [active-account (account-queries/active-account db)
-          query
-          {:queries [[:generate-otp
-                      {:user/address :$address}]]
+  [wallet-chain-interceptors]
+  (fn [{:keys [db]} [_ {:keys [:address :chain-id :callback] :as data}]]
+    (let [query
+          {:queries [[:generate-login-payload
+                      {:user/address :$address
+                       :chain-id :$chainid}
+                      [:scheme
+                       :domain
+                       :address
+                       :statement
+                       :uri
+                       :version
+                       :chain-id
+                       :nonce
+                       :issued-at
+                       :expiration-time
+                       :not-before
+                       :request-id
+                       :resources]]]
            :variables [{:variable/name :$address
-                        :variable/type :ID!}]}]
+                        :variable/type :ID!}
+                       {:variable/name :$chainid
+                        :variable/type :String}]}]
       {:dispatch [::gql-events/mutation
                   {:query query
-                   :variables {:address active-account}
-                   :on-success [:user/request-signature]
+                   :variables {:address address
+                               :chainid (str chain-id)}
+                   :on-success [:user/request-login-payload-success data]
                    :on-error [::dispatch-n
-                              [[::error-notification/show-error "An error occurs while requesting OTP to the server"]
-                               [::logging/error " Error Requesting OTP to the server."]]]}]})))
+                              [[:user/request-login-payload-error data]
+                               [::error-notification/show-error "An error occurs while requesting login payload to the server"]
+                               [::logging/error "Error Requesting login payload to the server."]]]}]})))
 
 (re-frame/reg-event-fx
-  :user/request-signature
-  ; Once having the OTP, the user sign a message with its wallet and send it to the server.
-  (fn [{:keys [db]} [_ response]]
-    (let [otp (:generate-otp response)
-          active-account (account-queries/active-account db)
-          data-str (gstring/format shared-utils/auth-data-msg otp)]
-      {:web3/personal-sign
-       {:web3 (web3-queries/web3 db)
-        :data-str data-str
-        :from active-account
-        :on-success [:user/-authenticate {:data-str data-str}]
-        :on-error [::dispatch-n
-                   [[::error-notification/show-error "Error signing with current account"]
-                    [::logging/error "Error Signing with Active Ethereum Account."]]]}})))
+  :user/request-login-payload-success
+  ; Once having the payload, the user should sign a message with its wallet and send it to the server.
+  (fn [{:keys [db]} [_ {:keys [:callback]} response]]
+    (let [payload (:generate-login-payload response)]
+      {:callback {:fn callback
+                  :result payload}})))
+
+(re-frame/reg-event-fx
+  :user/request-login-payload-error
+  (fn [{:keys [db]} [_ {:keys [:callback]} error]]
+    {:callback {:fn callback
+                :error error}}))
 
 (re-frame/reg-event-fx
   :user/-authenticate
   ; Having the data signed with the user's wallet, it sends a GraphQL mutation request with the data signed
   ; so the server can validate it and produce a JWT
-  (fn [_ [_ {:keys [data-str]} data-signature]]
+  (fn [_ [_ {:keys [payload signature callback]}]]
     (let [query
-          {:queries [[:sign-in {:data-signature :$dataSignature
-                                :data           :$data}
+          {:queries [[:sign-in {:signature :$signature
+                                :payload :$payload}
                       [:jwt
                        :user/address]]]
-           :variables [{:variable/name :$dataSignature
+           :variables [{:variable/name :$signature
                         :variable/type :String!}
-                       {:variable/name :$data
-                        :variable/type :String!}]}]
+                       {:variable/name :$payload
+                        :variable/type :LoginPayloadInput!}]}]
       {:dispatch
        [::gql-events/mutation
         {:query query
-         :variables {:dataSignature data-signature
-                     :data data-str}
-         :on-success [:authentication-success]
-         :on-error [:authentication-error]}]})))
+         :variables {:signature signature
+                     :payload (transform-keys csk/->camelCase payload)}
+         :on-success [:authentication-success {:callback callback}]
+         :on-error [:authentication-error {:callback callback}]}]})))
 
 (re-frame/reg-event-fx
   :authentication-success
   ; when the authentication success, the JWT produced by the server is stored in the browser. Additionally,
   ; the authorization token for GraphQL is set, it will be used on subsequents GraphQL requests
   [(re-frame/inject-cofx :store)]
-  (fn [{:keys [db store]} [_ {session-info :sign-in}]]
+  (fn [{:keys [db store]} [_ {:keys [:callback]} {session-info :sign-in}]]
     {:dispatch-n [[::logging/info "Authentication succeeded" {:user (:user/address session-info)}]
                   [::gql-events/set-authorization-token (:jwt session-info)]]
      :db (assoc db :active-session session-info)
-     :store (assoc store :active-session session-info)}))
+     :store (assoc store :active-session session-info)
+     :callback {:fn callback
+                :result session-info}}))
 
 (re-frame/reg-event-fx
   :authentication-error
-  (fn [_ [_ error]]
+  (fn [_ [_ {:keys [:callback]} error]]
     {:dispatch-n [[::error-notification/show-error "An error occurs while authenticating" error]
-                  [::logging/error "Failed to authenticate" {:error error}]]}))
+                  [::logging/error "Failed to authenticate" {:error error}]]
+     :callback {:fn callback
+                :error error}}))
 
 (re-frame/reg-event-fx
   :user/sign-out
   ; Sing out just deletes the JWT from the browser, and clean up the token for GraphQL.
   ; There is no enforcement in the server side.
   [(re-frame/inject-cofx :store)]
-  (fn [{:keys [db store]}]
+  (fn [{:keys [db store]} [_ {:keys [:callback]}]]
     {:db (dissoc db :active-session)
      :store (dissoc store :active-session)
-     :dispatch [::gql-events/set-authorization-token nil]}))
+     :dispatch [::gql-events/set-authorization-token nil]
+     :callback {:fn callback}}))
 
 (re-frame/reg-event-fx
   ::add-to-cart

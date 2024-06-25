@@ -46,7 +46,8 @@
     [:items [:donation/id
              :donation/date
              :donation/amount
-             :donation/coin
+             ;[:donation/coin [:coin/symbol
+             ;                 :coin/decimals]]
              [:donation/receiver [:user/address
                                   :user/name
                                   :user/photo]]]]]])
@@ -103,7 +104,7 @@
        [:span (ui-utils/format-graphql-time date)]]
       [:li
        [:h4.d-lg-none "Amount"]
-       [:span (shared-utils/format-price amount)]]]]))
+       [:span (shared-utils/format-price amount {:coin/decimals 18 :coin/symbol "ETH"})]]]]))
 
 (defn donations []
   (let [active-account (subscribe [::accounts-subs/active-account])]
@@ -142,7 +143,9 @@
 
 (defmethod page :route.send-support/index []
   (let [cart (subscribe [::st-subs/cart])
-        form-data (r/atom {})
+        form-data (r/atom
+                    (reduce (fn [aggr [address _]]
+                              (merge aggr {address nil})) {} @cart))
         errors (reaction {:local
                           (reduce (fn [aggr [addr {:keys [:amount]}]]
                                     (if (and amount (or (not (re-matches #"^\d+(\.\d{0,18})?$" amount))
@@ -162,12 +165,12 @@
             [:div.headerSendSupport
               [:h1.titlePage "Simping"]]
             [:div.cart
-             (if (empty? @cart)
+             (if (empty? @form-data)
                [no-items-found {:message "Your cart is empty 😢"}]
                [:div.contentSendSupport
                 [support-seal]
                 (doall
-                  (for [[address _] @cart]
+                  (for [[address _] @form-data]
                     ^{:key address} [send-support-card address form-data errors]))])
                 [:div.buttons
                  [pending-button {:pending? (or @donate-tx-pending? @waiting-wallet?)
@@ -175,7 +178,7 @@
                                   :disabled (or @donate-tx-pending? @donate-tx-success? @waiting-wallet?
                                                 (empty? @form-data)
                                                 (some #(or (zero? %) (nil? %)) (map :amount (vals @form-data))))
-                                  :class (str "btBasic btBasic-light btCheckout" (when-not @donate-tx-success? " checkedOut"))
+                                  :class (str "btBasic btBasic-light btCheckout" (when @donate-tx-success? " checkedOut"))
                                   :on-click (fn [e]
                                               (.stopPropagation e)
                                               (dispatch [::ss-events/send-support {:donations @form-data

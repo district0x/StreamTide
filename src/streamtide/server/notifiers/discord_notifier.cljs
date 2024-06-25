@@ -55,9 +55,10 @@
           (recur (next user-entries)))))))
 
 (defn get-discord-id [addresses]
-  (map #(assoc % :notification/user-id (last (string/split (:social/url %) "/")))
-       (stdb/get-user-socials {:user/addresses addresses
-                               :social/network (name :discord)})))
+  (safe-go
+    (map #(assoc % :notification/user-id (last (string/split (:social/url %) "/")))
+         (<? (stdb/get-user-socials {:user/addresses addresses
+                                     :social/network (name :discord)})))))
 
 (defmethod notify notifier-type-kw [_ users notification]
   (discord-notify users notification))

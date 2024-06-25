@@ -4,10 +4,12 @@
     [bignumber.core :as bn]
     [camel-snake-kebab.core :as camel-snake-kebab]
     [cljsjs.bignumber]
-    [cljs-web3-next.eth :as web3-eth]
     [cljs-web3-next.core :as web3-core]
+    [cljs-web3-next.eth :as web3-eth]
+    [cljs-web3-next.helpers :refer [zero-address]]
     [cljs.core.async :as async :refer [<! go]]
     [cljs.core.async.impl.protocols :refer [ReadPort]]
+    [clojure.string :as string]
     [district.shared.async-helpers :refer [<? safe-go]]
     [district.server.smart-contracts :as smart-contracts]
     [district.server.web3-events :as web3-events]
@@ -17,7 +19,7 @@
     [mount.core :as mount :refer [defstate]]
     [streamtide.server.notifiers.notifiers :as notifiers]
     [streamtide.server.db :as db]
-    [streamtide.shared.utils :as shared-utils]
+    [streamtide.shared.utils :as shared-utils :refer [abi-reduced-erc20]]
     [taoensso.timbre :as log]))
 
 
@@ -58,56 +60,56 @@
 (defn admin-added-event [_ {:keys [:args]}]
   (let [{:keys [:_admin]} args]
     (safe-go
-      (db/upsert-user-info! {:user/address _admin})
+      (<! (db/upsert-user-info! {:user/address _admin}))
       (db/add-role _admin :role/admin))))
 
 (defn admin-removed-event [_ {:keys [:args]}]
   (let [{:keys [:_admin]} args]
     (safe-go
-      (db/remove-role _admin :role/admin))))
+      (<! (db/remove-role _admin :role/admin)))))
 
 (defn blacklisted-added-event [_ {:keys [:args]}]
   (let [{:keys [:_blacklisted]} args]
     (safe-go
-      (db/upsert-user-info! {:user/address _blacklisted})
-      (db/add-to-blacklist! {:user/address _blacklisted}))))
+      (<! (db/upsert-user-info! {:user/address _blacklisted}))
+      (<! (db/add-to-blacklist! {:user/address _blacklisted})))))
 
 (defn blacklisted-removed-event [_ {:keys [:args]}]
   (let [{:keys [:_blacklisted]} args]
     (safe-go
-      (db/upsert-user-info! {:user/address _blacklisted})
-      (db/remove-from-blacklist! {:user/address _blacklisted}))))
+      (<! (db/upsert-user-info! {:user/address _blacklisted}))
+      (<! (db/remove-from-blacklist! {:user/address _blacklisted})))))
 
 (defn patrons-added-event [_ {:keys [:args]}]
   (let [{:keys [:addresses :timestamp]} args
         addresses (js->clj addresses)]
     (safe-go
-      (db/ensure-users-exist! addresses)
+      (<! (db/ensure-users-exist! addresses))
       (let [grants {:user/addresses addresses
                     :grant/status (name :grant.status/approved)
                     :grant/decision-date timestamp}]
-           (db/upsert-grants! grants)
-           (notifiers/notify-grants-statuses grants)))))
+        (<! (db/upsert-grants! grants))
+        (<! (notifiers/notify-grants-statuses grants))))))
 
 (defn round-started-event [_ {:keys [:args]}]
   (let [{:keys [:round-start :round-id :round-duration]} args]
     (safe-go
-      (db/add-round! {:round/id round-id
+      (<! (db/add-round! {:round/id round-id
                       :round/start round-start
                       :round/duration round-duration
                       :round/matching-pool 0
-                      :round/distributed 0}))))
+                      :round/distributed 0})))))
 
 (defn current-round []
-  (first (:items (db/get-rounds {:first 1 :order-by :rounds.order-by/id :order-dir :desc}))))
+  (first (:items (<! (db/get-rounds {:first 1 :order-by :rounds.order-by/id :order-dir :desc})))))
 
 (defn round-closed-event [_ {:keys [:args]}]
   (let [{:keys [:round-id :timestamp]} args]
     (safe-go
-      (let [round (db/get-round round-id)]
+      (let [round (<! (db/get-round round-id))]
         (when (shared-utils/active-round? round timestamp)
-          (db/update-round! {:round/id round-id
-                             :round/duration (- timestamp (:round/start round))}))))))
+          (<! (db/update-round! {:round/id round-id
+                             :round/duration (- timestamp (:round/start round))})))))))
 
 (defn donate-event [_ {:keys [:args]}]
   (let [{:keys [:sender :value :patron-address :round-id :timestamp]} args]
@@ -117,39 +119,78 @@
                       :donation/receiver patron-address
                       :donation/date timestamp
                       :donation/amount value
-                      :donation/coin (name :eth)
+                      :donation/coin zero-address
                       :round/id round-id}]
-        (db/upsert-user-info! {:user/address sender})
-        (db/add-donation! donation)
-        (notifiers/notify-donation donation)
+        (<! (db/upsert-user-info! {:user/address sender}))
+        (<! (db/add-donation! donation))
+        (<! (notifiers/notify-donation donation))
         (let [min-donation (:user/min-donation (db/get-user patron-address))]
           (when (or (nil? min-donation) (bn/>= (js/BigNumber. value) (js/BigNumber. min-donation)))
-            (db/add-user-content-permission! {:user/source-user sender
-                                              :user/target-user patron-address})))))))
+            (<! (db/add-user-content-permission! {:user/source-user sender
+                                              :user/target-user patron-address}))))))))
+
+(defn update-matching-pool [{:keys [:value :round-id :token]}]
+  (go
+    (when (bn/> (js/BigNumber. value) (js/BigNumber. 0))
+      (let [matching-pool (<! (db/get-matching-pool round-id token))
+            amount (bn/+ (js/BigNumber. (or (:matching-pool/amount matching-pool) 0)) (js/BigNumber. value))]
+        (<! (db/upsert-matching-pool!
+              {:round/id round-id
+               :matching-pool/coin (string/lower-case token)
+               :matching-pool/amount (bn/fixed amount)}))))))
+
+(defn nullify-err [v]
+  (if (cljs.core/instance? js/Error v) nil v))
+
+(defn fetch-coin-info [coin-address]
+  (safe-go
+    (let [contract (web3-eth/contract-at @web3 abi-reduced-erc20 coin-address)
+          decimals (<! (smart-contracts/contract-call contract "decimals"))
+          symbol (nullify-err (<! (smart-contracts/contract-call contract "symbol")))
+          name (nullify-err (<! (smart-contracts/contract-call contract "name")))]
+      {:coin/address (string/lower-case coin-address)
+       :coin/symbol symbol
+       :coin/name name
+       :coin/decimals decimals})))
+
+(defn ensure-coin-exists! [coin-address]
+  (safe-go
+    (let [coin (<! (db/get-coin coin-address))]
+      (when-not (:coin/address coin)
+        (let [coin-info (<? (fetch-coin-info coin-address))]
+          (<! (db/add-coin! coin-info)))))))
+
+(defn matching-pool-donation-token-event [_ {:keys [:args]}]
+  (let [{:keys [:sender :value :round-id :token]} args]
+    (safe-go
+      (do
+        (<? (ensure-coin-exists! (string/lower-case token)))
+        (<? (update-matching-pool (update args :token string/lower-case)))))))
 
 (defn matching-pool-donation-event [_ {:keys [:args]}]
   (let [{:keys [:sender :value :round-id]} args]
     (safe-go
-      (let [round (db/get-round round-id)
-            matching-pool (bn/+ (js/BigNumber. (:round/matching-pool round)) (js/BigNumber. value))]
-        (db/update-round! {:round/id round-id :round/matching-pool (bn/fixed matching-pool)})))))
+      (<? (update-matching-pool (merge args {:token zero-address}))))))
 
 (defn distribute-event [_ {:keys [:args]}]
-  (let [{:keys [:to :amount :timestamp :round-id]} args]
+  (let [{:keys [:to :amount :timestamp :round-id :token]} args]
     (safe-go
-      (db/add-matching! {:matching/receiver to
-                         :matching/amount amount
-                         :matching/date timestamp
-                         :matching/coin (name :eth)
-                         :round/id round-id}))))
+      (<! (db/ensure-users-exist! [to]))
+      (<! (db/add-matching! {:matching/receiver to
+                             :matching/amount amount
+                             :matching/date timestamp
+                             :matching/coin (string/lower-case token)
+                             :round/id round-id})))))
 
 (defn distribute-round-event [_ {:keys [:args]}]
-  (let [{:keys [:round-id :amount :timestamp]} args]
+  (let [{:keys [:round-id :amount :token]} args]
     (safe-go
-      (let [round (db/get-round round-id)
-            distributed-amount (bn/+ (js/BigNumber. (:round/distributed round)) (js/BigNumber. amount))]
-        (db/update-round! {:round/id round-id
-                           :round/distributed (bn/fixed distributed-amount)})))))
+      (let [matching-pool (<! (db/get-matching-pool round-id token))
+            distributed-amount (bn/+ (js/BigNumber. (or (:matching-pool/distributed matching-pool) 0)) (js/BigNumber. amount))]
+        (<! (db/upsert-matching-pool!
+              {:round/id round-id
+               :matching-pool/coin (string/lower-case token)
+               :matching-pool/distributed (bn/fixed distributed-amount)}))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -166,6 +207,8 @@
       (log/debug (str "Skipping event. error:" err))
       (safe-go
         (try
+          (when-not (= (<? (db/wait-until-ready 10000)) :db/ready)
+            (throw (js/Error. "Database module has not started")))
           (swap! last-block-number #(max %1 block-number))
           (let [block-timestamp (<? (block-timestamp block-number))
                 event (-> event
@@ -179,7 +222,7 @@
                 {:keys [:event/last-block-number :event/last-log-index :event/count]
                  :or {last-block-number -1
                       last-log-index -1
-                      count 0}} (db/get-last-event contract-key event-name)
+                      count 0}} (<? (db/get-last-event contract-key event-name))
                 evt {:event/contract-key contract-key
                      :event/event-name event-name
                      :event/count count
@@ -193,13 +236,13 @@
               (let [result (callback err event)]
                 ;; block if we need
                 (when (satisfies? ReadPort result)
-                  (<! result))
+                  (<? result))
                 (log/info "Handled new event" evt)
-                (db/upsert-event! {:event/last-log-index log-index
+                (<? (db/upsert-event! {:event/last-log-index log-index
                                    :event/last-block-number block-number
                                    :event/count (inc count)
                                    :event/event-name event-name
-                                   :event/contract-key contract-key}))
+                                   :event/contract-key contract-key})))
 
               (log/info "Skipping handling of a persisted event" evt)))
           (catch js/Error error
@@ -226,32 +269,28 @@
   (js/clearInterval @reload-timeout))
 
 (defn start [opts]
-  (safe-go
-    (when-not (:disabled? opts)
-      (when-not (web3-eth/is-listening? @web3)
-        (throw (js/Error. "Can't connect to Ethereum node")))
-      (when-not (= ::db/started @db/streamtide-db)
-        (throw (js/Error. "Database module has not started")))
-      (let [start-time (shared-utils/now)
-            event-callbacks {:streamtide/admin-added-event admin-added-event
-                             :streamtide/admin-removed-event admin-removed-event
-                             :streamtide/blacklisted-added-event blacklisted-added-event
-                             :streamtide/blacklisted-removed-event blacklisted-removed-event
-                             :streamtide/patrons-added-event patrons-added-event
-                             :streamtide/round-started-event round-started-event
-                             :streamtide/round-closed-event round-closed-event
-                             :streamtide/matching-pool-donation-event matching-pool-donation-event
-                             :streamtide/distribute-event distribute-event
-                             :streamtide/distribute-round-event distribute-round-event
-                             :streamtide/donate-event donate-event}
-            callback-ids (doall (for [[event-key callback] event-callbacks]
-                                  (web3-events/register-callback! event-key (dispatcher callback))))]
-        (web3-events/register-after-past-events-dispatched-callback! (fn []
-                                                                       (log/warn "Syncing past events finished" (time/time-units (- (shared-utils/now) start-time)) ::start)
-                                                                       (ping-start {:ping-interval 10000})
-                                                                       (when (> (:reload-interval opts) 0)
-                                                                         (reload-timeout-start (select-keys opts [:reload-interval])))))
-        (assoc opts :callback-ids callback-ids)))))
+  (when-not (:disabled? opts)
+    (let [start-time (shared-utils/now)
+          event-callbacks {:streamtide/admin-added-event admin-added-event
+                           :streamtide/admin-removed-event admin-removed-event
+                           :streamtide/blacklisted-added-event blacklisted-added-event
+                           :streamtide/blacklisted-removed-event blacklisted-removed-event
+                           :streamtide/patrons-added-event patrons-added-event
+                           :streamtide/round-started-event round-started-event
+                           :streamtide/round-closed-event round-closed-event
+                           :streamtide/matching-pool-donation-event matching-pool-donation-event
+                           :streamtide/matching-pool-donation-token-event matching-pool-donation-token-event
+                           :streamtide/distribute-event distribute-event
+                           :streamtide/distribute-round-event distribute-round-event
+                           :streamtide/donate-event donate-event}
+          callback-ids (doall (for [[event-key callback] event-callbacks]
+                                (web3-events/register-callback! event-key (dispatcher callback))))]
+      (web3-events/register-after-past-events-dispatched-callback! (fn []
+                                                                     (log/warn "Syncing past events finished" (time/time-units (- (shared-utils/now) start-time)) ::start)
+                                                                     (ping-start {:ping-interval 10000})
+                                                                     (when (> (:reload-interval opts) 0)
+                                                                       (reload-timeout-start (select-keys opts [:reload-interval])))))
+      (assoc opts :callback-ids callback-ids))))
 
 (defn stop [syncer]
   (reload-timeout-stop)
