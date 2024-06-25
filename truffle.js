@@ -65,8 +65,8 @@ module.exports = {
         "alchemy-base-mainnet": {
             provider: () => new HDWalletProvider(process.env.BASE_PRIV_KEY, "https://base-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY),
             network_id: 8453,
-            gas: 6e7,
-            gasPrice: 3e8,
+            gas: 6e6,
+            gasPrice: 4e6,
             skipDryRun: true
         }
     },
