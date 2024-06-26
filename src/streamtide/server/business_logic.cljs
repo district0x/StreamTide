@@ -32,12 +32,12 @@
 (defn get-roles [current-user]
   "Gets the roles of the user sending the request"
   (require-auth current-user)
-  (go
+  (safe-go
     (map #(keyword :role (:role/role %)) (<? (stdb/get-roles current-user)))))
 
 (defn require-role [current-user role]
   "Checks the user performing the request has the given role. Throws an error otherwise"
-  (go
+  (safe-go
     (when-not (contains? (set (<? (get-roles current-user))) role)
       (throw (js/Error. "Unauthorized")))))
 
@@ -47,13 +47,13 @@
 
 (defn require-not-blacklisted [current-user]
   "Checks the user performing the request is not blacklisted. Throws an error otherwise"
-  (go
+  (safe-go
     (when (<? (stdb/blacklisted? {:user/address current-user}))
       (throw (js/Error. "Unauthorized - address blacklisted")))))
 
 (defn require-grant-approved [current-user]
   "Checks the grant of the user performing the request has been already approved. Throws an error otherwise"
-  (go
+  (safe-go
     (when-not (= (name :grant.status/approved) (:grant/status (<? (stdb/get-grant current-user))))
       (throw (js/Error. "Unauthorized - require approved grant to perform operation")))))
 
@@ -88,13 +88,13 @@
 
 (defn get-users [current-user args]
   "Gets all users"
-  (go
+  (safe-go
     (when (or (:users.order-by/last-seen args)
               (:users.order-by/last-modification args))
       (require-auth current-user)
       (<? (require-admin current-user)))
 
-    (stdb/get-users args)))
+    (<? (stdb/get-users args))))
 
 (defn get-announcements [_current-user args]
   "Gets defined announcements"
@@ -127,7 +127,7 @@
 (defn verify-social! [current-user {:keys [:state] :as args}]
   "Verify a social network, for example checking the authentication code coming from user authentication is valid.
   This returns a channel"
-  (go
+  (safe-go
     (require-auth current-user)
     (<? (require-not-blacklisted current-user))
 
@@ -146,13 +146,13 @@
 (defn generate-twitter-oauth-url [current-user args]
   "Requests a twitter oauth URL"
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-not-blacklisted current-user))
 
     (twitter/generate-twitter-oauth-url args)))
 
 (defn- add-notification-types [current-user notification-type-input]
-  (go
+  (safe-go
     (doall
       (for [{:keys [:user/address :notification/user-id :notification/type]}
             (map (fn [user-id]
@@ -165,7 +165,7 @@
 (defn add-notification-type [current-user notification-type-input]
   "Adds notification details for a given user"
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-not-blacklisted current-user))
 
     (<? (add-notification-types current-user notification-type-input))))
@@ -211,7 +211,7 @@
 (defn update-user-info! [current-user {:keys [:user/socials :user/perks :user/photo :user/bg-photo :user/notification-categories :user/notification-types] :as args} config]
   "Sets the user info"
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-not-blacklisted current-user))
 
     (check-user-urls args)
@@ -247,7 +247,7 @@
 
 (defn get-notification-categories [current-user address]
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-not-blacklisted current-user))
     (require-same-user current-user address)
 
@@ -255,7 +255,7 @@
 
 (defn get-notification-types [current-user address]
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-not-blacklisted current-user))
     (require-same-user current-user address)
 
@@ -278,7 +278,7 @@
 (defn request-grant! [current-user]
   "Request a grant for a user if she does not requested it already"
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-not-blacklisted current-user))
 
     (<? (stdb/upsert-grants! {:user/addresses [current-user] :grant/status (name :grant.status/requested)}))))
@@ -286,7 +286,7 @@
 (defn review-grants! [current-user {:keys [:user/addresses :grant/status] :as args}]
   "Approves or reject a grant request"
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-admin current-user))
 
     ; Grant approval needs to be done through smart contract, rejection from here
@@ -304,7 +304,7 @@
 (defn get-user-timestamps [current-user user-address]
   "Gets the timestamps of a user"
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-admin current-user))
 
     (<? (stdb/get-user-timestamps {:user/address user-address}))))
@@ -315,7 +315,7 @@
 
 (defn unlocked? [current-user user-address]
   "Checks if a user is currently blacklisted"
-  (go
+  (safe-go
     (if current-user
       (<? (stdb/has-permission? {:user/source-user current-user :user/target-user user-address}))
       false)))
@@ -323,7 +323,7 @@
 (defn add-announcement! [current-user {:keys [:announcement/text] :as args}]
   "Adds an announcement to show to all users"
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-admin current-user))
 
     (<? (stdb/add-announcement! (select-keys args [:announcement/text])))
@@ -332,7 +332,7 @@
 (defn remove-announcement! [current-user {:keys [:announcement/id] :as args}]
   "Removes an existing announcement"
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-admin current-user))
 
     (<? (stdb/remove-announcement! (select-keys args [:announcement/id])))))
@@ -340,7 +340,7 @@
 (defn add-content! [current-user {:keys [:content/url :content/type :content/public :content/pinned] :as args}]
   "Adds (a link to) content for the logged in user"
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-grant-approved current-user))
     (<? (require-not-blacklisted current-user))
 
@@ -349,12 +349,12 @@
     (<? (stdb/add-content! (merge {:user/address current-user}
                                   (select-keys args [:content/type :content/url :content/public :content/pinned]))))
 
-    (<? (notifiers/notify-new-content (stdb/get-user current-user)))))
+    (<? (notifiers/notify-new-content (<? (stdb/get-user current-user))))))
 
 (defn remove-content! [current-user {:keys [:content/id] :as args}]
   "Removes content of the logged in user"
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-not-blacklisted current-user))
 
     (<? (stdb/remove-content! (merge {:user/address current-user} (select-keys args [:content/id]))))))
@@ -362,7 +362,7 @@
 (defn set-content-visibility! [current-user {:keys [:content/id :content/public] :as args}]
   "Updates the visibility (public/private) of a given content"
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-not-blacklisted current-user))
 
     (<? (stdb/set-content-visibility! (merge {:user/address current-user} (select-keys args [:content/id :content/public]))))))
@@ -370,7 +370,7 @@
 (defn set-content-pinned! [current-user {:keys [:content/id :content/pinned] :as args}]
   "Set a content as pinned or not"
   (require-auth current-user)
-  (go
+  (safe-go
     (<? (require-not-blacklisted current-user))
 
     (<? (stdb/set-content-pinned! (merge {:user/address current-user} (select-keys args [:content/id :content/pinned]))))))

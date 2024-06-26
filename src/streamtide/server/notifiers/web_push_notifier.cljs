@@ -71,7 +71,7 @@
                   (.catch (fn [e]
                             (when (= 410 (.-statusCode e))
                               (log/info "Web push endpoint-domain is no longer active. Removing it" notification-entry)
-                              (remove-subscription notification-entry))))))
+                              (<? (remove-subscription notification-entry)))))))
           (recur (next subscriptions))))))))
 
 (defmethod notify notifier-type-kw [_ users notification]

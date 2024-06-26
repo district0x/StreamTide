@@ -57,8 +57,7 @@
   (safe-go
     (let [notification {:title "New content from supported patron"
                         :body (gstring/format "The creator you support \"%s\" has added new content" (:user/name creator))}
-
-          addresses (map :user/source-user (stdb/get-user-content-permissions {:user/target-user address}))
+          addresses (map :user/source-user (<? (stdb/get-user-content-permissions {:user/target-user address})))
           enabled-notifications (<? (stdb/get-notification-categories {:user/addresses addresses
                                                                    :notification/category (name :notification-category/patron-publications)
                                                                    :notification/enable true}))]
@@ -67,7 +66,7 @@
 (defn notify-donation [donation]
   "Sends a notification to the receiver of a donation"
   (safe-go
-    (let [sender (stdb/get-user (:donation/sender donation))
+    (let [sender (<? (stdb/get-user (:donation/sender donation)))
           notification {:title "Donation received"
                         :body (gstring/format "You have received a donation from %s of a value of %s"
                                               (if (string/blank? (:user/name sender)) (:donation/sender donation) (:user/name sender))
