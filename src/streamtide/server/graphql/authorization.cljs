@@ -20,7 +20,7 @@
   (safe-go
     (let [siwe-message (new (.-SiweMessage siwe) (clj->js (transform-keys csk/->camelCase payload)))
           message (.toMessage siwe-message)
-          public-client (.createPublicClient viem #js {:transport (new (.-webSocket viem) (-> @config/config :web3 :url))})
+          public-client (.createPublicClient viem #js {:transport (new (.-http viem) (-> @config/config :siwe :url))})
           isValid (<? (.verifyMessage public-client #js {:address (:address payload)
                                                          :message message
                                                          :signature signature}))]
