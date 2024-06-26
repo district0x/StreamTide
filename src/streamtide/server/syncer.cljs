@@ -130,7 +130,7 @@
                                               :user/target-user patron-address}))))))))
 
 (defn update-matching-pool [{:keys [:value :round-id :token]}]
-  (go
+  (safe-go
     (when (bn/> (js/BigNumber. value) (js/BigNumber. 0))
       (let [matching-pool (<! (db/get-matching-pool round-id token))
             amount (bn/+ (js/BigNumber. (or (:matching-pool/amount matching-pool) 0)) (js/BigNumber. value))]
@@ -254,7 +254,7 @@
 (defn- reload-handler [interval]
   (js/setInterval
     (fn []
-      (go
+      (safe-go
         (let [connected? (true? (<! (web3-eth/is-listening? @web3)))]
           (when connected?
             (do
