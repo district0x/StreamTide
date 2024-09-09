@@ -32,6 +32,7 @@
            :main streamtide.server.core/-main
            :output-dir "server/"
            :output-to "server/streamtide_server.js"
+           :prepend "shadow_esm_import = function(x) { return import(x); };"
            :dev {:closure-defines {goog.DEBUG true}
                  :js-options      {:keep-as-import #{"d3"}}}
            :release {:compiler-options {:optimizations :simple}}}

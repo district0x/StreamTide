@@ -1,12 +1,11 @@
 (ns streamtide.server.verifiers.twitter-verifier
   (:require
-    [cljs.nodejs :as nodejs]
+    ["twitter-api-sdk" :as twitter-sdk]
     [district.server.config :refer [config]]
     [district.shared.async-helpers :refer [<? safe-go]]
     [streamtide.server.verifiers.verifiers :as verifiers]
     [streamtide.shared.utils :as shared-utils]))
 
-(defonce twitter-sdk (nodejs/require "twitter-api-sdk"))
 (defonce Client (.-Client twitter-sdk))
 (defonce auth (.-auth twitter-sdk))
 

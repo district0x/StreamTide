@@ -1,6 +1,6 @@
 (ns streamtide.server.notifiers.web-push-notifier
   (:require
-    [cljs.nodejs :as nodejs]
+    ["web-push" :as web-push]
     [clojure.string :as string]
     [district.server.config :refer [config]]
     [district.shared.async-helpers :refer [<? safe-go]]
@@ -11,7 +11,6 @@
 
 (def notifier-type-kw :web-push)
 (def notifier-type (name notifier-type-kw))
-(defonce web-push (nodejs/require "web-push"))
 
 (def valid-web-push-endpoints-domains #{"android.googleapis.com"
                                         "fcm.googleapis.com"

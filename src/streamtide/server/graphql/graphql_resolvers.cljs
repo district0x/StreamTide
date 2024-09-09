@@ -2,24 +2,16 @@
   "Defines the resolvers aimed to handle the GraphQL requests.
   This namespace does not perform any authorization or any complex logic, but it is mainly an entry point which
   delegates the GraphQL calls to the business logic layer."
-  (:require [cljs.core.async :refer [<! take!]]
-            [clojure.string :as string]
+  (:require [clojure.string :as string]
             [district.graphql-utils :as graphql-utils]
             [district.shared.async-helpers :refer [safe-go <?]]
             [district.shared.error-handling :refer [try-catch-throw]]
             [eip55.core :as eip55]
             [streamtide.server.business-logic :as logic]
             [streamtide.server.graphql.authorization :as authorization]
+            [streamtide.server.utils :refer [wrap-as-promise]]
             [taoensso.timbre :as log]))
 
-
-(defn wrap-as-promise [chanl]
-  (js/Promise. (fn [resolve reject]
-                 (take! (safe-go (<? chanl))
-                        (fn [v-or-err#]
-                          (if (cljs.core/instance? js/Error v-or-err#)
-                            (reject v-or-err#)
-                            (resolve v-or-err#)))))))
 
 (def enum graphql-utils/kw->gql-name)
 

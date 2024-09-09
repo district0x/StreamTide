@@ -1,6 +1,6 @@
 (ns streamtide.server.core
   "Main entry point of the server. Reads the config and starts all modules with mount"
-  (:require [cljs.nodejs :as nodejs]
+  (:require ["body-parser" :as body-parser]
             [clojure.string :as str]
             [district.graphql-utils :as graphql-utils]
             [district.server.config :as district.server.config]
@@ -24,10 +24,9 @@
             [streamtide.shared.smart-contracts-dev :as smart-contracts-dev]
             [streamtide.shared.smart-contracts-prod :as smart-contracts-prod]
             [streamtide.shared.smart-contracts-qa :as smart-contracts-qa]
+            [streamtide.server.farcaster-frame]
             [taoensso.timbre :as log :refer [info warn error]])
   (:require-macros [streamtide.shared.utils :refer [get-environment]]))
-
-(def body-parser (nodejs/require "body-parser"))
 
 (defonce resync-count (atom 0))
 
@@ -46,7 +45,8 @@
                     #'district.server.web3-events/web3-events
                     #'district.server.web3/web3
                     #'streamtide.server.db/streamtide-db
-                    #'streamtide.server.syncer/syncer})
+                    #'streamtide.server.syncer/syncer
+                    #'streamtide.server.farcaster-frame/farcaster-frame})
       (mount/with-args
         {:config {:default {:logging {:level "info"
                                       :console? false}
@@ -81,6 +81,11 @@
                                             :url-path "/img/avatar/"}
                             :verifiers {:twitter {:consumer-key "PLACEHOLDER"
                                                   :consumer-secret "PLACEHOLDER"}}
+                            :farcaster-frame {:port 3000
+                                              :path "/"
+                                              :static-public "resources/public"
+                                              :title "StreamTide Farcaster Frame"
+                                              :on-error #(js/process.exit 1)}
                             :web3 {:url "ws://127.0.0.1:8546"
                                    :on-offline (fn []
                                                  (log/warn "Ethereum node went offline, stopping syncing modules" {:resyncs @resync-count} ::web3-watcher)

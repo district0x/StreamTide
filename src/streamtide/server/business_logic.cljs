@@ -3,13 +3,12 @@
   This is an intermediate layer between the GraphQL endpoint (or any other API which may come in the future)
   and the database functionality to enforce authorization and to enrich or validate input data."
   (:require
-            [cljs.core.async :refer [go]]
-            [cljs.nodejs :as nodejs]
             [clojure.string :as str]
             [clojure.string :as string]
             [district.shared.async-helpers :refer [safe-go <?]]
             [district.shared.error-handling :refer [try-catch-throw]]
             [fs]
+            [path]
             [streamtide.server.db :as stdb]
             [streamtide.server.notifiers.notifiers :as notifiers]
             [streamtide.server.verifiers.twitter-verifier :as twitter]
@@ -21,8 +20,6 @@
             [streamtide.server.notifiers.email-notifier]
             [streamtide.server.notifiers.web-push-notifier]
             [streamtide.shared.utils :as shared-utils]))
-
-(def path (nodejs/require "path"))
 
 (defn require-auth [current-user]
   "Check if the request comes from an authenticated user. Throws an error otherwise"
