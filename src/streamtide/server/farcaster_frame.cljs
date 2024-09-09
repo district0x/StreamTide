@@ -14,7 +14,7 @@
     [taoensso.timbre :as log]))
 
 (def TX-API "/tx")
-(def FRAME-API "/frame")
+(def FRAME-API "/")
 (def FINISH-TX-FRAME "/finish")
 (def st-contract-abi (js/JSON.parse "[{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"patronAddresses\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"amounts\",\"type\":\"uint256[]\"}],\"name\":\"donate\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\",\"payable\":true}]"))
 (def DEFAULT-IMAGE "/img/layout/streamtide-farcaster.png")
