@@ -407,13 +407,18 @@
                                            config))
         true))))
 
+(defn gql-date->secs [date]
+  (js/parseInt (/ (.getTime (graphql-utils/gql-date->date date)) 1000)))
+
 (defn update-campaign-mutation [_ {:keys [:campaign/id :user/address :campaign/image :campaign/start-date :campaign/end-date] :as args} {:keys [:current-user :config]}]
   (log/debug "update-campaign-mutation" args)
   (try-catch-throw
     (wrap-as-promise
       (safe-go
         (<? (logic/update-farcaster-campaign! (user-id current-user)
-                                              (select-keys args [:campaign/id :user/address :campaign/image :campaign/start-date :campaign/end-date])
+                                              (cond-> (select-keys args [:campaign/id :user/address :campaign/image :campaign/start-date :campaign/end-date])
+                                                      (:campaign/start-date args) (update :campaign/start-date gql-date->secs)
+                                                      (:campaign/end-date args) (update :campaign/end-date gql-date->secs))
                                               config))
         true))))
 

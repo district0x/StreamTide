@@ -43,8 +43,12 @@
    [[:items [[:grant/user [:user/address
                            :user/name]]]]]])
 
+(defn format-graphql-date [gql-time]
+  (when gql-time
+    (.toLocaleString (ui-utils/gql-time->date gql-time)
+                     js/undefined #js { :year "numeric" :month "short" :day "numeric" } )))
+
 (defn campaign-entry [{:keys [:campaign/id :campaign/start-date :campaign/end-date :campaign/user] :as campaign}]
-  (js/console.log user)
   (let [nav (partial nav-anchor {:route :route.admin/campaign :params {:campaign id}})]
     [nav
      [:div.contentCampaign
@@ -58,10 +62,10 @@
        [:h3 (:user/name user)]]
       [:div.cel.startdate
        [:h4.d-lg-none "Start Date"]
-       [:span (ui-utils/format-graphql-time start-date)]]
+       [:span (format-graphql-date start-date)]]
       [:div.cel.enddate
        [:h4.d-lg-none "End Date"]
-       [:span (ui-utils/format-graphql-time end-date)]]]]))
+       [:span (format-graphql-date end-date)]]]]))
 
 
 (defn campaign-entries [campaigns-search]

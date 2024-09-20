@@ -14,6 +14,7 @@
     [streamtide.ui.admin.campaign.subs :as c-subs]
     [streamtide.ui.components.app-layout :refer [app-layout]]
     [streamtide.ui.components.custom-select :refer [select]]
+    [streamtide.ui.components.datepicker :refer [date-picker]]
     [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.warn-popup :as warn-popup]
@@ -65,11 +66,18 @@
 (defn- photo->gql [photo]
   (-> photo :selected-file :url-data))
 
+(defn date->gql [date]
+  (js/parseInt (/ (.getTime date) 1000)))
+
 (defn- clean-form-data [form-data]
   (try
     (cond-> form-data
             (and (:image form-data) (-> form-data :image :error)) (dissoc :image)
-            (and (:image form-data) (-> form-data :image :error not)) (update :image photo->gql))
+            (and (:image form-data) (-> form-data :image :error not)) (update :image photo->gql)
+            (= (:start-date form-data) "") (assoc :start-date nil)
+            (and (:start-date form-data) (not= (:start-date form-data) "")) (update :start-date date->gql)
+            (= (:end-date form-data) "") (assoc :end-date nil)
+            (and (:end-date form-data) (not= (:end-date form-data) "")) (update :end-date date->gql))
     (catch :default e
       (dispatch [::error-notification/show-error "Invalid data" e])
       (throw e))))
@@ -80,6 +88,8 @@
         campaign-id (-> @active-page-sub :params :campaign)
         form-data (r/atom {:id campaign-id})
         errors (reaction {:local (cond-> {}
+                                         (-> @form-data :image :error)
+                                         (assoc :image (-> @form-data :image :error))
                                          )})]
     (fn []
       (let [active-session (subscribe [::st-subs/active-session])
@@ -112,8 +122,7 @@
            [:div.headerCampaign
             [:h2 (str "Campaign: " campaign-id)]
             [:div
-             [:span "Frame URL:"]
-             [:span url]
+             [:span (str "Frame URL: " url)]
              [:img.clipboard {:height "24px"
                     :src "/img/layout/icon-clipboard.svg"
                     :on-click #(js/navigator.clipboard.writeText url)}]]]
@@ -135,16 +144,26 @@
                          :class "options"
                          :initial-value (:user/address user)
                          :options users}]]]
-              ; TODO allow defining dates
-              ;[:div.start (str "Start Time: " (ui-utils/format-graphql-time start-date))]
-              ;[:div.end (str "End Time: " (ui-utils/format-graphql-time end-date))]
+              [:div.dates
+               [:div.date.start
+                [:span "Start Time:"]
+                [date-picker {:form-data form-data
+                              :class "datepicker"
+                              :id :start-date
+                              :initial-value (when start-date (ui-utils/gql-time->date start-date))}]]
+               [:div.date.end
+                [:span "End Time:"]
+                [date-picker {:form-data form-data
+                              :class "datepicker"
+                              :id :end-date
+                              :initial-value (when end-date (ui-utils/gql-time->date end-date))}]]]
               [:div.buttons
                 [:button.btBasic.btBasic-light.btUpdateCampaign
                  {:on-click #(dispatch [::c-events/update-campaign
                                         {:form-data (clean-form-data @form-data)
                                          :on-success (fn []
                                                        (reset! form-data (with-meta @form-data {:touched? false})))}])
-                  :disabled (or (not (:touched? (meta @form-data))) updating? removing?)}
+                  :disabled (or (not (:touched? (meta @form-data))) (not-empty (-> @errors :local)) updating? removing?)}
                  "Update"]
                 [:button.btBasic.btBasic-light.btDeleteCampaign
                  {:on-click (fn [e]

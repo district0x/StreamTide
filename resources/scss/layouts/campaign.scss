@@ -49,7 +49,7 @@
 		}
 
 		.creator-container {
-			margin-bottom: 24px;
+			margin-bottom: 10px;
 			span {
 				font-weight: bold;
 				display: block;
@@ -57,7 +57,24 @@
 			}
 		}
 
+		.react-datepicker__calendar-icon {
+			width: 1.2em;
+			height: 1.7em;
+		}
+
+		.date {
+			span {
+				margin-right: 8px;
+			}
+		}
+		.datepicker {
+			border: 3px solid $lilac;
+			padding: 6px 10px 5px 30px;
+			width: 160px;
+		}
+
 		.buttons {
+			margin-top: 16px;
 			display: flex;
 			justify-content: space-between;
 
