@@ -83,6 +83,17 @@ type Query {
         after: String
     ): RoundList
 
+    campaign(
+        campaign_id: ID!
+    ): Campaign
+
+    searchCampaigns(
+        orderBy: CampaignsOrderBy
+        orderDir: OrderDir
+        first: Int
+        after: String
+    ): CampaignList
+
     roles: [Role]
 
     announcements(
@@ -159,7 +170,26 @@ type Mutation {
     ): String!
 
     addNotificationType(
-       notification_type: NotificationTypeSettingInput
+        notification_type: NotificationTypeSettingInput
+    ): Boolean
+
+    addCampaign(
+        user_address: ID!
+        campaign_image: String
+        campaign_startDate: Date
+        campaign_endDate: Date
+    ): Boolean
+
+    updateCampaign(
+        campaign_id: ID!
+        user_address: ID
+        campaign_image: String
+        campaign_startDate: Date
+        campaign_endDate: Date
+    ): Boolean
+
+    removeCampaign(
+        campaign_id: ID!
     ): Boolean
 }
 
@@ -408,8 +438,23 @@ type Coin {
     coin_decimals: Int
 }
 
+type Campaign {
+    campaign_id: ID!
+    campaign_user: User!
+    campaign_image: String
+    campaign_startDate: Date
+    campaign_endDate: Date
+}
+
 type RoundList {
     items: [Round]
+    totalCount: Int
+    endCursor: String
+    hasNextPage: Boolean
+}
+
+type CampaignList {
+    items: [Campaign]
     totalCount: Int
     endCursor: String
     hasNextPage: Boolean
@@ -494,6 +539,12 @@ enum LeadersOrderBy {
 enum RoundOrderBy {
     rounds_orderBy_id
     rounds_orderBy_date
+}
+
+enum CampaignsOrderBy {
+    campaigns_orderBy_id
+    campaigns_orderBy_startDate
+    campaigns_orderBy_endDate
 }
 
 enum Role {

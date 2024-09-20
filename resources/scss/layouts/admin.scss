@@ -433,6 +433,67 @@
 			background: $bgActiveRound;
 		}
 	}
+	.headerCampaign {
+		margin-bottom: 30px;
+		.titleCel {
+			display: block;
+			font-weight: $bold;
+			font-size: 20px;
+			line-height: 25px;
+			margin-bottom: 10px;
+		}
+		.fieldDescription {
+			font-weight: bold;
+			margin-bottom: 10px;
+		}
+		.formCampaigns {
+			padding: 19.86px 15px 18.58px;
+			.field {
+				.inputContainer {
+					margin-left: 15px;
+				}
+			}
+			.creator {
+				margin-bottom: 12px;
+			}
+		}
+		.btBasic {
+			width: 100%;
+			height: 56px;
+			&:disabled {
+				pointer-events: none;
+				background-color: $bgDisabled;
+			}
+		}
+	}
+	.contentCampaign {
+		width: 100%;
+		margin-bottom: 14px;
+		border-radius: 6px;
+		position: relative;
+		overflow: hidden;
+		background: $bgCard;
+		padding: 19.86px 15px 18.58px;
+		max-height: 500px;
+		.cel {
+			display: flex;
+			justify-content: space-between;
+		}
+		.data {
+			width: 100%;
+			align-items: center;
+			justify-content: space-between;
+			h3 {
+				font-size: 16px;
+				line-height: 22px;
+				font-weight: $bold;
+			}
+		}
+		hr {
+			border-top: 1px solid $lilac;
+			margin: 0 0 18.84px;
+		}
+	}
 	@include media-breakpoint-down(xs) {
 		font-size: 14px;
 	}
@@ -782,6 +843,74 @@
 				&:hover {
 					background-image: url('../img/layout/icon-x-dark-hover.svg');
 				}
+			}
+		}
+		.headerCampaigns {
+			margin-bottom: 11.15px;
+			display: flex;
+			justify-content: space-between;
+			padding: 0 18.58px;
+			.titleCel {
+				font-size: 18px;
+				font-weight: $bold;
+				letter-spacing: 0;
+				line-height: 25px;
+			}
+			.cel {
+				//width: calc(25% - 8.66px);
+				text-align: left;
+			}
+			.cel-id {
+				//max-width: 240px;
+				width: 10%;
+				text-align: left;
+			}
+			.cel-creator {
+				width: 40%;
+				//max-width: calc(100% - 527px);
+				text-align: left;
+			}
+			.cel-startdate {
+				width: 20%;
+			}
+			.cel-enddate {
+				width: 20%;
+			}
+		}
+		.contentCampaign {
+			margin-bottom: 12px;
+			border-radius: 6px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			.cel {
+				//width: calc(25% - 8.66px);
+			}
+			.id {
+				width: 10%;
+			}
+			.data {
+				display: flex;
+				width: 40%;
+				justify-content: flex-start;
+				.user {
+					order: 1;
+					margin-right: 10px;
+				}
+				h3 {
+					order: 2;
+					width: auto;
+					font-size: 20px;
+					line-height: 26px;
+				}
+			}
+			.startdate {
+				width: 20%;
+				text-align: center;
+			}
+			.enddate {
+				width: 20%;
+				text-align: center;
 			}
 		}
 	}

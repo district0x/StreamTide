@@ -16,8 +16,9 @@
 
 (defn format-graphql-time [gql-time]
   "Pretty printed version of the time coming from the server"
-  (.toLocaleString (tc/to-date (gql-utils/gql-date->date gql-time))
-                   js/undefined #js {:hour12 false :dateStyle "short" :timeStyle "short"} ))
+  (when gql-time
+    (.toLocaleString (tc/to-date (gql-utils/gql-date->date gql-time))
+                     js/undefined #js {:hour12 false :dateStyle "short" :timeStyle "short"} )))
 
 (defn truncate-text
   ([text]

@@ -35,6 +35,8 @@
             [streamtide.ui.admin.grant-approval-feed.page]
             [streamtide.ui.admin.round.page]
             [streamtide.ui.admin.rounds.page]
+            [streamtide.ui.admin.campaign.page]
+            [streamtide.ui.admin.campaigns.page]
             [streamtide.ui.config :as config]
             [streamtide.ui.config :refer [config-map]]
             [streamtide.ui.effects]

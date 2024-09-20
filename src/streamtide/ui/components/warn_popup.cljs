@@ -7,8 +7,8 @@
 (def show-popup? (r/atom false))
 (def on-accept-atom (r/atom nil))
 
-(defn warn-popup [{:keys [:title :content :button-label] :or {title "Warning"
-                                                              button-label "Accept"}}]
+(defn warn-popup [{:keys [:title :content :button-label :cancel-button?] :or {title "Warning"
+                                                                              button-label "Accept"}}]
   "Add this component to a page so the warning can be shown"
   (let [close-popup (fn [e]
                       (when e
@@ -25,7 +25,9 @@
          [:p content]
          [:button.btBasic.btBasic-light.btAccept {:on-click (fn [e]
                                                 (@on-accept-atom)
-                                                (close-popup e))} button-label ]]]])))
+                                                (close-popup e))} button-label ]
+         (when cancel-button?
+           [:button.btBasic.btBasic-light.btCancel {:on-click #(close-popup %)} "Cancel"])]]])))
 
 (re-frame/reg-event-fx
   ::show-popup

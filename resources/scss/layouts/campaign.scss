@@ -1,0 +1,119 @@
+#campaign {
+	.headerCampaign {
+		margin-bottom: 24px;
+		.clipboard {
+			margin-left: 6px;
+			cursor: pointer;
+		}
+	}
+	.contentCampaign {
+		input[type="file"] {
+			display: none;
+		}
+		.image {
+			width: 100%;
+			display: flex;
+			justify-content: center;
+			margin-bottom: 24px;
+
+			.input-group {
+				max-width: 600px;
+				max-height: 600px;
+				aspect-ratio: 1/1;
+				border: 3px solid #a478f9;
+
+				.dropzone {
+					height: 100%;
+					position: relative;
+
+					.file-name {
+						display: none;
+					}
+
+					.file-input-label {
+						width: 30px;
+						height: 30px;
+						top: 18px;
+						right: -12px;
+						position: absolute;
+						transform: translate(-50%, -50%);
+						z-index: 10;
+					}
+				}
+				img {
+					height: 100%;
+					width: 100%;
+					object-fit: cover;
+				}
+			}
+		}
+
+		.creator-container {
+			margin-bottom: 24px;
+			span {
+				font-weight: bold;
+				display: block;
+				margin-bottom: 4px;
+			}
+		}
+
+		.buttons {
+			display: flex;
+			justify-content: space-between;
+
+			.btBasic {
+				width: calc(18% - 10px);
+			}
+			.btUpdateCampaign, .btDeleteCampaign {
+				min-width: 130px;
+			}
+			.btDeleteCampaign {
+				background: chocolate;
+			}
+		}
+	}
+
+	.popUpWarn {
+		.btAccept {
+			background: chocolate;
+		}
+	}
+
+	@include media-breakpoint-up(sm) {
+		.contentCampaign {
+			.image {
+				.input-group {
+					.dropzone {
+						.file-input-label {
+							width: 40px;
+							height: 40px;
+							top: 24px;
+							right: -16px;
+						}
+					}
+				}
+			}
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		.contentCampaign {
+			.buttons {
+				.btUpdateCampaign, .btDeleteCampaign {
+					min-width: 240px;
+				}
+			}
+			.image {
+				.input-group {
+					.dropzone {
+						.file-input-label {
+							width: 60px;
+							height: 60px;
+							top: 0;
+							left: 100%;
+						}
+					}
+				}
+			}
+		}
+	}
+}

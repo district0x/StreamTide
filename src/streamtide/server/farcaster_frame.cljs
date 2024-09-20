@@ -15,8 +15,8 @@
     [taoensso.timbre :as log]))
 
 (def TX-API "/tx")
-(def FRAME-API "")
-(def FINISH-TX-FRAME "/finish")
+(def CREATOR-API "/creator")
+(def CAMPAIGN-API "/campaign")
 (def st-contract-abi (js/JSON.parse "[{\"inputs\":[{\"internalType\":\"address[]\",\"name\":\"patronAddresses\",\"type\":\"address[]\"},{\"internalType\":\"uint256[]\",\"name\":\"amounts\",\"type\":\"uint256[]\"}],\"name\":\"donate\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\",\"payable\":true}]"))
 
 (def BUTTON-PRICES
@@ -41,6 +41,9 @@
 (defn- get-creator [context]
   (or (-> context .-req (.param "creator")) (-> context .-req .query (js->clj :keywordize-keys true) :creator)))
 
+(defn- get-campaign [context]
+  (-> context .-req (.param "campaign")))
+
 (defn- get-photo [context]
   (safe-go
     (if (= "1" (-> context .-req .query (js->clj :keywordize-keys true) :profile-pic))
@@ -59,57 +62,75 @@
                      (str base-url "/")))]
     (str base-url "profile/" creator)))
 
-(defn- build-frames [frog opts]
+(defn- main-frame [{:keys [:frog :opts :creator :image :context]}]
   (let [Button (.-Button frog)
         TextInput (.-TextInput frog)
         TransactionButton (.-Transaction Button)
         ResetButton (.-Reset Button)
-        LinkButton (.-Link Button)]
-    {(str FRAME-API "/:creator")
-     (fn [c]
-       (wrap-as-promise
-         (safe-go
-           (let [creator (get-creator c)
-                 image (<? (get-photo c))
-                 button-value (.-buttonValue c)
-                 browser-location (build-browser-location (:redirect-base-url opts) creator)]
-             (if (= button-value "custom-tip")
-               (.res c (clj->js {:image image
-                                 :imageAspectRatio "1:1"
-                                 :intents (map
-                                            to-jsx
-                                            [[TextInput {:placeholder "Amount in $"}]
-                                             [TransactionButton
-                                              {:target (str TX-API "?creator=" creator)
-                                               :action FINISH-TX-FRAME}
-                                              "Tip"]
-                                             [ResetButton "< Go Back"]])
-                                 :browserLocation browser-location}))
-               (.res c (clj->js {:image image
-                                 :imageAspectRatio "1:1"
-                                 :intents (map
-                                            to-jsx
-                                            (concat (map (fn [amount] [TransactionButton
-                                                                       {:target (str TX-API "?creator=" creator)
-                                                                        :action FINISH-TX-FRAME}
-                                                                       (str "Tip " amount "$")]) (vals BUTTON-PRICES))
-                                                    [[Button {:value "custom-tip"} "Custom tip"]]))
-                                 :browserLocation browser-location})))))))
-     FINISH-TX-FRAME
-     (fn [c]
-       (wrap-as-promise
-         (safe-go
-           (let [creator (get-creator c)
-                 tx-id (.-transactionId c)
-                 image (<? (get-photo c))
-                 browser-location (build-browser-location (:redirect-base-url opts) creator)]
-             (.res c (clj->js {:image image
-                               :imageAspectRatio "1:1"
-                               :intents (map
-                                          to-jsx
-                                          [[LinkButton {:href (str (:etherscan-tx-url opts) "/" tx-id)} "See transaction status"]
-                                           [ResetButton "< Restart"]])
-                               :browserLocation browser-location}))))))}))
+        LinkButton (.-Link Button)
+        c context
+        tx-id (.-transactionId c)
+        button-value (.-buttonValue c)
+        browser-location (build-browser-location (:redirect-base-url opts) creator)]
+    (cond
+      tx-id
+      (.res c (clj->js {:image image
+                        :imageAspectRatio "1:1"
+                        :intents (map
+                                   to-jsx
+                                   [[LinkButton {:href (str (:etherscan-tx-url opts) "/" tx-id)} "See transaction status"]
+                                    [ResetButton "< Restart"]])
+                        :browserLocation browser-location}))
+      (= button-value "custom-tip")
+      (.res c (clj->js {:image image
+                        :imageAspectRatio "1:1"
+                        :intents (map
+                                   to-jsx
+                                   [[TextInput {:placeholder "Amount in $"}]
+                                    [TransactionButton
+                                     {:target (str TX-API "?creator=" creator)}
+                                     "Tip"]
+                                    [ResetButton "< Go Back"]])
+                        :browserLocation browser-location}))
+      :default
+      (.res c (clj->js {:image image
+                        :imageAspectRatio "1:1"
+                        :intents (map
+                                   to-jsx
+                                   (concat (map (fn [amount] [TransactionButton
+                                                              {:target (str TX-API "?creator=" creator)}
+                                                              (str "Tip " amount "$")]) (vals BUTTON-PRICES))
+                                           [[Button {:value "custom-tip"} "Custom tip"]]))
+                        :browserLocation browser-location})))))
+
+(defn- build-frames [frog opts]
+  {(str CREATOR-API "/:creator")
+   (fn [c]
+     (wrap-as-promise
+       (safe-go
+         (let [creator (get-creator c)
+               image (<? (get-photo c))]
+          (main-frame {:frog frog
+                       :opts opts
+                       :creator creator
+                       :image image
+                       :context c})))))
+
+   (str CAMPAIGN-API "/:campaign")
+   (fn [c]
+     (wrap-as-promise
+       (safe-go
+         (let [campaign-id (get-campaign c)
+               campaign (<? (stdb/get-farcaster-campaign campaign-id))]
+           (when campaign
+             (let [creator (:user/address campaign)
+                   image (:campaign/image campaign)]
+               ; TODO disable tip buttons if campaign has not started or has already ended
+               (main-frame {:frog frog
+                            :opts opts
+                            :creator creator
+                            :image image
+                            :context c})))))))})
 
 (defn- dollar-to-wei [dollar-amount {:keys [:etherscan-api-key]}]
   (safe-go

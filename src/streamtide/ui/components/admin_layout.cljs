@@ -17,7 +17,9 @@
                            {:text "Black Listing"
                             :route :route.admin/black-listing}
                            {:text "Announcements"
-                            :route :route.admin/announcements}])
+                            :route :route.admin/announcements}
+                           {:text "Campaigns"
+                            :route :route.admin/campaigns}])
 
 (defn admin-nav-menu []
   "Menu for admin pages"
