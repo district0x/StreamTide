@@ -9,9 +9,11 @@
     #js {:className class
          :classNamePrefix "select"
          :isSearchable false
-         :components #js {:DropdownIndicator #()
+         :components #js {:DropdownIndicator (fn [^js c]
+                                               (let [is-open? (-> c .-selectProps .-menuIsOpen)
+                                                     classname (str "dropdown-indicator " (if is-open? "dropdown-opened" "dropdown-closed"))]
+                                                 (r/create-element "div" #js {:className classname})))
                           :IndicatorSeparator #()}
-         :dropdownindicator nil
          :onChange on-change
          :value (clj->js value)
          :options (clj->js options)}))
