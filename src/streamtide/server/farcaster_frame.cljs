@@ -5,6 +5,7 @@
     ["axios" :as axios]
     ["hono/jsx" :refer [jsx]]
     [bignumber.core :as bn]
+    [cljs-time.coerce :as tc]
     [district.server.config :refer [config]]
     [district.shared.async-helpers :refer [safe-go <?]]
     [mount.core :as mount :refer [defstate]]
@@ -103,6 +104,30 @@
                                            [[Button {:value "custom-tip"} "Custom tip"]]))
                         :browserLocation browser-location})))))
 
+(defn format-date [time]
+  (-> time (* 1000) tc/from-long tc/to-date (.toLocaleString js/undefined #js { :year "numeric" :month "short" :day "numeric" })))
+
+(defn- out-of-period-frame [{:keys [:frog :opts :creator :image :context :campaign]}]
+  (let [c context
+        browser-location (build-browser-location (:redirect-base-url opts) creator)
+        current-date (/ (.getTime (js/Date.)) 1000)
+        start-after (when (and (:campaign/start-date campaign) (< current-date (:campaign/start-date campaign))) (:campaign/start-date campaign))]
+    (.res c (clj->js {:image (to-jsx [:div {:style {:display "flex" :width "100%" :height "100%"}}
+                                      [:img {:src image}]
+                                      [:div {:style
+                                             {:content ""
+                                              :display "flex"
+                                              :position "absolute"
+                                              :width "100%"
+                                              :height "100%"
+                                              :background-color "rgba(59,29,86,.8)"}}]
+                                      [:h1 {:style {:position "absolute" :bottom "0" :color "white" :justify-content "center"
+                                                   :font-size "42px" :width "100%"}}
+                                       (if start-after (str "Campaign starts on " (format-date start-after)) "Campaign has already finished")]])
+                      :imageOptions { :width 800 :height 800 }
+                      :imageAspectRatio "1:1"
+                      :browserLocation browser-location}))))
+
 (defn- build-frames [frog opts]
   {(str CREATOR-API "/:creator")
    (fn [c]
@@ -124,13 +149,18 @@
                campaign (<? (stdb/get-farcaster-campaign campaign-id))]
            (when campaign
              (let [creator (:user/address campaign)
-                   image (:campaign/image campaign)]
-               ; TODO disable tip buttons if campaign has not started or has already ended
-               (main-frame {:frog frog
-                            :opts opts
-                            :creator creator
-                            :image image
-                            :context c})))))))})
+                   image (:campaign/image campaign)
+                   params {:frog frog
+                           :opts opts
+                           :creator creator
+                           :image image
+                           :context c}
+                   current-date (/ (.getTime (js/Date.)) 1000)
+                   out-of-period? (or (and (:campaign/start-date campaign) (< current-date (:campaign/start-date campaign)))
+                                      (and (:campaign/end-date campaign) (> current-date (:campaign/end-date campaign))))]
+               (if out-of-period?
+                 (out-of-period-frame (merge params {:campaign campaign}))
+                 (main-frame params))))))))})
 
 (defn- dollar-to-wei [dollar-amount {:keys [:etherscan-api-key]}]
   (safe-go
