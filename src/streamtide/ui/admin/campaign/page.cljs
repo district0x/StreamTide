@@ -135,28 +135,29 @@
                  :initial-value image
                  :id :image
                  :errors errors}]]
-              [:div.creator-container
-               [:label
-                [:span "Creator"]]
-               [:div.custom-select.selectForm.creator
-                [select {:form-data form-data
-                         :id :address
-                         :class "options"
-                         :initial-value (:user/address user)
-                         :options users}]]]
-              [:div.dates
-               [:div.date.start
-                [:span "Start Time:"]
-                [date-picker {:form-data form-data
-                              :class "datepicker"
-                              :id :start-date
-                              :initial-value (when start-date (ui-utils/gql-time->date start-date))}]]
-               [:div.date.end
-                [:span "End Time:"]
-                [date-picker {:form-data form-data
-                              :class "datepicker"
-                              :id :end-date
-                              :initial-value (when end-date (ui-utils/gql-time->date end-date))}]]]
+              [:div.form-container
+               [:div.creator-container
+                [:label
+                 [:span "Creator:"]]
+                [:div.custom-select.selectForm.creator
+                 [select {:form-data form-data
+                          :id :address
+                          :class "options"
+                          :initial-value (:user/address user)
+                          :options users}]]]
+               [:div.dates
+                [:div.date.start
+                 [:span "Start Date:"]
+                 [date-picker {:form-data form-data
+                               :class "datepicker"
+                               :id :start-date
+                               :initial-value (when start-date (ui-utils/gql-time->date start-date))}]]
+                [:div.date.end
+                 [:span "End Date:"]
+                 [date-picker {:form-data form-data
+                               :class "datepicker"
+                               :id :end-date
+                               :initial-value (when end-date (ui-utils/gql-time->date end-date))}]]]]
               [:div.buttons
                 [:button.btBasic.btBasic-light.btUpdateCampaign
                  {:on-click #(dispatch [::c-events/update-campaign

@@ -48,6 +48,29 @@
 			}
 		}
 
+		.form-container {
+			display: grid;
+			grid-template-columns: auto 1fr;
+			gap: 10px;
+			align-items: center;
+		}
+
+		.creator-container, .creator-container .label, .dates, .dates .date {
+			display: contents
+		}
+
+		.creator-container label span,
+		.dates .date span {
+			grid-column: 1;
+			justify-self: start;
+		}
+
+		.creator-container .custom-select,
+		.dates .react-datepicker-wrapper {
+			grid-column: 2;
+			justify-self: start;
+		}
+
 		.creator-container {
 			margin-bottom: 10px;
 			span {
@@ -55,22 +78,36 @@
 				display: block;
 				margin-bottom: 4px;
 			}
+			.custom-select {
+				width: 100%;
+				max-width: 500px;
+				.options {
+					font-size: 20px;
+				}
+			}
 		}
 
 		.react-datepicker__calendar-icon {
-			width: 1.2em;
-			height: 1.7em;
+			width: 1.3em;
+			height: 2em;
 		}
 
-		.date {
-			span {
-				margin-right: 8px;
+		.dates {
+			.react-datepicker__tab-loop {
+				position: absolute;
 			}
-		}
-		.datepicker {
-			border: 3px solid $lilac;
-			padding: 6px 10px 5px 30px;
-			width: 160px;
+
+			.react-datepicker__close-icon::after {
+				background-color: $lilac;
+			}
+
+			.datepicker {
+				border: 3px solid $lilac;
+				border-radius: 7px;
+				padding: 6px 10px 5px 36px;
+				width: 170px;
+				height: 46px;
+			}
 		}
 
 		.buttons {
@@ -81,13 +118,16 @@
 			.btBasic {
 				width: calc(18% - 10px);
 			}
+
 			.btUpdateCampaign, .btDeleteCampaign {
 				min-width: 130px;
 			}
+
 			.btDeleteCampaign {
 				background: chocolate;
 			}
 		}
+
 	}
 
 	.popUpWarn {
