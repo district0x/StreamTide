@@ -43,6 +43,10 @@ module.exports = {
                     },
                     flags: 'g'
                 }
+            },
+            {
+                test: /\.(sass|css)$/,
+                use: ['style-loader', 'css-loader']
             }
         ]
     },

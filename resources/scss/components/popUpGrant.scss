@@ -101,7 +101,20 @@
 			font-size: 16px;
 		}
 	}
-	.popUpContent, .popUpGrant, .popUpSafeLink, .popUpWarn, .popUpRestoreSettings {
+	.popUpWarn {
+		.btCancel {
+			margin-top: 5px;
+			color: black;
+			background-color: lightgrey;
+			&:hover {
+				background-color: $yellow;
+			}
+		}
+		.btBasic {
+			font-size: 16px;
+		}
+	}
+	.popUpContent, .popUpGrant, .popUpSafeLink, .popUpWarn, .popUpRestoreSettings, .popUpDeleteCampaign {
 		width: calc(100% - 42px);
 		max-width: 490px;
 		margin: 0 auto;
@@ -138,10 +151,6 @@
 			width: 100%;
 			height: 53px;
 			line-height: 53px;
-			&:disabled {
-				pointer-events: none;
-				background-color: $bgDisabled;
-			}
 		}
 		&.add {
 			max-width: 860px;

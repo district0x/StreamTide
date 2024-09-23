@@ -3,13 +3,13 @@
   This is an intermediate layer between the GraphQL endpoint (or any other API which may come in the future)
   and the database functionality to enforce authorization and to enrich or validate input data."
   (:require
-            [cljs.core.async :refer [go]]
-            [cljs.nodejs :as nodejs]
             [clojure.string :as str]
             [clojure.string :as string]
             [district.shared.async-helpers :refer [safe-go <?]]
             [district.shared.error-handling :refer [try-catch-throw]]
             [fs]
+            [path]
+            [streamtide.server.constants :refer [farcaster-default-image]]
             [streamtide.server.db :as stdb]
             [streamtide.server.notifiers.notifiers :as notifiers]
             [streamtide.server.verifiers.twitter-verifier :as twitter]
@@ -21,8 +21,6 @@
             [streamtide.server.notifiers.email-notifier]
             [streamtide.server.notifiers.web-push-notifier]
             [streamtide.shared.utils :as shared-utils]))
-
-(def path (nodejs/require "path"))
 
 (defn require-auth [current-user]
   "Check if the request comes from an authenticated user. Throws an error otherwise"
@@ -82,6 +80,14 @@
   "Gets the info of a given round"
   (stdb/get-round round-id))
 
+(defn get-farcaster-campaign [current-user campaign-id]
+  "Gets the info of a given campaign"
+  (require-auth current-user)
+  (safe-go
+    (<? (require-admin current-user))
+
+    (<? (stdb/get-farcaster-campaign campaign-id))))
+
 (defn get-grants [_current-user args]
   "Gets all the grants"
   (stdb/get-grants args))
@@ -119,6 +125,14 @@
 (defn get-rounds [_current-user args]
   "Gets all the rounds info"
   (stdb/get-rounds args))
+
+(defn get-farcaster-campaigns [current-user args]
+  "Gets all the campaigns info"
+  (require-auth current-user)
+  (safe-go
+    (<? (require-admin current-user))
+
+    (<? (stdb/get-farcaster-campaigns args))))
 
 (defn get-coin [_current-user address]
   "Gets coin info from its ETH address"
@@ -374,3 +388,32 @@
     (<? (require-not-blacklisted current-user))
 
     (<? (stdb/set-content-pinned! (merge {:user/address current-user} (select-keys args [:content/id :content/pinned]))))))
+
+(defn add-farcaster-campaign! [current-user {:keys [:user/address :campaign/image :campaign/start-date :campaign/end-date] :as args} config]
+  "Adds a new farcaster campaign"
+  (require-auth current-user)
+  (safe-go
+    (<? (require-admin current-user))
+
+    (let [args (merge {:campaign/image farcaster-default-image} args)]
+      (<? (stdb/add-farcaster-campaign! (select-keys args [:user/address :campaign/image :campaign/start-date :campaign/end-date]))))))
+
+(defn update-farcaster-campaign! [current-user {:keys [:campaign/id :user/address :campaign/image :campaign/start-date :campaign/end-date] :as args} config]
+  "Adds a new farcaster campaign"
+  (require-auth current-user)
+  (safe-go
+    (<? (require-admin current-user))
+
+    (let [args (if image
+                 (update args :campaign/image upload-photo (name :campaign) (keyword id) config)
+                 args)]
+
+      (<? (stdb/update-farcaster-campaign! (select-keys args [:campaign/id :user/address :campaign/image :campaign/start-date :campaign/end-date]))))))
+
+(defn remove-farcaster-campaign! [current-user {:keys [:campaign/id] :as args}]
+  "Removes an existing campaign"
+  (require-auth current-user)
+  (safe-go
+    (<? (require-admin current-user))
+
+    (<? (stdb/remove-farcaster-campaign! (select-keys args [:campaign/id])))))

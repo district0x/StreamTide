@@ -1,0 +1,176 @@
+#campaign {
+	.headerCampaign {
+		margin-bottom: 24px;
+		.clipboard {
+			margin-left: 6px;
+			cursor: pointer;
+		}
+	}
+	.contentCampaign {
+		input[type="file"] {
+			display: none;
+		}
+		.image {
+			width: 100%;
+			display: flex;
+			justify-content: center;
+			margin-bottom: 24px;
+
+			.input-group {
+				max-width: 600px;
+				max-height: 600px;
+				aspect-ratio: 1/1;
+				border: 3px solid #a478f9;
+
+				.dropzone {
+					height: 100%;
+					position: relative;
+
+					.file-name {
+						display: none;
+					}
+
+					.file-input-label {
+						width: 30px;
+						height: 30px;
+						top: 18px;
+						right: -12px;
+						position: absolute;
+						transform: translate(-50%, -50%);
+						z-index: 10;
+					}
+				}
+				img {
+					height: 100%;
+					width: 100%;
+					object-fit: cover;
+				}
+			}
+		}
+
+		.form-container {
+			display: grid;
+			grid-template-columns: auto 1fr;
+			gap: 10px;
+			align-items: center;
+		}
+
+		.creator-container, .creator-container .label, .dates, .dates .date {
+			display: contents
+		}
+
+		.creator-container label span,
+		.dates .date span {
+			grid-column: 1;
+			justify-self: start;
+		}
+
+		.creator-container .custom-select,
+		.dates .react-datepicker-wrapper {
+			grid-column: 2;
+			justify-self: start;
+		}
+
+		.creator-container {
+			margin-bottom: 10px;
+			span {
+				font-weight: bold;
+				display: block;
+				margin-bottom: 4px;
+			}
+			.custom-select {
+				width: 100%;
+				max-width: 500px;
+				.options {
+					font-size: 20px;
+				}
+			}
+		}
+
+		.react-datepicker__calendar-icon {
+			width: 1.3em;
+			height: 2em;
+		}
+
+		.dates {
+			.react-datepicker__tab-loop {
+				position: absolute;
+			}
+
+			.react-datepicker__close-icon::after {
+				background-color: $lilac;
+			}
+
+			.datepicker {
+				border: 3px solid $lilac;
+				border-radius: 7px;
+				padding: 6px 10px 5px 36px;
+				width: 170px;
+				height: 46px;
+			}
+		}
+
+		.buttons {
+			margin-top: 16px;
+			display: flex;
+			justify-content: space-between;
+
+			.btBasic {
+				width: calc(18% - 10px);
+			}
+
+			.btUpdateCampaign, .btDeleteCampaign {
+				min-width: 130px;
+			}
+
+			.btDeleteCampaign {
+				background: chocolate;
+			}
+		}
+
+	}
+
+	.popUpWarn {
+		.btAccept {
+			background: chocolate;
+		}
+	}
+
+	@include media-breakpoint-up(sm) {
+		.contentCampaign {
+			.image {
+				.input-group {
+					.dropzone {
+						.file-input-label {
+							width: 40px;
+							height: 40px;
+							top: 24px;
+							right: -16px;
+						}
+					}
+				}
+			}
+		}
+	}
+	@include media-breakpoint-up(lg) {
+		.contentCampaign {
+			.buttons {
+				.btUpdateCampaign, .btDeleteCampaign {
+					min-width: 240px;
+				}
+			}
+			.image {
+				.input-group {
+					.dropzone {
+						.file-input-label {
+							width: 60px;
+							height: 60px;
+							top: 0;
+							left: 100%;
+						}
+					}
+				}
+			}
+		}
+	}
+}

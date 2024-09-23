@@ -2,24 +2,16 @@
   "Defines the resolvers aimed to handle the GraphQL requests.
   This namespace does not perform any authorization or any complex logic, but it is mainly an entry point which
   delegates the GraphQL calls to the business logic layer."
-  (:require [cljs.core.async :refer [<! take!]]
-            [clojure.string :as string]
+  (:require [clojure.string :as string]
             [district.graphql-utils :as graphql-utils]
             [district.shared.async-helpers :refer [safe-go <?]]
             [district.shared.error-handling :refer [try-catch-throw]]
             [eip55.core :as eip55]
             [streamtide.server.business-logic :as logic]
             [streamtide.server.graphql.authorization :as authorization]
+            [streamtide.server.utils :refer [wrap-as-promise]]
             [taoensso.timbre :as log]))
 
-
-(defn wrap-as-promise [chanl]
-  (js/Promise. (fn [resolve reject]
-                 (take! (safe-go (<? chanl))
-                        (fn [v-or-err#]
-                          (if (cljs.core/instance? js/Error v-or-err#)
-                            (reject v-or-err#)
-                            (resolve v-or-err#)))))))
 
 (def enum graphql-utils/kw->gql-name)
 
@@ -167,6 +159,13 @@
   (wrap-as-promise
     (logic/get-coin (user-id current-user) coin)))
 
+(defn campaign->user-resolver [{:keys [:user/address] :as user-campaign} _ {:keys [:current-user]}]
+  (log/debug "campaign->user-resolver args" user-campaign)
+  (if (contains? user-campaign :user/name)
+    user-campaign
+    (wrap-as-promise
+      (logic/get-user (user-id current-user) address))))
+
 (defn leader->receiver-resolver [{:keys [:leader/receiver] :as user-donation}]
   (log/debug "leader->receiver-resolver args" user-donation)
   user-donation)
@@ -182,6 +181,12 @@
   (try-catch-throw
     (wrap-as-promise
       (logic/get-round (user-id current-user) id))))
+
+(defn campaign-query-resolver [_ {:keys [:campaign/id] :as args} {:keys [:current-user]}]
+  (log/debug "campaign args" args)
+  (try-catch-throw
+    (wrap-as-promise
+      (logic/get-farcaster-campaign (user-id current-user) id))))
 
 (defn search-grants-query-resolver [_ {:keys [:statuses :search-term :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
   (log/debug "search grants args" args)
@@ -233,6 +238,14 @@
       (logic/get-rounds (user-id current-user) (cond-> args
                                                        (:order-by args)
                                                        (update :order-by graphql-utils/gql-name->kw))))))
+
+(defn search-campaigns-query-resolver [_ {:keys [:order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
+  (log/debug "campaigns args" args)
+  (try-catch-throw
+    (wrap-as-promise
+      (logic/get-farcaster-campaigns (user-id current-user) (cond-> args
+                                                                    (:order-by args)
+                                                                    (update :order-by graphql-utils/gql-name->kw))))))
 
 (defn search-users-query-resolver [_ {:keys [:user/name :user/address :user/blacklisted :order-by :order-dir :first :after] :as args} {:keys [:current-user]}]
   (log/debug "search users args" args)
@@ -384,6 +397,39 @@
         (<? (logic/set-content-pinned! (user-id current-user) (select-keys args [:content/id :content/pinned])))
         true))))
 
+(defn add-campaign-mutation [_ {:keys [:user/address :campaign/image :campaign/start-date :campaign/end-date] :as args} {:keys [:current-user :config]}]
+  (log/debug "add-campaign-mutation" args)
+  (try-catch-throw
+    (wrap-as-promise
+      (safe-go
+        (<? (logic/add-farcaster-campaign! (user-id current-user)
+                                           (select-keys args [:user/address :campaign/image :campaign/start-date :campaign/end-date])
+                                           config))
+        true))))
+
+(defn gql-date->secs [date]
+  (js/parseInt (/ (.getTime (graphql-utils/gql-date->date date)) 1000)))
+
+(defn update-campaign-mutation [_ {:keys [:campaign/id :user/address :campaign/image :campaign/start-date :campaign/end-date] :as args} {:keys [:current-user :config]}]
+  (log/debug "update-campaign-mutation" args)
+  (try-catch-throw
+    (wrap-as-promise
+      (safe-go
+        (<? (logic/update-farcaster-campaign! (user-id current-user)
+                                              (cond-> (select-keys args [:campaign/id :user/address :campaign/image :campaign/start-date :campaign/end-date])
+                                                      (:campaign/start-date args) (update :campaign/start-date gql-date->secs)
+                                                      (:campaign/end-date args) (update :campaign/end-date gql-date->secs))
+                                              config))
+        true))))
+
+(defn remove-campaign-mutation [_ {:keys [:campaign/id] :as args} {:keys [:current-user]}]
+  (log/debug "remove-campaign-mutation" args)
+  (try-catch-throw
+    (wrap-as-promise
+      (safe-go
+        (<? (logic/remove-farcaster-campaign! (user-id current-user) (select-keys args [:campaign/id])))
+        true))))
+
 (defn verify-social-mutation [_ {:keys [:code :state] :as args} {:keys [:current-user]}]
   (log/debug "verify-social args" args)
   (try-catch-throw
@@ -418,12 +464,14 @@
   {:Query {:user user-query-resolver
            :grant grant-query-resolver
            :round round-query-resolver
+           :campaign campaign-query-resolver
            :search-grants search-grants-query-resolver
            :search-contents search-contents-query-resolver
            :search-donations search-donations-query-resolver
            :search-matchings search-matchings-query-resolver
            :search-leaders search-leaders-query-resolver
            :search-rounds search-rounds-query-resolver
+           :search-campaigns search-campaigns-query-resolver
            :roles roles-query-resolver
            :search-users search-users-query-resolver
            :announcements announcements-query-resolver}
@@ -436,6 +484,9 @@
               :remove-content remove-content-mutation
               :set-content-visibility set-content-visibility-mutation
               :set-content-pinned set-content-pinned-mutation
+              :add-campaign add-campaign-mutation
+              :update-campaign update-campaign-mutation
+              :remove-campaign remove-campaign-mutation
               :sign-in sign-in-mutation
               :generate-login-payload generate-login-payload-mutation
               :verify-social verify-social-mutation
@@ -463,5 +514,5 @@
    :Leader {:leader/receiver leader->receiver-resolver}
    :MatchingPool {:matching-pool/coin matching-pool->coin-resolver}
    :CoinAmount {:coin coin-amount->coin-resolver}
-
+   :Campaign {:campaign/user campaign->user-resolver}
    })

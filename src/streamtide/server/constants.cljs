@@ -13,3 +13,5 @@
    :streamtide/distribute-event [:streamtide-fwd :Distribute]
    :streamtide/distribute-round-event [:streamtide-fwd :DistributeRound]
    :streamtide/donate-event [:streamtide-fwd :Donate]})
+
+(def farcaster-default-image "/img/layout/streamtide-farcaster.png")

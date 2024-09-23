@@ -1,12 +1,10 @@
 (ns streamtide.server.verifiers.discord-verifier
   (:require
-    [cljs.nodejs :as nodejs]
+    ["axios" :as axios]
     [cljs.core.async :refer [<!]]
     [district.server.config :refer [config]]
     [district.shared.async-helpers :refer [<? safe-go]]
     [streamtide.server.verifiers.verifiers :as verifiers]))
-
-(defonce axios (nodejs/require "axios"))
 
 (defn- get-token-request [code]
   (safe-go

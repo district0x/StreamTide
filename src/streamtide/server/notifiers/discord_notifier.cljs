@@ -1,6 +1,6 @@
 (ns streamtide.server.notifiers.discord-notifier
   (:require
-    [cljs.nodejs :as nodejs]
+    ["axios" :as axios]
     [cljs.core.async :refer [<!]]
     [clojure.string :as string]
     [district.server.config :refer [config]]
@@ -12,8 +12,6 @@
 
 (def notifier-type-kw :discord)
 (def notifier-type (name notifier-type-kw))
-
-(defonce axios (nodejs/require "axios"))
 
 (defn- build-content [message]
   (str "** " (:title message) " **\n" (:body message)))

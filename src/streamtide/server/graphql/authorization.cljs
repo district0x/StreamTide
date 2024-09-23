@@ -1,17 +1,16 @@
 (ns streamtide.server.graphql.authorization
   "Graphql utils for handling authentication. Takes signed data and generates a JWT"
-  (:require [camel-snake-kebab.core :as csk]
+  (:require ["jsonwebtoken" :as JsonWebToken]
+            ["siwe" :as siwe]
+            ["viem" :as viem]
+            [camel-snake-kebab.core :as csk]
             [camel-snake-kebab.extras :refer [transform-keys]]
-            [cljs.nodejs :as nodejs]
             [cljs-web3-next.core :as web3-next]
             [district.server.config :as config]
             [district.shared.async-helpers :refer [safe-go <?]]
             [streamtide.shared.utils :as shared-utils]
             [taoensso.timbre :as log]))
 
-(defonce JsonWebToken (nodejs/require "jsonwebtoken"))
-(defonce viem (nodejs/require "viem"))
-(defonce siwe (nodejs/require "siwe"))
 (def otp-length 20)
 (def otp-time-step 120)   ; OTP validity: 2 minutes
 

@@ -14,10 +14,14 @@
   (let [function (if show "add" "remove")]
     (js-invoke (-> js/document .-body .-classList) function "hidden" )))
 
+(defn gql-time->date [gql-time]
+  (tc/to-date (gql-utils/gql-date->date gql-time)))
+
 (defn format-graphql-time [gql-time]
   "Pretty printed version of the time coming from the server"
-  (.toLocaleString (tc/to-date (gql-utils/gql-date->date gql-time))
-                   js/undefined #js {:hour12 false :dateStyle "short" :timeStyle "short"} ))
+  (when gql-time
+    (.toLocaleString (gql-time->date gql-time)
+                     js/undefined #js {:hour12 false :dateStyle "short" :timeStyle "short"} )))
 
 (defn truncate-text
   ([text]

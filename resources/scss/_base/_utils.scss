@@ -16,3 +16,8 @@
 		background-color: #666;
 	}
 }
+
+.btBasic:disabled {
+	pointer-events: none;
+	background-color: $bgDisabled;
+}

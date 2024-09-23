@@ -12,11 +12,7 @@
             [honeysql.helpers :as sqlh]
             [mount.core :as mount :refer [defstate]]
             [streamtide.shared.utils :as shared-utils]
-            [taoensso.timbre :as log]
-
-
-            [honeysql.format :as sql-format :refer [to-sql paren-wrap]]
-            ))
+            [taoensso.timbre :as log]))
 
 (defonce db-state (atom nil))
 (defonce db-client (atom nil))
@@ -216,6 +212,13 @@
    [:coin/symbol :varchar default-nil]
    [:coin/decimals :unsigned :integer default-nil]])
 
+(def farcaster-campaign-columns
+  [[:campaign/id :serial primary-key :autoincrement]
+   [:user/address address not-nil]
+   [:campaign/start-date :timestamp default-nil]
+   [:campaign/end-date :timestamp default-nil]
+   [:campaign/image :varchar not-nil]])
+
 (def events-columns
   [[:event/contract-key :varchar not-nil]
    [:event/event-name :varchar not-nil]
@@ -242,6 +245,7 @@
 (def round-column-names (filter keyword? (map first round-columns)))
 (def matching-pool-column-names (filter keyword? (map first matching-pool-columns)))
 (def coin-column-names (filter keyword? (map first coin-columns)))
+(def farcaster-campaign-column-names (filter keyword? (map first farcaster-campaign-columns)))
 (def events-column-names (filter keyword? (map first events-columns)))
 
 
@@ -262,7 +266,7 @@
           result (<! (db-all paged-query))
           last-idx (cond-> (count result)
                            page-start-idx (+ page-start-idx))]
-      (log/debug "Paged query result" result)
+      (log/debug "Paged query result" {:result result})
       {:items result
        :total-count total-count
        :end-cursor (str last-idx)
@@ -558,6 +562,25 @@
            :from [:coin]
            :where [:= (string/lower-case address) :coin.coin/address]}))
 
+(defn get-farcaster-campaign [campaign-id]
+  (db-get {:select [:*]
+           :from [[:farcaster-campaign :fc]]
+           :where [:= campaign-id :fc.campaign/id]}))
+
+(defn get-farcaster-campaigns [{:keys [:order-by :order-dir :first :after] :as args}]
+  (let [page-start-idx (when after (js/parseInt after))
+        page-size first
+        query (cond->
+                {:select [:fc.* :st-user.*]
+                 :from [[:farcaster-campaign :fc]]
+                 :join [:st-user [:= :fc.user/address :st-user.user/address]]}
+                order-by (sqlh/merge-order-by [[(get {:campaigns.order-by/id :fc.campaign/id
+                                                      :campaigns.order-by/start-date :fc.campaign/start-date
+                                                      :campaigns.order-by/end-date :fc.campaign/end-date}
+                                                     order-by)
+                                                (or (keyword order-dir) :asc)]]))]
+    (paged-query query page-size page-start-idx)))
+
 (defn get-user-timestamps [{:keys [:user/address]}]
   (db-get {:select [:*]
            :from [:user-timestamp]
@@ -734,6 +757,22 @@
               :set round-info
               :where [:= :round/id id]})))
 
+(defn add-farcaster-campaign! [args]
+  (log/debug "add-farcaster-campaign" args)
+  (db-run! {:insert-into :farcaster-campaign
+            :values [(select-keys args farcaster-campaign-column-names)]}))
+
+(defn update-farcaster-campaign! [{:keys [:campaign/id] :as args}]
+  (log/debug "update-farcaster-campaign" args)
+  (let [campaign-info (select-keys args (remove :campaign/id farcaster-campaign-column-names))]
+    (db-run! {:update :farcaster-campaign
+              :set campaign-info
+              :where [:= :campaign/id id]})))
+
+(defn remove-farcaster-campaign! [{:keys [:campaign/id]}]
+  (db-run! {:delete-from :farcaster-campaign
+            :where [:= :campaign/id id]}))
+
 (defn upsert-matching-pool! [{:keys [:round/id :matching-pool/coin] :as args}]
   (log/debug "update-matching-pool" args)
   (let [matching-pool (select-keys args matching-pool-column-names)]
@@ -892,6 +931,9 @@
 
     (<? (db-run! (-> (psqlh/create-table :matching-pool :if-not-exists)
                  (psqlh/with-columns (mod-types matching-pool-columns)))))
+
+    (<? (db-run! (-> (psqlh/create-table :farcaster-campaign :if-not-exists)
+                 (psqlh/with-columns (mod-types farcaster-campaign-columns)))))
 
     (<? (db-run! (-> (psqlh/create-table :events :if-not-exists)
                  (psqlh/with-columns (mod-types events-columns)))))
