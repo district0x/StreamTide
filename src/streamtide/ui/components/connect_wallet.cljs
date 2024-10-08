@@ -21,6 +21,7 @@
     [streamtide.ui.config :refer [config-map]]))
 
 (defonce wallet (atom nil))
+(defonce connect-modal-atom (atom nil))
 
 (defn build-chain-info []
   (clj->js (-> config-map
@@ -54,10 +55,11 @@
                                                           "0x0"))) (:typeHex receipt))
             true clj->js)))
 
-(defn create-provider [^js connectModal ^js connect-config]
+(defn create-provider [^js connect-config]
   #js {:request
        (fn [^js args]
          (let [^js wallet @wallet
+               connectModal @connect-modal-atom
                rpc-call (fn [rpc-method params-map parse-fn]
                           (js/Promise. (fn [resolve reject]
                                          (let [rpc-client# (getRpcClient #js {:client (.-client connect-config)
@@ -180,16 +182,20 @@
                                  :switchToActiveChain true})
         connectModal (useConnectModal)
         active-web3-provider (subscribe [::web3-subs/web3])
-        provider (create-provider connectModal connect-config)]
+        provider (create-provider connect-config)]
+    (reset! connect-modal-atom connectModal)
     ;; some libraries assume the provider is in window.ethereum, so we set our wrapper in there to intercept any call
     (when-not @active-web3-provider
       (set! (.-ethereum js/window) provider)
       (dispatch [::web3-events/create-web3-with-user-permitted-provider {} provider]))
     (react/useEffect (fn []
-                       (when (and loaded? active-wallet)
-                         (dispatch [::chain-events/set-chain (-> active-wallet .getChain .-id)])
-                         (dispatch [::accounts-events/set-accounts [(-> active-wallet .getAccount .-address)]])
-                         (reset! wallet active-wallet))
+                       (when loaded?
+                         (if active-wallet
+                           (do
+                             (dispatch [::chain-events/set-chain (-> active-wallet .getChain .-id)])
+                             (dispatch [::accounts-events/set-accounts [(-> active-wallet .getAccount .-address)]])
+                             (reset! wallet active-wallet))
+                           (reset! wallet nil)))
                          js/undefined)
                    (array active-wallet))
   (react/useEffect (fn []
