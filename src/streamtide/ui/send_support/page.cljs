@@ -109,16 +109,16 @@
 (defn donations []
   (let [active-account (subscribe [::accounts-subs/active-account])]
     (fn []
-      (let [donations-search (when @active-account (subscribe [::gql/query {:queries [(build-donations-query {:user/address @active-account} nil)]}
+      (let [donations-search (subscribe [::gql/query {:queries [(build-donations-query {:user/address @active-account} nil)]}
                                                                {:id :user-donations
-                                                                :refetch-on [::ss-events/send-support-success]}]))
-            loading? (or (nil? donations-search) (:graphql/loading? (last @donations-search)))
-            donations (when @active-account (->> @donations-search
-                                                 (mapcat (fn [r] (-> r :search-donations :items)))
-                                                 distinct
-                                                 (sort-by #(tc/to-long (:donation/date %)))
-                                                 reverse))
-            has-more? (when @active-account (-> (last @donations-search) :search-donations :has-next-page))]
+                                                                :refetch-on [::ss-events/send-support-success]}])
+            loading? (:graphql/loading? (last @donations-search))
+            donations (->> @donations-search
+                           (mapcat (fn [r] (-> r :search-donations :items)))
+                           distinct
+                           (sort-by #(tc/to-long (:donation/date %)))
+                           reverse)
+            has-more? (-> (last @donations-search) :search-donations :has-next-page)]
         [:div.containerDonations
          (if (and (empty? donations)
                   (not loading?))
@@ -130,7 +130,7 @@
                              :has-more? has-more?
                              :loading-spinner-delegate (fn []
                                                          [:div.spinner-container [spinner/spin]])
-                             :load-fn #(let [end-cursor (:end-cursor (:search-contents (last @donations-search)))]
+                             :load-fn #(let [end-cursor (:end-cursor (:search-donations (last @donations-search)))]
                                          (dispatch [::graphql-events/query
                                                     {:query {:queries [(build-donations-query {:user/address @active-account} end-cursor)]}
                                                      :id :user-donations
@@ -153,7 +153,8 @@
                                       (assoc-in aggr [addr :amount] "Amount not valid")
                                       aggr))
                                   {} @form-data)})
-        tx-id (str "donate_" (random-uuid))]
+        tx-id (str "donate_" (random-uuid))
+        active-account (subscribe [::accounts-subs/active-account])]
     (fn []
       (let [donate-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/donate tx-id}])
             donate-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/donate tx-id}])
@@ -187,13 +188,14 @@
                  [:button.btBasic.btBasic-light.btKeep
                   {:on-click #(dispatch [::router-events/navigate :route.grants/index])}
                   "KEEP BROWSING"]]]]
-          [:div.container
-           [:div.headerPastDonations
-            [:h2 "Past Donations"]]
-           [:div.headerDonations.d-none.d-lg-flex
-            [:div.cel-data
-             [:span.titleCel.col-user "Artist Name"]]
-            [:div.cel-score
-             [:span.titleCel.col-date "Date"]
-             [:span.titleCel.col-amount "Amount"]]]
-           [donations]]]]))))
+          (when @active-account
+            [:div.container
+             [:div.headerPastDonations
+              [:h2 "Past Donations"]]
+             [:div.headerDonations.d-none.d-lg-flex
+              [:div.cel-data
+               [:span.titleCel.col-user "Artist Name"]]
+              [:div.cel-score
+               [:span.titleCel.col-date "Date"]
+               [:span.titleCel.col-amount "Amount"]]]
+             [donations]])]]))))
