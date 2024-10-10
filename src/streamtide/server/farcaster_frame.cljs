@@ -6,6 +6,7 @@
     ["hono/jsx" :refer [jsx]]
     [bignumber.core :as bn]
     [cljs-time.coerce :as tc]
+    [clojure.string :as str]
     [district.server.config :refer [config]]
     [district.shared.async-helpers :refer [safe-go <?]]
     [mount.core :as mount :refer [defstate]]
@@ -175,6 +176,7 @@
               (safe-go
                 (let [creator (get-creator c)
                       input-amount (get-tip-value c)
+                      input-amount (str/replace input-amount "," ".")
                       amount-wei (<? (dollar-to-wei input-amount opts))
                       chain-id (str "eip155:" (:chain-id opts))
                       st-address (-> @(-> @config :smart-contracts :contracts-var) :streamtide-fwd :address)]
