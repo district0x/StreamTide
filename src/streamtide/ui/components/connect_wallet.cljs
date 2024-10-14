@@ -8,6 +8,7 @@
     ["react" :as react]
     [camel-snake-kebab.core :as csk]
     [camel-snake-kebab.extras :refer [transform-keys]]
+    [district.ui.logging.events :as logging]
     [district.ui.web3-accounts.subs :as accounts-subs]
     [district.ui.web3-accounts.events :as accounts-events]
     [district.ui.web3-chain.events :as chain-events]
@@ -186,8 +187,11 @@
     (reset! connect-modal-atom connectModal)
     ;; some libraries assume the provider is in window.ethereum, so we set our wrapper in there to intercept any call
     (when-not @active-web3-provider
-      (set! (.-ethereum js/window) provider)
-      (dispatch [::web3-events/create-web3-with-user-permitted-provider {} provider]))
+      (try
+        (set! (.-ethereum js/window) provider)
+        (dispatch [::web3-events/create-web3-with-user-permitted-provider {} provider])
+        (catch :default e
+          (dispatch [::logging/error "Cannot set ethereum wallet. This may lead to unexpected wallet behaviour" {:error e}]))))
     (react/useEffect (fn []
                        (when loaded?
                          (if active-wallet
