@@ -13,9 +13,6 @@
     [streamtide.shared.utils :as shared-utils]))
 
 (def supported-video-exts #{"mp4", "webm", "ogg"})
-(def supported-image-exts #{"jpg", "jpeg", "apng", "png", "avif", "gif", "jfif", "pjpeg", "pjp", "svg", "webp"})
-(def supported-audio-exts #{"mp3", "wav", "ogg", "m4a", "aac", "webm"})
-
 
 ;; Pattern and replacements adjusted from nodebb-plugin-ns-embed
 (def matching-rules
@@ -89,15 +86,6 @@
 
 (defn- file-ext [filename]
   (string/lower-case (last (string/split filename "."))))
-
-(defn- supported-video-ext? [ext]
-  (contains? supported-video-exts ext))
-
-(defn- supported-image-ext? [ext]
-  (contains? supported-image-exts ext))
-
-(defn- supported-audio-ext? [ext]
-  (contains? supported-audio-exts ext))
 
 (def current-url (r/atom nil))
 (def show-popup? (r/atom false))
@@ -180,30 +168,34 @@
   "Embed an external video in the current page"
   (if-let [src (embed-url url :video)]
     src
-    (let [ext (file-ext url)]
-      (if (supported-video-ext? ext)
-        [:video {:controls true}
-         [:source {:src url :type (str "video/" ext)}]
-         "Your browser does not support the video tag."]
-        [safe-external-link url safe-link-opts]))))
+    (let [broken (r/atom false)
+          ext (file-ext url)]
+      (fn []
+        (if-not @broken
+          [:video {:controls true :onError #(reset! broken true)}
+           [:source (merge {:src url} (when (and ext (contains? supported-video-exts ext)) {:type (str "video/" ext)}))]
+           "Your browser does not support the video tag."]
+          [safe-external-link url safe-link-opts])))))
 
 (defn embed-image [url safe-link-opts]
   "Embed an external image in the current page"
   (if-let [src (embed-url url :image)]
     src
-    (let [ext (file-ext url)]
-      (if (supported-image-ext? ext)
-        [:img {:src url}]
-        [safe-external-link url safe-link-opts]))))
+    (let [broken (r/atom false)]
+      (fn []
+        (if-not @broken
+          [:img.image {:src url :onError #(reset! broken true)}]
+          [safe-external-link url safe-link-opts])))))
 
 (defn embed-audio [url safe-link-opts]
   "Embed an external audio in the current page"
   (if-let [src (embed-url url :audio)]
     src
-    (let [ext (file-ext url)]
-      (if (supported-audio-ext? ext)
-        [:audio {:controls "1" :src url}]
-        [safe-external-link url safe-link-opts]))))
+    (let [broken (r/atom false)]
+      (fn []
+        (if-not @broken
+          [:audio {:controls "1" :src url :onError #(reset! broken true)}]
+          [safe-external-link url safe-link-opts])))))
 
 (defn embed-other [url safe-link-opts]
   "Embed an external URL in the current page"
