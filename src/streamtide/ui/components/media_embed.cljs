@@ -13,7 +13,6 @@
     [streamtide.shared.utils :as shared-utils]))
 
 (def supported-video-exts #{"mp4", "webm", "ogg"})
-(def supported-image-exts #{"jpg", "jpeg", "apng", "png", "avif", "gif", "jfif", "pjpeg", "pjp", "svg", "webp"})
 (def supported-audio-exts #{"mp3", "wav", "ogg", "m4a", "aac", "webm"})
 
 
@@ -92,9 +91,6 @@
 
 (defn- supported-video-ext? [ext]
   (contains? supported-video-exts ext))
-
-(defn- supported-image-ext? [ext]
-  (contains? supported-image-exts ext))
 
 (defn- supported-audio-ext? [ext]
   (contains? supported-audio-exts ext))
@@ -191,10 +187,7 @@
   "Embed an external image in the current page"
   (if-let [src (embed-url url :image)]
     src
-    (let [ext (file-ext url)]
-      (if (supported-image-ext? ext)
-        [:img {:src url}]
-        [safe-external-link url safe-link-opts]))))
+    [:img {:src url}]))
 
 (defn embed-audio [url safe-link-opts]
   "Embed an external audio in the current page"
