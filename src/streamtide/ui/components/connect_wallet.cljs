@@ -61,7 +61,7 @@
        (fn [^js args]
          (let [^js wallet @wallet
                connectModal @connect-modal-atom
-               rpc-call (fn [rpc-method params-map parse-fn]
+               rpc-call (fn [rpc-method params-map parse-fn nil-if-error?]
                           (js/Promise. (fn [resolve reject]
                                          (let [rpc-client# (getRpcClient #js {:client (.-client connect-config)
                                                                               :chain  (build-chain-info)})]
@@ -69,7 +69,9 @@
                                                (.then (fn [res#]
                                                         (resolve (parse-fn res#))))
                                                (.catch (fn [err#]
-                                                         (reject err#))))))))]
+                                                         (if nil-if-error?
+                                                           (resolve nil)
+                                                           (reject err#)))))))))]
            (case (.-method args)
              "eth_chainId" (if (nil? wallet)
                              (js/Promise.reject "Wallet not connected")
@@ -101,20 +103,25 @@
                                  (-> wallet .getAccount (.signMessage params))))
              "eth_call" (rpc-call eth_call
                                   (-> args .-params (aget 0))
-                                  identity)
+                                  identity
+                                  false)
              "eth_getTransactionReceipt" (rpc-call eth_getTransactionReceipt
                                                    {:hash (-> args .-params (aget 0))}
-                                                   parse-tx)
+                                                   parse-tx
+                                                   true)
              "eth_getTransactionByHash" (rpc-call eth_getTransactionByHash
                                                   {:hash (-> args .-params (aget 0))}
-                                                  parse-tx)
+                                                  parse-tx
+                                                  true)
              "eth_blockNumber" (rpc-call eth_blockNumber
                                          nil
-                                         toHex)
+                                         toHex
+                                         false)
              "eth_getBlockByNumber" (rpc-call eth_getBlockByNumber
                                               {:blockNumber         (-> args .-params (aget 0))
                                                :includeTransactions (-> args .-params (aget 1))}
-                                              parse-tx)
+                                              parse-tx
+                                              true)
              (js/Promise.reject (str "Method not implemented: " (.-method args))))))})
 
 (re-frame/reg-event-fx
