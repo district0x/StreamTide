@@ -793,7 +793,7 @@
     (let [bl (:user/blacklisted (<! (db-get {:select [:user/blacklisted]
                                         :from [:st-user]
                                         :where [:= :user/address address]})))]
-      (not (or (nil? bl) (zero? bl))))))
+      (not (or (nil? bl) (zero? bl) (false? bl))))))
 
 (defn add-to-blacklist! [{:keys [:user/address]}]
   (db-run! {:update :st-user
