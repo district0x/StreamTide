@@ -289,7 +289,7 @@
          [:div.socialAccounts
           [:h2.titleEdit "Connected accounts"]
           [:p "Connect your social accounts to verify your identity and get the most out of Streamtide."]
-          [:div.verifier-hint "Verify you have a valid Twitter account"]
+          [:div.verifier-hint "Verify you have a valid X account"]
           [social-link-edit (merge input-params
                                    {:id [:socials :twitter]
                                     :icon-src "/img/layout/ico_twitter.svg"

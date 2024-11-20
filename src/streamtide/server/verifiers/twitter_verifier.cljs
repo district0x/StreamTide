@@ -36,7 +36,7 @@
               user (<? (.findMyUser (.-users tw-client)))]
           (if user
             {:valid? true
-             :url (str "https://twitter.com/" (-> user (js->clj :keywordize-keys true) :data :username))}
+             :url (str "https://x.com/" (-> user (js->clj :keywordize-keys true) :data :username))}
             {:valid? false
              :message "Cannot found user"})))
       (throw (js/Error. "Auth client invalid or expired")))))
