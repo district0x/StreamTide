@@ -71,7 +71,7 @@
        [timeago {:title (.toUTCString creation-date)
                  :datetime creation-date}]]]]))
 
-(defmethod page :route.feeds/index []
+(defn feeds []
   (let [active-account (subscribe [::accounts-subs/active-account])
         active-session? (subscribe [::st-subs/active-account-has-session?])]
     (fn []
@@ -81,12 +81,6 @@
             all-content (->> @user-content
                              (mapcat (fn [r] (-> r :search-contents :items))))
             has-more? (-> (last @user-content) :search-contents :has-next-page)]
-        [app-layout
-         [:main.pageSite.pageFeeds
-          {:id "feeds"}
-          ;[:div.headerFeeds
-          ; [:div.container
-          ;  [:h1.titlePage "Feeds"]]]
           (if loading?
             [spinner/spin]
             [:div.container
@@ -106,5 +100,11 @@
                    (doall
                      (for [{:keys [:content/id] :as content} all-content]
                        ^{:key id}
-                       [content-card content])))])]])]
-         [embed/safe-link-popup]]))))
+                       [content-card content])))])]
+             [embed/safe-link-popup]])))))
+
+(defmethod page :route.feeds/index []
+  [app-layout
+   [:main.pageSite.pageFeeds
+    {:id "feeds"}
+    [feeds]]])

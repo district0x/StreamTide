@@ -2,7 +2,8 @@
   "Home page"
   (:require
     [district.ui.component.page :refer [page]]
-    [streamtide.ui.components.app-layout :refer [app-layout]]))
+    [streamtide.ui.components.app-layout :refer [app-layout]]
+    [streamtide.ui.feeds.page :refer [feeds]]))
 
 (defmethod page :route/home []
   (let []
@@ -27,4 +28,10 @@
            [:video.item-night
             {:autoPlay true :muted true :loop true}
             [:source {:src "/img/layout/stream_night.mp4" :type "video/mp4"}]
-            "Your browser does not support the video tag."]]]]]])))
+            "Your browser does not support the video tag."]]]
+         [:div.feeds.container
+          [:h1.titlePage.titleFeeds
+           "Latest Activity"]
+          [feeds]
+          ]
+         ]]])))
