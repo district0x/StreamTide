@@ -86,6 +86,9 @@
 			}
 		}
 	}
+	.feeds {
+		margin-top: 30px;
+	}
 	@include media-breakpoint-up(sm) {
 		.hero {
 			.imgHero {
@@ -170,7 +173,7 @@
 		}
 		.hero {
 			position: absolute;
-			bottom: -2px;
+			top: -50px;
 			right: 0;
 			z-index: 0;
 			transform: translateY(0);
@@ -185,6 +188,13 @@
 					height: 100%;
 					margin: 0 0 0 auto;
 				}
+			}
+		}
+		.feeds {
+			margin-top: 200px;
+			.titleFeeds {
+				padding-left: 40px;
+				padding-bottom: 20px;
 			}
 		}
 	}
