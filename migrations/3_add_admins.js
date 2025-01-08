@@ -1,7 +1,7 @@
 const {readSmartContractsFile, getSmartContractAddress} = require ("./utils.js");
 const {smart_contracts_path, env, parameters} = require ('../truffle.js');
 
-const smartContracts = readSmartContractsFile(smart_contracts_path);
+const [smartContracts, _] = readSmartContractsFile(smart_contracts_path);
 const streamtideFwdAddr = getSmartContractAddress(smartContracts, ":streamtide-fwd");
 
 const Streamtide = artifacts.require("MVPCLR");

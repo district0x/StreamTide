@@ -7,7 +7,7 @@ const {readSmartContractsFile, getSmartContractAddress, setSmartContractAddress,
 const StreamtideForwarder = artifacts.require("MutableForwarder");
 const Streamtide = artifacts.require("MVPCLR");
 
-const smartContracts = readSmartContractsFile(smart_contracts_path);
+const [smartContracts, multichainSmartContracts] = readSmartContractsFile(smart_contracts_path);
 const streamtideFwdAddr = getSmartContractAddress(smartContracts, ":streamtide-fwd");
 
 
@@ -39,7 +39,7 @@ module.exports = async(deployer, network, accounts) => {
 
     setSmartContractAddress(smartContracts, ":streamtide", status.getValue(sk.streamtideAddr));
 
-    writeSmartContracts(smart_contracts_path, smartContracts, env);
+    writeSmartContracts(smart_contracts_path, smartContracts, multichainSmartContracts, env);
 
     status.clean();
     console.log ("Done");
