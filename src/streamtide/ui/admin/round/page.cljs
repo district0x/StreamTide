@@ -22,6 +22,7 @@
     [streamtide.ui.components.general :refer [nav-anchor no-items-found]]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [user-photo social-links]]
+    [streamtide.ui.config :refer [config-map]]
     [streamtide.ui.subs :as st-subs]
     [streamtide.ui.utils :as ui-utils]))
 
@@ -59,6 +60,9 @@
 ;; TODO get existing coins from server
 (def matching-pool-coin [{:value "ETH" :label "ETH"}
                          {:value other-coin-value :label "Other"}])
+
+(def matching-pool-chain (map (fn [chain] {:value (:chain-id chain) :label (:chain-name chain)})
+                              (cons (-> config-map :web3-chain) (-> config-map :multichain-matching-pool))))
 
 (defn build-donations-query [{:keys [:round :order-key]} after]
   (let [[order-by order-dir] ((juxt namespace name) (keyword order-key))]
@@ -364,7 +368,8 @@
   (let [active-page-sub (subscribe [::router-subs/active-page])
         round-id (-> @active-page-sub :params :round)
         form-data (r/atom {:amount 0
-                           :matching-pool-coin (:value (first matching-pool-coin))})
+                           :matching-pool-coin (:value (first matching-pool-coin))
+                           :matching-pool-chain (:value (first matching-pool-chain))})
         errors (reaction {:local (cond-> {}
                                          (and (:coin-address @form-data)
                                               (not (ui-utils/valid-address-format? (:coin-address @form-data))))
@@ -412,7 +417,7 @@
                       approve-coin-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/approve-coin tx-id-ac}])
                       approve-coin-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/approve-coin tx-id-ac}])
                       approve-coin-waiting-wallet? (subscribe [::st-subs/waiting-wallet? {:streamtide/approve-coin tx-id-ac}])
-                      coin-info (subscribe [::r-subs/coin-info (:coin-address @form-data)])]
+                      coin-info (subscribe [::r-subs/coin-info (:matching-pool-chain @form-data) (:coin-address @form-data)])]
                   [:<>
                    [:div.form.fillPoolForm
                     [:label.inputField
@@ -423,6 +428,11 @@
                      [select {:form-data form-data
                               :id        :matching-pool-coin
                               :options   matching-pool-coin
+                              :class     "options"}]]
+                    [:div.custom-select.selectForm
+                     [select {:form-data form-data
+                              :id        :matching-pool-chain
+                              :options   matching-pool-chain
                               :class     "options"}]]
                     (when (= (:matching-pool-coin @form-data) other-coin-value)
                       [:<>
@@ -435,7 +445,7 @@
                        (if @coin-info
                          [:span.coin-symbol (:symbol @coin-info)]
                          [:button.btBasic.btBasic-light.btValidateCoin
-                          {:on-click #(dispatch [::r-events/validate-coin {:coin-address (:coin-address @form-data)}])
+                          {:on-click #(dispatch [::r-events/validate-coin {:chain-id (:matching-pool-chain @form-data) :coin-address (:coin-address @form-data)}])
                            :disabled (or (not (:coin-address @form-data))
                                          (not (ui-utils/valid-address-format? (:coin-address @form-data))))}
                           "Validate"])
@@ -462,7 +472,8 @@
                                                         (.stopPropagation e)
                                                         (dispatch [::r-events/approve-coin {:send-tx/id tx-id-ac
                                                                                             :amount (:amount @form-data)
-                                                                                            :round round
+                                                                                            :round round-id
+                                                                                            :chain-id (:matching-pool-chain @form-data)
                                                                                             :coin-info @coin-info}]))}
                             (if @approve-coin-tx-success? "Approved" "Approve")]))])]
                    [:div.buttons
@@ -480,10 +491,11 @@
                                                  (.stopPropagation e)
                                                  (dispatch [::r-events/fill-matching-pool {:send-tx/id tx-id-mp
                                                                                            :amount (:amount @form-data)
-                                                                                           :round round
+                                                                                           :round round-id
                                                                                            :coin-info (when (= (:matching-pool-coin @form-data)
                                                                                                                other-coin-value)
                                                                                                         @coin-info)
+                                                                                           :chain-id (:matching-pool-chain @form-data)
                                                                                            :from-address (let [from-address (:from-address @form-data)]
                                                                                                            (if (empty? from-address) active-account from-address))}]))}
                      (if @match-pool-tx-success? "Matching Pool Filled up" "Fill Up Matching Pool")]
@@ -494,6 +506,6 @@
                                      :on-click (fn [e]
                                                  (.stopPropagation e)
                                                  (dispatch [::r-events/close-round {:send-tx/id tx-id-cr
-                                                                                    :round round}]))}
+                                                                                    :round round-id}]))}
                      (if @close-round-tx-success? "Round Closed" "Close Round")]]]))
               [donations round-id round last-round?]])]]]))))

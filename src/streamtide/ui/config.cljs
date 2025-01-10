@@ -12,7 +12,8 @@
    :logging {:level :debug
              :console? true}
    :graphql {:url "http://localhost:6300/graphql"}
-   :smart-contracts {:contracts smart-contracts-dev/smart-contracts}
+   :smart-contracts {:contracts (merge (-> smart-contracts-dev/multichain-smart-contracts first second) smart-contracts-dev/smart-contracts)}
+   :multichain-smart-contracts {:contracts smart-contracts-dev/multichain-smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
    :web3-chain {:chain-id "1337"
                 :rpc-urls ["http://localhost:8545"]
@@ -20,6 +21,12 @@
                 :native-currency {:name "ETH"
                                   :symbol "ETH"
                                   :decimals 18}}
+   :multichain-matching-pool [{:chain-id "5777"
+                               :rpc-urls ["http://localhost:7545"]
+                               :chain-name "Another Ganache"
+                               :native-currency {:name "ETH"
+                                                 :symbol "ETH"
+                                                 :decimals 18}}]
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    :thirdweb {:client-id "."}
    })
