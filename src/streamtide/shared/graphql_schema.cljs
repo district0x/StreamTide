@@ -433,6 +433,7 @@ type MatchingPool {
 
 type Coin {
     coin_address: String!
+    coin_chainId: Int!
     coin_name: String
     coin_symbol: String
     coin_decimals: Int
