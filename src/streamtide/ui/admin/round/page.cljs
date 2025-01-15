@@ -4,6 +4,7 @@
     [bignumber.core :as bn]
     [cljsjs.bignumber]
     [cljs-web3-next.helpers :refer [zero-address]]
+    [clojure.string :as str]
     [district.ui.component.form.input :refer [amount-input pending-button text-input]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
@@ -37,7 +38,8 @@
     :round/duration
     [:round/matching-pools [[:matching-pool/coin [:coin/symbol
                                                   :coin/decimals
-                                                  :coin/address]]
+                                                  :coin/address
+                                                  :coin/chain-id]]
                             :matching-pool/amount
                             :matching-pool/distributed]]]])
 
@@ -285,7 +287,7 @@
 ;               {} amounts)))
 
 (defn donations-entries [round-id round matching-pool donations-search last-round?]
-  (let [tx-id (str "distribute_" round-id)
+  (let [tx-id (str "distribute_" round-id (-> matching-pool :matching-pool/coin :coin/chain-id) (-> matching-pool :matching-pool/coin :coin/address))
         distribute-tx-pending (subscribe [::tx-id-subs/tx-pending? {:streamtide/distribute tx-id}])
         distribute-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/distribute tx-id}])
         waiting-wallet? (subscribe [::st-subs/waiting-wallet? {:streamtide/distribute tx-id}])
@@ -298,6 +300,7 @@
         matchings (compute-matchings (:matching-pool/amount matching-pool) donations-by-receiver
                                      @(subscribe [::r-subs/all-multipliers])
                                      @(subscribe [::r-subs/all-donations]))]
+    (pr matching-pool)
     [:<>
      (if (empty? all-donations)
        [no-items-found]
@@ -319,12 +322,13 @@
                                    (dispatch [::r-events/distribute {:send-tx/id tx-id
                                                                      :round round-id
                                                                      :matchings matchings
-                                                                     :coin (:matching-pool/coin matching-pool)}]))}
+                                                                     :coin (:matching-pool/coin matching-pool)
+                                                                     :chain-id (-> matching-pool :matching-pool/coin :coin/chain-id str)}]))}
        (if @distribute-tx-success? "Distributed" "Distribute")])]))
 
 (defn donations [round-id round last-round?]
   (let [coins (map #(let [coin (:matching-pool/coin %)]
-                       {:value (:coin/address coin)
+                       {:value (str (:coin/chain-id coin) "#" (:coin/address coin))
                         :label (:coin/symbol coin)})
                    (:round/matching-pools round))
         form-data (r/atom {:round round-id
@@ -336,7 +340,11 @@
             loading? (:graphql/loading? (last @donations-search))
             has-more? (-> (last @donations-search) :search-donations :has-next-page)
             end-cursor (-> (last @donations-search) :search-donations :end-cursor)
-            matching-pool (first (filter #(= (:coin @form-data) (-> % :matching-pool/coin :coin/address)) (:round/matching-pools round)))
+            matching-pool (first (filter #(let [[chain-id coin-address] (str/split (:coin @form-data) "#")]
+                                            (and
+                                              (= chain-id (-> % :matching-pool/coin :coin/chain-id str))
+                                              (= coin-address (-> % :matching-pool/coin :coin/address))))
+                                         (:round/matching-pools round)))
             ; makes sure all items are loaded
             _ (when (and (not loading?) has-more?) (dispatch [::graphql-events/query
                                                             {:query {:queries [(build-donations-query @form-data end-cursor)]}
@@ -405,8 +413,8 @@
                  (str "Status: " status)])
               [:div.start (str "Start Time: " (ui-utils/format-graphql-time start))]
               [:div.end (str "End Time: " (ui-utils/format-graphql-time (+ start duration)))]
-              [:div.matching "Matching pool:" [:div.amounts (map (fn [mp] [:span.amount {:key (-> mp :matching-pool/coin :coin/address)} (shared-utils/format-price (:matching-pool/amount mp) (:matching-pool/coin mp))] ) matching-pools)]]
-              [:div.distributed "Distributed amount:" [:div.amounts (map (fn [mp] [:span.amount {:key (-> mp :matching-pool/coin :coin/address)} (shared-utils/format-price (:matching-pool/distributed mp) (:matching-pool/coin mp))] ) matching-pools)]]
+              [:div.matching "Matching pool:" [:div.amounts (map (fn [mp] [:span.amount {:key (str (-> mp :matching-pool/coin :coin/chain-id) (-> mp :matching-pool/coin :coin/address))} (shared-utils/format-price (:matching-pool/amount mp) (:matching-pool/coin mp))] ) matching-pools)]]
+              [:div.distributed "Distributed amount:" [:div.amounts (map (fn [mp] [:span.amount {:key (str (-> mp :matching-pool/coin :coin/chain-id) (-> mp :matching-pool/coin :coin/address))} (shared-utils/format-price (:matching-pool/distributed mp) (:matching-pool/coin mp))] ) matching-pools)]]
               (when (round-open? round)
                 (let [match-pool-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/fill-matching-pool tx-id-mp}])
                       match-pool-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/fill-matching-pool tx-id-mp}])

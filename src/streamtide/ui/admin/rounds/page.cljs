@@ -34,7 +34,9 @@
              :round/start
              :round/duration
              [:round/matching-pools [[:matching-pool/coin [:coin/symbol
-                                                           :coin/decimals]]
+                                                           :coin/decimals
+                                                           :coin/address
+                                                           :coin/chain-id]]
                                      :matching-pool/amount
                                      :matching-pool/distributed]]]]]])
 
@@ -56,12 +58,12 @@
       [:h4.d-lg-none "Matching Pool"]
       [:div.amounts
        (map (fn [mp]
-              [:span {:key (-> mp :matching-pool/coin :coin/symbol)} (shared-utils/format-price (:matching-pool/amount mp) (:matching-pool/coin mp))]) matching-pools)]]
+              [:span {:key (str (-> mp :matching-pool/coin :coin/chain-id) (-> mp :matching-pool/coin :coin/address))} (shared-utils/format-price (:matching-pool/amount mp) (:matching-pool/coin mp))]) matching-pools)]]
      [:div.cel.distributed
       [:h4.d-lg-none "Distributed"]
       [:div.amounts
        (map (fn [mp]
-              [:span {:key (-> mp :matching-pool/coin :coin/symbol)}(shared-utils/format-price (:matching-pool/distributed mp) (:matching-pool/coin mp))]) matching-pools)]]]]))
+              [:span {:key (str (-> mp :matching-pool/coin :coin/chain-id) (-> mp :matching-pool/coin :coin/address))} (shared-utils/format-price (:matching-pool/distributed mp) (:matching-pool/coin mp))]) matching-pools)]]]]))
 
 
 (defn round-entries [rounds-search]
