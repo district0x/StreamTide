@@ -279,35 +279,38 @@
               (web3-core/disconnect @web3))))))
     interval))
 
-(defn reload-timeout-start [{:keys [:reload-interval]}]
+(defn reload-timeout-start [reload-interval]
   (reset! reload-timeout (reload-handler reload-interval)))
 
 (defn reload-timeout-stop []
   (js/clearInterval @reload-timeout))
 
-(defn start [opts]
-  (when-not (:disabled? opts)
+(defn register-events [{:keys [:disabled? :reload-interval] :as opts} event-callbacks]
+  (when-not disabled?
     (let [start-time (shared-utils/now)
-          event-callbacks {:streamtide/admin-added-event admin-added-event
-                           :streamtide/admin-removed-event admin-removed-event
-                           :streamtide/blacklisted-added-event blacklisted-added-event
-                           :streamtide/blacklisted-removed-event blacklisted-removed-event
-                           :streamtide/patrons-added-event patrons-added-event
-                           :streamtide/round-started-event round-started-event
-                           :streamtide/round-closed-event round-closed-event
-                           :streamtide/matching-pool-donation-event matching-pool-donation-event
-                           :streamtide/matching-pool-donation-token-event matching-pool-donation-token-event
-                           :streamtide/distribute-event distribute-event
-                           :streamtide/distribute-round-event distribute-round-event
-                           :streamtide/donate-event donate-event}
           callback-ids (doall (for [[event-key callback] event-callbacks]
                                 (web3-events/register-callback! event-key (dispatcher callback))))]
       (web3-events/register-after-past-events-dispatched-callback! (fn []
                                                                      (log/warn "Syncing past events finished" (time/time-units (- (shared-utils/now) start-time)) ::start)
                                                                      (ping-start {:ping-interval 10000})
-                                                                     (when (> (:reload-interval opts) 0)
-                                                                       (reload-timeout-start (select-keys opts [:reload-interval])))))
+                                                                     (when (> reload-interval 0)
+                                                                       (reload-timeout-start reload-interval))))
       (assoc opts :callback-ids callback-ids))))
+
+(defn start [{:keys [:disabled? :reload-interval] :as opts}]
+  (register-events opts {:streamtide/admin-added-event admin-added-event
+                         :streamtide/admin-removed-event admin-removed-event
+                         :streamtide/blacklisted-added-event blacklisted-added-event
+                         :streamtide/blacklisted-removed-event blacklisted-removed-event
+                         :streamtide/patrons-added-event patrons-added-event
+                         :streamtide/round-started-event round-started-event
+                         :streamtide/round-closed-event round-closed-event
+                         :streamtide/matching-pool-donation-event matching-pool-donation-event
+                         :streamtide/matching-pool-donation-token-event matching-pool-donation-token-event
+                         :streamtide/distribute-event distribute-event
+                         :streamtide/distribute-round-event distribute-round-event
+                         :streamtide/donate-event donate-event}))
+
 
 (defn stop [syncer]
   (reload-timeout-stop)
