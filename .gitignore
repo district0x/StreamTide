@@ -15,3 +15,4 @@
 /.shadow-cljs/
 /server/
 /target/
+/ecosystem.config.js
