@@ -41,12 +41,24 @@
                                    command-args (format "-M:dev:shadow-cljs%s watch server" (clojure.string.join "" aliases))]
                                (println "Starting watch server args:" command-args)
                                (clojure command-args))}
+         watch-sidechain-server {:doc "Watch and compile sidechain server code changes CLJS -> JS in src/server/**"
+                                 :requires ([babashka.cli :as cli])
+                                 :task (let [aliases (or *command-line-args* [])
+                                             command-args (format "-M:dev:shadow-cljs%s watch sidechain-server" (clojure.string.join "" aliases))]
+                                         (println "Starting watch sidechain server args:" command-args)
+                                         (clojure command-args))}
          release-server {:doc "Compile server CLJS -> JS in src/server/** for release"
                        :requires ([babashka.cli :as cli])
                        :task (let [aliases (or *command-line-args* [])
                                    command-args (format "-M:shadow-cljs%s release server" (clojure.string.join "" aliases))]
                                (println "Preparing server for release:" command-args)
                                (clojure command-args))}
+         release-sidechain-server {:doc "Compile sidechain server CLJS -> JS in src/server/** for release"
+                                   :requires ([babashka.cli :as cli])
+                                   :task (let [aliases (or *command-line-args* [])
+                                               command-args (format "-M:shadow-cljs%s release sidechain-server" (clojure.string.join "" aliases))]
+                                           (println "Preparing sidechain server for release:" command-args)
+                                           (clojure command-args))}
          watch-ui-server {:doc "Watch and compile both ui and server code changes CLJS -> JS in src/(ui|server)/**"
                        :requires ([babashka.cli :as cli])
                        :task (let [aliases (or *command-line-args* [])
@@ -57,6 +69,11 @@
                      :task (do
                              (println "Starting Streamtide API server")
                              (shell "node server/streamtide_server.js"))}
+         run-sidechain-server {:doc "Start Node.js API sidechain server process"
+                               :task (let [command-args (clojure.string.join " " (or *command-line-args* []))]
+                                       (do
+                                         (println "Starting Streamtide sidechain server")
+                                         (shell (format "node sidechain_server/streamtide_sidechain_server.js %s" command-args))))}
          watch-server-tests {:doc "watch server tests"
                            :task (do
                                    (println "Watch and compile server code changes tests")

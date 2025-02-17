@@ -2,11 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const edn = require("jsedn");
 
-function smartContractsTemplate (map, env) {
+function smartContractsTemplate (map, multichainmap, env) {
   return `(ns streamtide.shared.smart-contracts-${env})
-
-(def smart-contracts
-  ${map})
+  (def smart-contracts
+    ${map})
+  (def multichain-smart-contracts
+    ${multichainmap})
 `;
 }
 
@@ -17,7 +18,21 @@ function encodeSmartContracts (smartContracts) {
   var contracts = edn.encode(smartContracts);
   console.log(contracts);
   return contracts;
-};
+}
+
+function extractEdnDefs(ednString) {
+  const ednObjects = {};
+  const defPattern = /\(def\s+([\w\-]+)\s+([\s\S]*?)\)/g;
+  let match;
+
+  while ((match = defPattern.exec(ednString)) !== null) {
+    const key = match[1];
+    const value = match[2];
+    ednObjects[key] = edn.parse(value);
+  }
+
+  return ednObjects;
+}
 
 const utils = {
 
@@ -69,21 +84,11 @@ const utils = {
     contract.bytecode = bytecode;
   },
 
-  smartContractsTemplate: (map, env) => {
-    return `(ns streamtide.shared.smart-contracts-${env})
-  (def smart-contracts
-    ${map})
-`;
-  },
-
   readSmartContractsFile: (smartContractsPath) => {
     var content = fs.readFileSync(smartContractsPath, "utf8");
 
-    content = content.replace(/\(ns.*\)/gm, "");
-    content = content.replace(/\(def smart-contracts/gm, "");
-    content = content.replace(/\)$/gm, "");
-
-    return edn.parse(content);
+    let defs = extractEdnDefs(content);
+    return [defs["smart-contracts"], defs["multichain-smart-contracts"]];
   },
 
   setSmartContractAddress: (smartContracts, contractKey, newAddress) => {
@@ -100,9 +105,9 @@ const utils = {
     }
   },
 
-  writeSmartContracts: (smartContractsPath, smartContracts, env) => {
+  writeSmartContracts: (smartContractsPath, smartContracts, multichainSmartContracts, env) => {
     console.log("Writing to smart contract file: " + smartContractsPath);
-    fs.writeFileSync(smartContractsPath, smartContractsTemplate(encodeSmartContracts(smartContracts), env));
+    fs.writeFileSync(smartContractsPath, smartContractsTemplate(encodeSmartContracts(smartContracts), encodeSmartContracts(multichainSmartContracts), env));
   },
 
   Status: class {

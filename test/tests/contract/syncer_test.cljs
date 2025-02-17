@@ -17,11 +17,13 @@
 
 (def waited-events-counter (atom {}))
 
+(def chain-id 1337)
+
 (defn wait-event [event]
   (let [current-counter (swap! waited-events-counter update event inc)
         current-counter (get current-counter event)]
     (go
-      (while (< (or (:event/count (db/get-last-event "streamtide" (name event))) 0) current-counter)
+      (while (< (or (:event/count (db/get-last-event "streamtide" (name event) chain-id)) 0) current-counter)
         (<! (timeout 250))))))
 
 
@@ -89,7 +91,7 @@
             (let [rounds (:items (db/get-rounds {:first 6}))
                   round (first rounds)
                   round-id (:round/id round)
-                  matching-pool (db/get-matching-pool round-id zero-address)]
+                  matching-pool (db/get-matching-pool round-id zero-address chain-id)]
               (is (= (count rounds) 1))
               (is (> round-id 0))
               (is (= (:matching-pool/amount matching-pool) "1000"))
@@ -101,7 +103,7 @@
               (<! (wait-event :matching-pool-donation))
               (let [rounds (:items (db/get-rounds {:first 6}))
                     round (first rounds)
-                    matching-pool (db/get-matching-pool round-id zero-address)]
+                    matching-pool (db/get-matching-pool round-id zero-address chain-id)]
                 (is (= (count rounds) 1))
                 (is (= round-id (:round/id round)))
                 (is (= (:matching-pool/amount matching-pool) "2000"))))
@@ -112,7 +114,7 @@
                        :items
                        first
                        :round/id
-                       (db/get-matching-pool zero-address)
+                       (db/get-matching-pool zero-address chain-id)
                        :matching-pool/amount)
                    "3500"))
 
@@ -160,7 +162,7 @@
                         matching (last matchings)
                         round (first (:items (db/get-rounds {:first 1})))
                         round-id (:round/id round)
-                        matching-pool (db/get-matching-pool round-id zero-address)]
+                        matching-pool (db/get-matching-pool round-id zero-address chain-id)]
                     (is (= (count matchings) 1))
                     (is (= (:matching/receiver matching) user))
                     (is (= (str (:matching/amount matching)) "1000"))

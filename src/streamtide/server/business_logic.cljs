@@ -134,9 +134,9 @@
 
     (<? (stdb/get-farcaster-campaigns args))))
 
-(defn get-coin [_current-user address]
+(defn get-coin [_current-user address chain-id]
   "Gets coin info from its ETH address"
-  (stdb/get-coin address))
+  (stdb/get-coin address chain-id))
 
 (defn verify-social! [current-user {:keys [:state] :as args}]
   "Verify a social network, for example checking the authentication code coming from user authentication is valid.

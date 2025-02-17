@@ -37,6 +37,16 @@
                  :js-options      {:keep-as-import #{"d3"}}}
            :release {:compiler-options {:optimizations :simple}}}
 
+          :sidechain-server
+          {:target :node-script
+           :main streamtide.server.sidechain-core/-main
+           :output-dir "sidechain_server/"
+           :output-to "sidechain_server/streamtide_sidechain_server.js"
+           :prepend "shadow_esm_import = function(x) { return import(x); };"
+           :dev {:closure-defines {goog.DEBUG true}
+                 :js-options      {:keep-as-import #{"d3"}}}
+           :release {:compiler-options {:optimizations :simple}}}
+
           :server-tests
           {:target :node-test
            :output-dir "server/tests"

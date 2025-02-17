@@ -1,6 +1,7 @@
 /.idea/
 /streamtide.iml
 /config.edn
+/config*.edn
 /resources/public/js/main.js
 /resources/public/js/cljs-runtime/
 /resources/public/js/manifest.edn
@@ -14,3 +15,4 @@
 /.shadow-cljs/
 /server/
 /target/
+/ecosystem.config.js

@@ -40,10 +40,14 @@
       :has-next-page
       [:items [:leader/donation-amount
                [:leader/matching-amounts [:amount
-                                          [:coin [:coin/symbol
+                                          [:coin [:coin/address
+                                                  :coin/chain-id
+                                                  :coin/symbol
                                                   :coin/decimals]]]]
                [:leader/total-amounts [:amount
-                                       [:coin [:coin/symbol
+                                       [:coin [:coin/address
+                                               :coin/chain-id
+                                               :coin/symbol
                                                :coin/decimals]]]]
                [:leader/receiver [:user/address
                                   :user/name
@@ -70,12 +74,12 @@
 
        [:div.amounts
         (map (fn [mp]
-               [:span {:key (-> mp :coin :coin/symbol)} (shared-utils/format-price (:amount mp) (:coin mp))]) matching-amounts)]]
+               [:span {:key (str (-> mp :coin :coin/chain-id) (-> mp :coin :coin/address))} (shared-utils/format-price (:amount mp) (:coin mp))]) matching-amounts)]]
       [:li
        [:h4.d-md-none "Total Received"]
        [:div.amounts
         (map (fn [mp]
-               [:span {:key (-> mp :coin :coin/symbol)} (shared-utils/format-price (:amount mp) (:coin mp))]) total-amounts)]]]]))
+               [:span {:key (str (-> mp :coin :coin/chain-id) (-> mp :coin :coin/address))} (shared-utils/format-price (:amount mp) (:coin mp))]) total-amounts)]]]]))
 
 (defn leaderboard-entries [form-data leaders-search]
   (let [active-session (subscribe [::st-subs/active-session])
