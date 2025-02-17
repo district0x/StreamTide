@@ -29,7 +29,7 @@
 
 (def contracts-var
   (condp = (get-environment)
-    ;"prod" (atom ((keyword chain-id) smart-contracts-prod/multichain-smart-contracts))
+    "prod" (atom ((keyword chain-id) smart-contracts-prod/multichain-smart-contracts))
     "qa" (atom ((keyword chain-id) smart-contracts-qa/multichain-smart-contracts))
     "dev" (atom ((keyword chain-id) smart-contracts-dev/multichain-smart-contracts))))
 

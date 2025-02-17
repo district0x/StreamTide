@@ -59,7 +59,8 @@
   {:logging {:level :warn
              :console? false}
    :graphql {:url "https://api.streamtide.io/graphql"}
-   :smart-contracts {:contracts smart-contracts-prod/smart-contracts}
+   :smart-contracts {:contracts (merge (-> smart-contracts-prod/multichain-smart-contracts first second) smart-contracts-prod/smart-contracts)}
+   :multichain-smart-contracts {:contracts smart-contracts-prod/multichain-smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
    :web3-chain {:chain-id "8453"
                 :rpc-urls ["https://mainnet.base.org"]
@@ -68,6 +69,7 @@
                                   :symbol "ETH"
                                   :decimals 18}
                 :block-explorer-urls ["https://base.blockscout.com"]}
+   :multichain-matching-pool []
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
    })
