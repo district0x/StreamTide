@@ -11,6 +11,7 @@ WORKDIR /build
 
 RUN yarn install && \
 bb release-server && \
+bb release-sidechain-server && \
 bb compile-contracts
 
 EXPOSE 6300 3000
