@@ -14,4 +14,4 @@ bb release-server && \
 bb compile-contracts
 
 EXPOSE 6300 3000
-ENTRYPOINT ["pm2-runtime", "start", "ecosystem.config.js"]
+ENTRYPOINT ["npx", "pm2-runtime", "ecosystem.config.js"]
