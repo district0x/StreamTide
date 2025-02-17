@@ -69,6 +69,13 @@ module.exports = {
             gasPrice: 1e9,
             skipDryRun: true
         },
+        "alchemy-eth-sepolia": {
+            provider: () => new HDWalletProvider(process.env.ETH_SEPOLIA_PRIV_KEY, "https://eth-sepolia.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY),
+            network_id: 11155111,
+            gas: 6e6,
+            gasPrice: 3e9,
+            skipDryRun: true
+        },
         "alchemy-base-mainnet": {
             provider: () => new HDWalletProvider(process.env.BASE_PRIV_KEY, "https://base-mainnet.g.alchemy.com/v2/" + process.env.ALCHEMY_API_KEY),
             network_id: 8453,

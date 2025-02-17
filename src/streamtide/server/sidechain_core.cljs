@@ -29,8 +29,8 @@
 
 (def contracts-var
   (condp = (get-environment)
-    ;"prod" #'smart-contracts-prod/smart-contracts
-    ;"qa" #'smart-contracts-qa/smart-contracts
+    ;"prod" (atom ((keyword chain-id) smart-contracts-prod/multichain-smart-contracts))
+    "qa" (atom ((keyword chain-id) smart-contracts-qa/multichain-smart-contracts))
     "dev" (atom ((keyword chain-id) smart-contracts-dev/multichain-smart-contracts))))
 
 (defn start []
