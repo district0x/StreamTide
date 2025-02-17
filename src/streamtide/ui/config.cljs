@@ -35,7 +35,8 @@
   {:logging {:level :warn
              :console? true}
    :graphql {:url "https://api.streamtide.qa.district0x.io/graphql"}
-   :smart-contracts {:contracts smart-contracts-qa/smart-contracts}
+   :smart-contracts {:contracts (merge (-> smart-contracts-qa/multichain-smart-contracts first second) smart-contracts-qa/smart-contracts)}
+   :multichain-smart-contracts {:contracts smart-contracts-qa/multichain-smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
    :web3-chain {:chain-id "84532"
                 :rpc-urls ["https://sepolia.base.org"]
@@ -44,6 +45,7 @@
                                   :symbol "ETH"
                                   :decimals 18}
                 :block-explorer-urls ["https://sepolia-explorer.base.org"]}
+   :multichain-matching-pool []
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
    })
