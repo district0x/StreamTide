@@ -45,7 +45,12 @@
                                   :symbol "ETH"
                                   :decimals 18}
                 :block-explorer-urls ["https://sepolia-explorer.base.org"]}
-   :multichain-matching-pool []
+   :multichain-matching-pool [{:chain-id "11155111"
+                               :rpc-urls ["https://sepolia.infura.io"]
+                               :chain-name "Sepolia"
+                               :native-currency {:name "ETH"
+                                                 :symbol "ETH"
+                                                 :decimals 18}}]
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
    })
