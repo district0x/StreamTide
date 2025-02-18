@@ -21,7 +21,8 @@
     [re-frame.core :as re-frame :refer [subscribe dispatch]]
     [reagent.core :as r]
     [streamtide.ui.subs :as st-subs]
-    [streamtide.ui.config :refer [config-map]]))
+    [streamtide.ui.config :refer [config-map]]
+    [streamtide.ui.utils :refer [all-chains]]))
 
 (defonce wallet (atom nil))
 (defonce connect-modal-atom (atom nil))
@@ -30,8 +31,7 @@
   ([]
    (build-chain-info (-> config-map :web3-chain :chain-id)))
   ([chain-id]
-   (let [chains (cons (-> config-map :web3-chain) (-> config-map :multichain-matching-pool))
-         chains-map (into {} (map (fn [chain] [(:chain-id chain) chain]) chains))
+   (let [chains-map (into {} (map (fn [chain] [(:chain-id chain) chain]) all-chains))
          chain (get chains-map chain-id)]
      (clj->js (-> chain
                   (update :chain-id int)

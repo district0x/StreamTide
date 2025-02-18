@@ -6,6 +6,7 @@
             [district.ui.web3-accounts.subs :as accounts-subs]
             [district.graphql-utils :as gql-utils]
             [re-frame.core :refer [dispatch subscribe]]
+            [streamtide.ui.config :refer [config-map]]
             [streamtide.ui.subs :as st-subs]))
 
 (defn switch-popup [switch-atom show]
@@ -63,3 +64,12 @@
 
 (defn valid-address-format? [address]
   (re-matches #"^0x[a-fA-F0-9]{40}$" address))
+
+(def all-chains (cons (-> config-map :web3-chain) (-> config-map :multichain-matching-pool)))
+
+(defn side-chain? [chain-id]
+  (not= (str chain-id) (-> config-map :web3-chain :chain-id)))
+
+(defn chain-name [chain-id]
+  (let [chain-id (str chain-id)]
+    (:chain-name (some #(when (= chain-id (:chain-id %)) % ) all-chains))))
