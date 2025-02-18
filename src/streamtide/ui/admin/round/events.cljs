@@ -13,7 +13,7 @@
     [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.config :refer [config-map]]
     [streamtide.ui.events :as ui-events :refer [wallet-chain-interceptors connect-wallet check-chain-id]]
-    [streamtide.ui.utils :refer [build-tx-opts]]
+    [streamtide.ui.utils :refer [build-tx-opts side-chain?]]
     [taoensso.timbre :as log]))
 
 (def interceptors [re-frame/trim-v])
@@ -34,9 +34,6 @@
   (fn [{:keys [db store]} [{:keys [:id :enabled?]}]]
     {:store (assoc-in store [:donations id] enabled?)
      :db (assoc-in db [:donations id] enabled?)}))
-
-(defn side-chain? [chain-id]
-  (not= chain-id (-> config-map :web3-chain :chain-id)))
 
 (defn matching-pool-address [chain-id db]
   (if (side-chain? chain-id)

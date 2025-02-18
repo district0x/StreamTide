@@ -23,9 +23,8 @@
     [streamtide.ui.components.general :refer [nav-anchor no-items-found]]
     [streamtide.ui.components.spinner :as spinner]
     [streamtide.ui.components.user :refer [user-photo social-links]]
-    [streamtide.ui.config :refer [config-map]]
     [streamtide.ui.subs :as st-subs]
-    [streamtide.ui.utils :as ui-utils]))
+    [streamtide.ui.utils :as ui-utils :refer [side-chain? chain-name all-chains]]))
 
 (def page-size 1000)
 
@@ -64,7 +63,7 @@
                          {:value other-coin-value :label "Other"}])
 
 (def matching-pool-chain (map (fn [chain] {:value (:chain-id chain) :label (:chain-name chain)})
-                              (cons (-> config-map :web3-chain) (-> config-map :multichain-matching-pool))))
+                              all-chains))
 
 (defn build-donations-query [{:keys [:round :order-key]} after]
   (let [[order-by order-dir] ((juxt namespace name) (keyword order-key))]
@@ -327,9 +326,14 @@
        (if @distribute-tx-success? "Distributed" "Distribute")])]))
 
 (defn donations [round-id round last-round?]
-  (let [coins (map #(let [coin (:matching-pool/coin %)]
-                       {:value (str (:coin/chain-id coin) "#" (:coin/address coin))
-                        :label (:coin/symbol coin)})
+  (let [show-chains-name? (some #(side-chain?
+                                   (-> % :matching-pool/coin :coin/chain-id)) (:round/matching-pools round))
+        coins (map #(let [coin (:matching-pool/coin %)
+                          chain-id (:coin/chain-id coin)]
+                       {:value (str chain-id "#" (:coin/address coin))
+                        :label (str (:coin/symbol coin)
+                                    (when show-chains-name?
+                                      (str " (" (chain-name chain-id)")")))})
                    (:round/matching-pools round))
         form-data (r/atom {:round round-id
                            :order-key (:key (first donations-order))
@@ -355,8 +359,10 @@
          (if
            (< (count coins) 2)
            [:div.inputField.simple.coin.disabled
+            {:class (when show-chains-name? "chain-name")}
             [:span (-> coins first :label)]]
            [:div.custom-select.selectForm.coin
+            {:class (when show-chains-name? "chain-name")}
             [select {:form-data form-data
                      :id        :coin
                      :options   coins
@@ -371,6 +377,18 @@
            [spinner/spin]
            [donations-entries round-id round matching-pool donations-search last-round?])]))))
 
+(defn format-matching-amounts [matching-pools amount-key]
+  (let [show-chains-name? (some #(side-chain?
+                                     (-> % :matching-pool/coin :coin/chain-id)) matching-pools)]
+    [:div.amounts
+     (map (fn [mp]
+            (let [chain-id (-> mp :matching-pool/coin :coin/chain-id)]
+              [:span.amount
+               {:key (str chain-id (-> mp :matching-pool/coin :coin/address))}
+               (str (shared-utils/format-price (amount-key mp) (:matching-pool/coin mp))
+                    (when show-chains-name?
+                      (str " (" (chain-name chain-id) ")")))]))
+          matching-pools)]))
 
 (defmethod page :route.admin/round []
   (let [active-page-sub (subscribe [::router-subs/active-page])
@@ -413,8 +431,8 @@
                  (str "Status: " status)])
               [:div.start (str "Start Time: " (ui-utils/format-graphql-time start))]
               [:div.end (str "End Time: " (ui-utils/format-graphql-time (+ start duration)))]
-              [:div.matching "Matching pool:" [:div.amounts (map (fn [mp] [:span.amount {:key (str (-> mp :matching-pool/coin :coin/chain-id) (-> mp :matching-pool/coin :coin/address))} (shared-utils/format-price (:matching-pool/amount mp) (:matching-pool/coin mp))] ) matching-pools)]]
-              [:div.distributed "Distributed amount:" [:div.amounts (map (fn [mp] [:span.amount {:key (str (-> mp :matching-pool/coin :coin/chain-id) (-> mp :matching-pool/coin :coin/address))} (shared-utils/format-price (:matching-pool/distributed mp) (:matching-pool/coin mp))] ) matching-pools)]]
+              [:div.matching "Matching pool:" (format-matching-amounts matching-pools :matching-pool/amount)]
+              [:div.distributed "Distributed amount:" (format-matching-amounts matching-pools :matching-pool/distributed)]
               (when (round-open? round)
                 (let [match-pool-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/fill-matching-pool tx-id-mp}])
                       match-pool-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/fill-matching-pool tx-id-mp}])
