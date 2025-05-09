@@ -163,9 +163,9 @@
                  (out-of-period-frame (merge params {:campaign campaign}))
                  (main-frame params))))))))})
 
-(defn- dollar-to-wei [dollar-amount {:keys [:etherscan-api-key]}]
+(defn- dollar-to-wei [dollar-amount {:keys [:etherscan-api-key :chain-id]}]
   (safe-go
-    (let [result (<? (.get axios (str "https://api.etherscan.io/api?module=stats&action=ethprice&apikey=" etherscan-api-key)))
+    (let [result (<? (.get axios (str "https://api.etherscan.io/v2/api?chainid=" (or chain-id "1") "&module=stats&action=ethprice&apikey=" etherscan-api-key)))
           eth-price (-> result .-data .-result .-ethusd)]
       (when-not eth-price (throw (js/Error. (str "Cannot fetch current eth price. Details: " (js/JSON.stringify (.-data result))))))
       (str (.integerValue (bn/* (bn/pow (js/BigNumber. 10) 18) (bn// (js/BigNumber. dollar-amount) (js/BigNumber. eth-price))))))))
