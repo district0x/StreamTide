@@ -1,5 +1,4 @@
-const {Status, copy, linkBytecode, smartContractsTemplate} = require ("./utils.js");
-const fs = require('fs');
+const {Status, copy, linkBytecode, writeSmartContracts} = require ("./utils.js");
 const edn = require("jsedn");
 const {env, contracts_build_directory, smart_contracts_path, parameters} = require ('../truffle.js');
 
@@ -46,9 +45,7 @@ module.exports = async(deployer, network, accounts) => {
         await streamtideForwarder.construct(parameters.multiSig, parameters.lastRound);
     });
 
-    var smartContracts = edn.encode(
-        new edn.Map([
-
+    var smartContracts = new edn.Map([
             edn.kw(":migrations"), new edn.Map([edn.kw(":name"), "Migrations",
                 edn.kw(":address"), migrations.address]),
 
@@ -58,10 +55,10 @@ module.exports = async(deployer, network, accounts) => {
             edn.kw(":streamtide-fwd"), new edn.Map([edn.kw(":name"), "MutableForwarder",
                 edn.kw(":address"), status.getValue(sk.streamtideForwarderAddr),
                 edn.kw(":forwards-to"), edn.kw(":streamtide")])
-        ]));
+        ]);
 
     console.log (smartContracts);
-    fs.writeFileSync(smart_contracts_path, smartContractsTemplate (smartContracts, env));
+    writeSmartContracts(smart_contracts_path, smartContracts, new edn.Map(), env);
 
     status.clean();
     console.log ("Done");

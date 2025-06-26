@@ -11,7 +11,8 @@ WORKDIR /build
 
 RUN yarn install && \
 bb release-server && \
+bb release-sidechain-server && \
 bb compile-contracts
 
 EXPOSE 6300 3000
-ENTRYPOINT ["node", "server/streamtide_server.js"]
+ENTRYPOINT ["npx", "pm2-runtime", "ecosystem.config.js"]

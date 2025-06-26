@@ -111,34 +111,6 @@
           (<! (db/update-round! {:round/id round-id
                              :round/duration (- timestamp (:round/start round))})))))))
 
-(defn donate-event [_ {:keys [:args]}]
-  (let [{:keys [:sender :value :patron-address :round-id :timestamp]} args]
-    (safe-go
-      (let [round-id (when (not= (str round-id) "0") round-id)
-            donation {:donation/sender sender
-                      :donation/receiver patron-address
-                      :donation/date timestamp
-                      :donation/amount value
-                      :donation/coin zero-address
-                      :round/id round-id}]
-        (<! (db/upsert-user-info! {:user/address sender}))
-        (<! (db/add-donation! donation))
-        (<! (notifiers/notify-donation donation))
-        (let [min-donation (:user/min-donation (db/get-user patron-address))]
-          (when (or (nil? min-donation) (bn/>= (js/BigNumber. value) (js/BigNumber. min-donation)))
-            (<! (db/add-user-content-permission! {:user/source-user sender
-                                              :user/target-user patron-address}))))))))
-
-(defn update-matching-pool [{:keys [:value :round-id :token]}]
-  (safe-go
-    (when (bn/> (js/BigNumber. value) (js/BigNumber. 0))
-      (let [matching-pool (<! (db/get-matching-pool round-id token))
-            amount (bn/+ (js/BigNumber. (or (:matching-pool/amount matching-pool) 0)) (js/BigNumber. value))]
-        (<! (db/upsert-matching-pool!
-              {:round/id round-id
-               :matching-pool/coin (string/lower-case token)
-               :matching-pool/amount (bn/fixed amount)}))))))
-
 (defn nullify-err [v]
   (if (cljs.core/instance? js/Error v) nil v))
 
@@ -153,26 +125,65 @@
        :coin/name name
        :coin/decimals decimals})))
 
-(defn ensure-coin-exists! [coin-address]
+(defn ensure-coin-exists! [coin-address chain-id]
   (safe-go
-    (let [coin (<! (db/get-coin coin-address))]
+    (let [coin (<! (db/get-coin coin-address chain-id))]
       (when-not (:coin/address coin)
-        (let [coin-info (<? (fetch-coin-info coin-address))]
-          (<! (db/add-coin! coin-info)))))))
+        (let [coin-info
+              (if (= zero-address coin-address)
+                {:coin/address zero-address
+                 :coin/decimals 18
+                 :coin/symbol "ETH"
+                 :coin/name "Ether"}
+                (<? (fetch-coin-info coin-address)))]
+          (<! (db/add-coin! (merge coin-info {:coin/chain-id chain-id}))))))))
 
-(defn matching-pool-donation-token-event [_ {:keys [:args]}]
+(defn donate-event [_ {:keys [:args :chain-id]}]
+  (let [{:keys [:sender :value :patron-address :round-id :timestamp]} args]
+    (safe-go
+      (let [round-id (when (not= (str round-id) "0") round-id)
+            donation {:donation/sender sender
+                      :donation/receiver patron-address
+                      :donation/date timestamp
+                      :donation/amount value
+                      :donation/coin zero-address
+                      :donation/chain-id chain-id
+                      :round/id round-id}]
+        (<! (db/upsert-user-info! {:user/address sender}))
+        (<! (ensure-coin-exists! zero-address chain-id))
+        (<! (db/add-donation! donation))
+        (<! (notifiers/notify-donation donation))
+        (let [min-donation (:user/min-donation (db/get-user patron-address))]
+          (when (or (nil? min-donation) (bn/>= (js/BigNumber. value) (js/BigNumber. min-donation)))
+            (<! (db/add-user-content-permission! {:user/source-user sender
+                                              :user/target-user patron-address}))))))))
+
+(defn update-matching-pool [{:keys [:value :round-id :token :chain-id]}]
+  (safe-go
+    (when (bn/> (js/BigNumber. value) (js/BigNumber. 0))
+      (let [matching-pool (<! (db/get-matching-pool round-id token chain-id))
+            amount (bn/+ (js/BigNumber. (or (:matching-pool/amount matching-pool) 0)) (js/BigNumber. value))]
+        (<! (db/upsert-matching-pool!
+              {:round/id round-id
+               :matching-pool/coin (string/lower-case token)
+               :matching-pool/chain-id chain-id
+               :matching-pool/amount (bn/fixed amount)}))))))
+
+(defn matching-pool-donation-token-event [_ {:keys [:args :chain-id]}]
   (let [{:keys [:sender :value :round-id :token]} args]
     (safe-go
       (do
-        (<? (ensure-coin-exists! (string/lower-case token)))
-        (<? (update-matching-pool (update args :token string/lower-case)))))))
+        (<? (ensure-coin-exists! (string/lower-case token) chain-id))
+        (<? (update-matching-pool (update (merge args {:chain-id chain-id}) :token string/lower-case)))))))
 
-(defn matching-pool-donation-event [_ {:keys [:args]}]
+(defn matching-pool-donation-event [_ {:keys [:args :chain-id]}]
   (let [{:keys [:sender :value :round-id]} args]
     (safe-go
-      (<? (update-matching-pool (merge args {:token zero-address}))))))
+      (do
+        (<? (ensure-coin-exists! zero-address chain-id))
+        (<? (update-matching-pool (merge args {:token zero-address :chain-id chain-id})))))))
 
-(defn distribute-event [_ {:keys [:args]}]
+(defn distribute-event [_ {:keys [:args :chain-id]}]
   (let [{:keys [:to :amount :timestamp :round-id :token]} args]
     (safe-go
       (<! (db/ensure-users-exist! [to]))
@@ -180,16 +191,18 @@
                              :matching/amount amount
                              :matching/date timestamp
                              :matching/coin (string/lower-case token)
+                             :matching/chain-id chain-id
                              :round/id round-id})))))
 
-(defn distribute-round-event [_ {:keys [:args]}]
+(defn distribute-round-event [_ {:keys [:args :chain-id]}]
   (let [{:keys [:round-id :amount :token]} args]
     (safe-go
-      (let [matching-pool (<! (db/get-matching-pool round-id token))
+      (let [matching-pool (<! (db/get-matching-pool round-id token chain-id))
             distributed-amount (bn/+ (js/BigNumber. (or (:matching-pool/distributed matching-pool) 0)) (js/BigNumber. amount))]
         (<! (db/upsert-matching-pool!
               {:round/id round-id
                :matching-pool/coin (string/lower-case token)
+               :matching-pool/chain-id chain-id
                :matching-pool/distributed (bn/fixed distributed-amount)}))))))
 
 
@@ -211,25 +224,28 @@
             (throw (js/Error. "Database module has not started")))
           (swap! last-block-number #(max %1 block-number))
           (let [block-timestamp (<? (block-timestamp block-number))
+                chain-id (<? (web3-eth/get-chain-id @web3)) ;; TODO maybe we can cache this
                 event (-> event
                           (update :event camel-snake-kebab/->kebab-case)
                           (update-in [:args :version] bn/number)
                           (update-in [:args :timestamp] (fn [timestamp]
                                                           (if timestamp
                                                             (bn/number timestamp)
-                                                            block-timestamp))))
+                                                            block-timestamp)))
+                          (merge {:chain-id chain-id}))
                 {:keys [:event/contract-key :event/event-name :event/block-number :event/log-index]} (get-event event)
                 {:keys [:event/last-block-number :event/last-log-index :event/count]
                  :or {last-block-number -1
                       last-log-index -1
-                      count 0}} (<? (db/get-last-event contract-key event-name))
+                      count 0}} (<? (db/get-last-event contract-key event-name chain-id))
                 evt {:event/contract-key contract-key
                      :event/event-name event-name
                      :event/count count
                      :last-block-number last-block-number
                      :last-log-index last-log-index
                      :block-number block-number
-                     :log-index log-index}]
+                     :log-index log-index
+                     :chain-id chain-id}]
             (log/debug "Handling new event" evt)
             (if (or (> block-number last-block-number)
                     (and (= block-number last-block-number) (> log-index last-log-index)))
@@ -239,10 +255,11 @@
                   (<? result))
                 (log/info "Handled new event" evt)
                 (<? (db/upsert-event! {:event/last-log-index log-index
-                                   :event/last-block-number block-number
-                                   :event/count (inc count)
-                                   :event/event-name event-name
-                                   :event/contract-key contract-key})))
+                                       :event/last-block-number block-number
+                                       :event/count (inc count)
+                                       :event/event-name event-name
+                                       :event/contract-key contract-key
+                                       :event/chain-id chain-id})))
 
               (log/info "Skipping handling of a persisted event" evt)))
           (catch js/Error error
@@ -262,35 +279,38 @@
               (web3-core/disconnect @web3))))))
     interval))
 
-(defn reload-timeout-start [{:keys [:reload-interval]}]
+(defn reload-timeout-start [reload-interval]
   (reset! reload-timeout (reload-handler reload-interval)))
 
 (defn reload-timeout-stop []
   (js/clearInterval @reload-timeout))
 
-(defn start [opts]
-  (when-not (:disabled? opts)
+(defn register-events [{:keys [:disabled? :reload-interval] :as opts} event-callbacks]
+  (when-not disabled?
     (let [start-time (shared-utils/now)
-          event-callbacks {:streamtide/admin-added-event admin-added-event
-                           :streamtide/admin-removed-event admin-removed-event
-                           :streamtide/blacklisted-added-event blacklisted-added-event
-                           :streamtide/blacklisted-removed-event blacklisted-removed-event
-                           :streamtide/patrons-added-event patrons-added-event
-                           :streamtide/round-started-event round-started-event
-                           :streamtide/round-closed-event round-closed-event
-                           :streamtide/matching-pool-donation-event matching-pool-donation-event
-                           :streamtide/matching-pool-donation-token-event matching-pool-donation-token-event
-                           :streamtide/distribute-event distribute-event
-                           :streamtide/distribute-round-event distribute-round-event
-                           :streamtide/donate-event donate-event}
           callback-ids (doall (for [[event-key callback] event-callbacks]
                                 (web3-events/register-callback! event-key (dispatcher callback))))]
       (web3-events/register-after-past-events-dispatched-callback! (fn []
                                                                      (log/warn "Syncing past events finished" (time/time-units (- (shared-utils/now) start-time)) ::start)
                                                                      (ping-start {:ping-interval 10000})
-                                                                     (when (> (:reload-interval opts) 0)
-                                                                       (reload-timeout-start (select-keys opts [:reload-interval])))))
+                                                                     (when (> reload-interval 0)
+                                                                       (reload-timeout-start reload-interval))))
       (assoc opts :callback-ids callback-ids))))
+
+(defn start [{:keys [:disabled? :reload-interval] :as opts}]
+  (register-events opts {:streamtide/admin-added-event admin-added-event
+                         :streamtide/admin-removed-event admin-removed-event
+                         :streamtide/blacklisted-added-event blacklisted-added-event
+                         :streamtide/blacklisted-removed-event blacklisted-removed-event
+                         :streamtide/patrons-added-event patrons-added-event
+                         :streamtide/round-started-event round-started-event
+                         :streamtide/round-closed-event round-closed-event
+                         :streamtide/matching-pool-donation-event matching-pool-donation-event
+                         :streamtide/matching-pool-donation-token-event matching-pool-donation-token-event
+                         :streamtide/distribute-event distribute-event
+                         :streamtide/distribute-round-event distribute-round-event
+                         :streamtide/donate-event donate-event}))
+
 
 (defn stop [syncer]
   (reload-timeout-stop)

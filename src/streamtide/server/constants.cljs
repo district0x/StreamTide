@@ -14,4 +14,12 @@
    :streamtide/distribute-round-event [:streamtide-fwd :DistributeRound]
    :streamtide/donate-event [:streamtide-fwd :Donate]})
 
+(def web3-matching-pool-events
+  {:matching-pool/admin-added-event [:matching-pool-fwd :AdminAdded]
+   :matching-pool/admin-removed-event [:matching-pool-fwd :AdminRemoved]
+   :matching-pool/matching-pool-donation-event [:matching-pool-fwd :MatchingPoolDonation]
+   :matching-pool/matching-pool-donation-token-event [:matching-pool-fwd :MatchingPoolDonationToken]
+   :matching-pool/distribute-event [:matching-pool-fwd :Distribute]
+   :matching-pool/distribute-round-event [:matching-pool-fwd :DistributeRound]})
+
 (def farcaster-default-image "/img/layout/streamtide-farcaster.png")

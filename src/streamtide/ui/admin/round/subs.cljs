@@ -24,5 +24,5 @@
 
 (re-frame/reg-sub
   ::coin-info
-  (fn [db [_ coin-address]]
-    (get-in db [:coin-info coin-address])))
+  (fn [db [_ chain-id coin-address]]
+    (get-in db [:coin-info chain-id coin-address])))

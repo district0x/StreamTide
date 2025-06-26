@@ -1,6 +1,7 @@
 (ns streamtide.ui.components.connect-wallet
   (:require
     ["thirdweb/react" :refer [ConnectButton ThirdwebProvider useActiveWallet useActiveAccount useConnect useActiveWalletChain useConnectModal]]
+    ["thirdweb/chains" :refer [defineChain]]
     ["thirdweb/wallets" :refer [createWallet]]
     ["thirdweb" :refer [createThirdwebClient waitForReceipt]]
     ["thirdweb/utils" :refer [toHex]]
@@ -8,6 +9,7 @@
     ["react" :as react]
     [camel-snake-kebab.core :as csk]
     [camel-snake-kebab.extras :refer [transform-keys]]
+    [clojure.string :as string]
     [district.ui.logging.events :as logging]
     [district.ui.web3-accounts.subs :as accounts-subs]
     [district.ui.web3-accounts.events :as accounts-events]
@@ -19,20 +21,25 @@
     [re-frame.core :as re-frame :refer [subscribe dispatch]]
     [reagent.core :as r]
     [streamtide.ui.subs :as st-subs]
-    [streamtide.ui.config :refer [config-map]]))
+    [streamtide.ui.config :refer [config-map]]
+    [streamtide.ui.utils :refer [all-chains]]))
 
 (defonce wallet (atom nil))
 (defonce connect-modal-atom (atom nil))
 
-(defn build-chain-info []
-  (clj->js (-> config-map
-               :web3-chain
-               (update :chain-id int)
-               (update :rpc-urls first)
-               (clojure.set/rename-keys {:chain-id :id
-                                         :rpc-urls :rpc
-                                         :chain-name :name
-                                         :native-currency :nativeCurrency}))))
+(defn build-chain-info
+  ([]
+   (build-chain-info (-> config-map :web3-chain :chain-id)))
+  ([chain-id]
+   (let [chains-map (into {} (map (fn [chain] [(:chain-id chain) chain]) all-chains))
+         chain (get chains-map chain-id)]
+     (clj->js (-> chain
+                  (update :chain-id int)
+                  (update :rpc-urls first)
+                  (clojure.set/rename-keys {:chain-id :id
+                                            :rpc-urls :rpc
+                                            :chain-name :name
+                                            :native-currency :nativeCurrency}))))))
 
 (defn- parse-tx [receipt]
   (let [receipt (js->clj receipt :keywordize-keys true)
@@ -63,8 +70,9 @@
                connectModal @connect-modal-atom
                rpc-call (fn [rpc-method params-map parse-fn nil-if-error?]
                           (js/Promise. (fn [resolve reject]
-                                         (let [rpc-client# (getRpcClient #js {:client (.-client connect-config)
-                                                                              :chain  (build-chain-info)})]
+                                         (let [chain (or (when-not (nil? wallet) (.getChain wallet)) (build-chain-info))
+                                               rpc-client# (getRpcClient #js {:client (.-client connect-config)
+                                                                              :chain chain})]
                                            (-> (rpc-method rpc-client# (clj->js params-map))
                                                (.then (fn [res#]
                                                         (resolve (parse-fn res#))))
@@ -80,7 +88,12 @@
                                      ((.-connect connectModal) connect-config)
                                      (js/Promise. (fn [resolve]
                                                     (resolve [(-> wallet .getAccount .-address)]))))
-             "wallet_switchEthereumChain" (.switchChain wallet (build-chain-info))
+             "wallet_switchEthereumChain" (let [^js p (-> args .-params (aget 0))
+                                                ^js requested-chain-id (-> p .-chainId str)]
+                                            (.switchChain wallet (defineChain (build-chain-info
+                                                                                (if (string/starts-with? requested-chain-id "0x")
+                                                                                  (-> requested-chain-id js/parseInt str)
+                                                                                  requested-chain-id)))))
              "eth_sendTransaction" (if (nil? wallet)
                                      ((.-connect connectModal) connect-config)
                                      (js/Promise. (fn [resolve reject]

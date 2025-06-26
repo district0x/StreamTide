@@ -137,7 +137,9 @@
 			.coin {
 				width: 160px;
 				margin: 8px 0;
-
+				&.chain-name {
+					width: 280px;
+				}
 			}
 			.custom-select.selectForm {
 				.select__value-container {

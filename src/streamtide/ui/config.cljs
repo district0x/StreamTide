@@ -12,7 +12,8 @@
    :logging {:level :debug
              :console? true}
    :graphql {:url "http://localhost:6300/graphql"}
-   :smart-contracts {:contracts smart-contracts-dev/smart-contracts}
+   :smart-contracts {:contracts (merge (-> smart-contracts-dev/multichain-smart-contracts first second) smart-contracts-dev/smart-contracts)}
+   :multichain-smart-contracts {:contracts smart-contracts-dev/multichain-smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
    :web3-chain {:chain-id "1337"
                 :rpc-urls ["http://localhost:8545"]
@@ -20,6 +21,12 @@
                 :native-currency {:name "ETH"
                                   :symbol "ETH"
                                   :decimals 18}}
+   :multichain-matching-pool [{:chain-id "5777"
+                               :rpc-urls ["http://localhost:7545"]
+                               :chain-name "Another Ganache"
+                               :native-currency {:name "ETH"
+                                                 :symbol "ETH"
+                                                 :decimals 18}}]
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    :thirdweb {:client-id "."}
    })
@@ -28,7 +35,8 @@
   {:logging {:level :warn
              :console? true}
    :graphql {:url "https://api.streamtide.qa.district0x.io/graphql"}
-   :smart-contracts {:contracts smart-contracts-qa/smart-contracts}
+   :smart-contracts {:contracts (merge (-> smart-contracts-qa/multichain-smart-contracts first second) smart-contracts-qa/smart-contracts)}
+   :multichain-smart-contracts {:contracts smart-contracts-qa/multichain-smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
    :web3-chain {:chain-id "84532"
                 :rpc-urls ["https://sepolia.base.org"]
@@ -37,6 +45,12 @@
                                   :symbol "ETH"
                                   :decimals 18}
                 :block-explorer-urls ["https://sepolia-explorer.base.org"]}
+   :multichain-matching-pool [{:chain-id "11155111"
+                               :rpc-urls ["https://sepolia.infura.io"]
+                               :chain-name "Sepolia"
+                               :native-currency {:name "ETH"
+                                                 :symbol "ETH"
+                                                 :decimals 18}}]
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
    })
@@ -45,7 +59,8 @@
   {:logging {:level :warn
              :console? false}
    :graphql {:url "https://api.streamtide.io/graphql"}
-   :smart-contracts {:contracts smart-contracts-prod/smart-contracts}
+   :smart-contracts {:contracts (merge (-> smart-contracts-prod/multichain-smart-contracts first second) smart-contracts-prod/smart-contracts)}
+   :multichain-smart-contracts {:contracts smart-contracts-prod/multichain-smart-contracts}
    :verifiers {:discord {:client-id "1135876901093781544"}}
    :web3-chain {:chain-id "8453"
                 :rpc-urls ["https://mainnet.base.org"]
@@ -54,6 +69,7 @@
                                   :symbol "ETH"
                                   :decimals 18}
                 :block-explorer-urls ["https://base.blockscout.com"]}
+   :multichain-matching-pool []
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
    })

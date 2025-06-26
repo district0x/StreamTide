@@ -131,10 +131,10 @@
   (wrap-as-promise
     (logic/get-user (user-id current-user) sender)))
 
-(defn donation->coin-resolver [{:keys [:donation/coin] :as donation-coin} _ {:keys [:current-user]}]
+(defn donation->coin-resolver [{:keys [:donation/coin :donation/chain-id] :as donation-coin} _ {:keys [:current-user]}]
   (log/debug "donation->coin-resolver args" donation-coin)
   (wrap-as-promise
-    (logic/get-coin (user-id current-user) coin)))
+    (logic/get-coin (user-id current-user) coin chain-id)))
 
 (defn donation->receiver-resolver [{:keys [:donation/receiver] :as user-donation}]
   (log/debug "donation->receiver-resolver args" user-donation)
@@ -144,20 +144,20 @@
   (log/debug "matching->receiver-resolver args" user-donation)
   user-donation)
 
-(defn matching->coin-resolver [{:keys [:matching/coin] :as matching-coin} _ {:keys [:current-user]}]
+(defn matching->coin-resolver [{:keys [:matching/coin :matching/chain-id] :as matching-coin} _ {:keys [:current-user]}]
   (log/debug "matching->coin-resolver args" matching-coin)
   (wrap-as-promise
-    (logic/get-coin (user-id current-user) coin)))
+    (logic/get-coin (user-id current-user) coin chain-id)))
 
-(defn matching-pool->coin-resolver [{:keys [:matching-pool/coin] :as matching-pool-coin} _ {:keys [:current-user]}]
+(defn matching-pool->coin-resolver [{:keys [:matching-pool/coin :matching-pool/chain-id] :as matching-pool-coin} _ {:keys [:current-user]}]
   (log/debug "matching-pool->coin-resolver args" matching-pool-coin)
   (wrap-as-promise
-    (logic/get-coin (user-id current-user) coin)))
+    (logic/get-coin (user-id current-user) coin chain-id)))
 
-(defn coin-amount->coin-resolver [{:keys [:coin] :as coin-amount} _ {:keys [:current-user]}]
+(defn coin-amount->coin-resolver [{:keys [:coin :chain-id] :as coin-amount} _ {:keys [:current-user]}]
   (log/debug "coin-amount->coin-resolver args" coin-amount)
   (wrap-as-promise
-    (logic/get-coin (user-id current-user) coin)))
+    (logic/get-coin (user-id current-user) coin chain-id)))
 
 (defn campaign->user-resolver [{:keys [:user/address] :as user-campaign} _ {:keys [:current-user]}]
   (log/debug "campaign->user-resolver args" user-campaign)

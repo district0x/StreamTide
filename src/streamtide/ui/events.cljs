@@ -53,8 +53,7 @@
   ::web3-chain-changed
   [interceptors]
   (fn [{:keys [db]} [[_ {:keys [:new]}]]]
-    (when (= new (-> config-map :web3-chain :chain-id))
-      {:dispatch [::dispatch-pending-event]})))
+    {:dispatch [::dispatch-pending-event]}))
 
 
 (def last-wallet-event (atom nil))
@@ -91,7 +90,7 @@
                     (assoc context :queue #queue [])))))))
 
 
-(def check-chain
+(defn check-chain-id [parse-chain-fn]
   ;; interceptor to make sure wallet is connected to the proper network.
   ;; If not in the right network, it will request the user to switch networks.
   ;; Additionally, it stores the current event, so it resumes it when network is switched.
@@ -99,13 +98,14 @@
     :id :connect-wallet
     :before (fn [context]
               (let [db (-> context :coeffects :db)
-                    chain-id (-> config-map :web3-chain :chain-id)]
+                    event (-> context :coeffects :event)
+                    chain-id (parse-chain-fn event)]
                 (if (= chain-id (chain-queries/chain db))
                   ; if chain is correct, we just follow the normal flow
                   context
                   (do
                     ; stores the interrupted event to resume it later
-                    (reset! last-wallet-event {:event (-> context :coeffects :event)
+                    (reset! last-wallet-event {:event event
                                                :timestamp (shared-utils/now-secs)})
                     ; request a change of network
                     (re-frame/dispatch [::chain-events/request-switch-chain
@@ -116,6 +116,8 @@
                                                      [::logging/error "Cannot switch network"]]]}])
                     ; interrupt the event processing
                     (assoc context :queue #queue [])))))))
+
+(def check-chain (check-chain-id #(-> config-map :web3-chain :chain-id)))
 
 (def wallet-chain-interceptors [connect-wallet check-chain])
 
