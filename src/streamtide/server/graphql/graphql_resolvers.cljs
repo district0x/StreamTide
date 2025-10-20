@@ -285,7 +285,11 @@
                             (:user/notification-categories input)
                             (update :user/notification-categories adjust-notification-categories)
                             (:user/notification-types input)
-                            (update :user/notification-types adjust-notification-types))]
+                            (update :user/notification-types adjust-notification-types)
+                            (= (:user/donations-type input) "eth")
+                            (assoc :user/vibe-market-drop-address nil)
+                            (= (:user/donations-type input) "vibe-market")
+                            (assoc :user/min-donation nil))]
           (<? (logic/update-user-info! user-id input config))
           (<? (logic/get-user user-id user-id)))))))
 

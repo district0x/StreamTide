@@ -24,7 +24,9 @@
                            :user/handle :$handle
                            :user/url :$url
                            :user/perks :$perks
+                           :user/donations-type :$donationstype
                            :user/min-donation :$mindonation
+                           :user/vibe-market-drop-address :$vibemarketdropaddress
                            ;; TODO for simplicity we are uploading photos as base64
                            ;; TODO consider using as multipart or using a separated (REST?) API
                            :user/photo :$photo
@@ -46,7 +48,11 @@
                           :variable/type :String}
                          {:variable/name :$perks
                           :variable/type :String}
+                         {:variable/name :$donationstype
+                          :variable/type :String}
                          {:variable/name :$mindonation
+                          :variable/type :String}
+                         {:variable/name :$vibemarketdropaddress
                           :variable/type :String}
                          {:variable/name :$photo
                           :variable/type :String}
@@ -63,10 +69,12 @@
          :dispatch [::gql-events/mutation
                     {:query query
                      :variables (-> form-data
-                                    (select-keys [:name :description :tagline :handle :url :perks :min-donation
+                                    (select-keys [:name :description :tagline :handle :url :perks :donations-type :min-donation :vibe-market-drop-address
                                                   :socials :photo :bg-photo :notification-categories :notification-types])
                                     (clojure.set/rename-keys {:bg-photo :bgphoto
+                                                              :donations-type :donationstype
                                                               :min-donation :mindonation
+                                                              :vibe-market-drop-address :vibemarketdropaddress
                                                               :notification-categories :notificationcategories
                                                               :notification-types :notificationtypes}))
                      :on-success on-success

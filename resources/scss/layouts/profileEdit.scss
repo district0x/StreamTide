@@ -99,7 +99,7 @@
 				}
 			}
 		}
-		.generalInfo, .min-donation, .perks {
+		.generalInfo, .min-donation, .vibe-market, .perks {
 			margin-bottom: 23px;
 			label.inputField {
 				display: flex;
@@ -520,9 +520,18 @@
 					min-width: 189px;
 				}
 			}
-			.min-donation {
+			.donations-configs {
 				margin-top: 3em;
 			}
+            .donations-config {
+              margin-top: 15px;
+              margin-left: 1em;
+            }
+            .vibe-market {
+              span {
+                min-width: fit-content;
+              }
+            }
 		}
 		.submitField {
 			background: $bgSite;

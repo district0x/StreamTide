@@ -202,7 +202,9 @@ input UserInput {
     user_photo: String
     user_bgPhoto: String
     user_perks: String
+    user_donationsType: String
     user_minDonation: String
+    user_vibeMarketDropAddress: String
     user_socials: [SocialLinkInput!]
     user_notificationCategories: [NotificationCategorySettingInput!]
     user_notificationTypes: [NotificationTypeSettingInput!]
@@ -253,7 +255,9 @@ type User {
     user_handle: String
     user_url: String
     user_perks: String
+    user_donationsType: String
     user_minDonation: String
+    user_vibeMarketDropAddress: String
     user_socials: [SocialLink!]
     user_photo: String
     user_bgPhoto: String

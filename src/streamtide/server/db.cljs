@@ -87,7 +87,9 @@
    [:user/tagline :varchar default-nil]
    [:user/handle :varchar default-nil]
    [:user/url :varchar default-nil]
+   [:user/donations-type :varchar default-nil]
    [:user/min-donation :amount default-nil]
+   [:user/vibe-market-drop-address address default-nil]
    [:user/creation-date :timestamp not-nil]
    [:user/blacklisted :bool default-false]])
 

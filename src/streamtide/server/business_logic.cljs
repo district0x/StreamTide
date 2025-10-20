@@ -11,8 +11,10 @@
             [path]
             [streamtide.server.constants :refer [farcaster-default-image]]
             [streamtide.server.db :as stdb]
+            [streamtide.server.donations-configs.donations-configs :as donations-configs]
+            [streamtide.server.donations-configs.eth-donation]
+            [streamtide.server.donations-configs.vibe-market-donation]
             [streamtide.server.notifiers.notifiers :as notifiers]
-            [streamtide.server.verifiers.twitter-verifier :as twitter]
             [streamtide.server.verifiers.discord-verifier]
             [streamtide.server.verifiers.eth-verifier]
             [streamtide.server.verifiers.twitter-verifier :as twitter]
@@ -204,25 +206,29 @@
                                        (not (shared-utils/expected-root-domain? url
                                                                                 ((keyword network) shared-utils/social-domains))) ))
                                 socials)]
-    (when (not-empty invalid-socials) (throw (str "invalid social links: "
+    (when (not-empty invalid-socials) (throw (js/Error. (str "invalid social links: "
                                          (map (fn [{:keys [:social/url :social/network]}]
-                                                (str network ": " url)) invalid-socials))))))
+                                                (str network ": " url)) invalid-socials)))))))
 
 (defn- check-user-urls [user]
   (let [invalid-urls (filter (fn [field]
                                (and (not-empty (field user))
                                     (not (shared-utils/valid-url? (field user)))))
                              [:user/url :user/perks])]
-    (when (not-empty invalid-urls) (throw (str "invalid URLs: "
+    (when (not-empty invalid-urls) (throw (js/Error. (str "invalid URLs: "
                                                   (map (fn [field]
-                                                         (str (name field) ": " (field user))) invalid-urls))))))
+                                                         (str (name field) ": " (field user))) invalid-urls)))))))
 
 (defn- check-content-url [url]
   (when (or (string/blank? url)
             (not (shared-utils/valid-url? url)))
-    (throw (str "invalid URL: " url))))
+    (throw (js/Error. (str "invalid URL: " url)))))
 
-(defn update-user-info! [current-user {:keys [:user/socials :user/perks :user/photo :user/bg-photo :user/notification-categories :user/notification-types] :as args} config]
+(defn- check-donations-config [{:keys [:user/donations-type] :as args}]
+  (safe-go
+    (<? (donations-configs/verify (keyword donations-type) args))))
+
+(defn update-user-info! [current-user {:keys [:user/socials :user/perks :user/photo :user/bg-photo :user/notification-categories :user/notification-types :user/donations-type] :as args} config]
   "Sets the user info"
   (require-auth current-user)
   (safe-go
@@ -230,9 +236,12 @@
 
     (check-user-urls args)
     (check-socials socials)
+    (when donations-type
+      (<? (check-donations-config args)))
 
     ;; TODO images come encoded in base64 directly in the request. They should come separated from the API
     (let [args (cond-> args
+                       (not donations-type) (dissoc :min-donation :vibe-market-drop-address)
                        bg-photo (update :user/bg-photo upload-photo current-user :bg-photo config)
                        photo (update :user/photo upload-photo current-user :photo config))]
       (<? (stdb/upsert-user-info! (merge args {:user/address current-user})))

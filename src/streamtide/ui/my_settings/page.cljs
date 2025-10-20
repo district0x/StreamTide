@@ -2,6 +2,7 @@
   ; Page to edit the user profile
   (:require
     [cljs-web3-next.core :as web3]
+    [cljs-web3-next.helpers :refer [zero-address]]
     [clojure.string :as string]
     [district.graphql-utils :as gql-utils]
     [district.ui.component.form.input :refer [text-input get-by-path assoc-by-path file-drag-input checkbox-input err-reported radio-group]]
@@ -14,6 +15,7 @@
     [reagent.ratom :refer [reaction]]
     [streamtide.shared.utils :refer [valid-url? valid-email? expected-root-domain? social-domains deep-merge from-wei now-secs]]
     [streamtide.ui.components.app-layout :refer [app-layout]]
+    [streamtide.ui.components.custom-select :refer [select]]
     [streamtide.ui.components.error-notification :as error-notification]
     [streamtide.ui.components.general :refer [no-items-found support-seal discord-invite-link]]
     [streamtide.ui.components.spinner :as spinner]
@@ -21,6 +23,7 @@
     [streamtide.ui.components.web-push :as web-push]
     [streamtide.ui.my-settings.events :as ms-events]
     [streamtide.ui.my-settings.subs :as ms-subs]
+    [streamtide.ui.utils :as ui-utils]
     [streamtide.ui.utils :refer [switch-popup check-session build-grant-status-query]]
     [taoensso.timbre :as log]))
 
@@ -36,7 +39,9 @@
     :user/tagline
     :user/handle
     :user/url
+    :user/donations-type
     :user/min-donation
+    :user/vibe-market-drop-address
     :user/perks
     :user/photo
     :user/bg-photo]])
@@ -63,6 +68,11 @@
   [{:keys [:form-values :id] :as opts}]
   [text-input (merge {:value (get-by-path form-values id)}
                      (apply dissoc opts [:form-values]))])
+
+(defn initializable-select
+  [{:keys [:form-values :id] :as opts}]
+  [select (merge {:initial-value (get-by-path form-values id)}
+                 (apply dissoc opts [:form-values]))])
 
 (defn initializable-checkbox-input
   [{:keys [:form-values :form-data :id] :as opts}]
@@ -168,6 +178,9 @@
                 (assoc aggr type (first user-ids)))))
           {}
           notification-settings))
+
+(defn- parse-donations-type [entries]
+  (update entries :donations-type #(if % % "eth")))
 
 (defn- parse-min-donation [entries]
   (update entries :min-donation #(if % (from-wei %) "0")))
@@ -469,18 +482,27 @@
 
 (defn clean-form-data [form-data form-values initial-values]
   (try
-    (cond-> form-values
-            true (select-keys (keys (filter (fn [[key val]]
-                                              (or (= key :name)
-                                                  (not= (key initial-values) val))) form-values)))
-            (:socials @form-data) (update :socials socials-kw->gql)
-            (:notification-categories @form-data) (update :notification-categories notification-categories->gql)
-            (:notification-types @form-data) (update :notification-types notification-types->gql)
-            (and (:photo @form-data) (-> @form-data :photo :error)) (dissoc :photo)
-            (and (:photo @form-data) (-> @form-data :photo :error not)) (update :photo photo->gql)
-            (and (:bg-photo @form-data) (-> @form-data :bg-photo :error)) (dissoc :bg-photo)
-            (and (:bg-photo @form-data) (-> @form-data :bg-photo :error not)) (update :bg-photo photo->gql)
-            (:min-donation @form-data) (update :min-donation #(if (empty? %) "0" (web3/to-wei % :ether))))
+    (let [f (cond-> form-values
+              true (select-keys (keys (filter (fn [[key val]]
+                                                (or (= key :name)
+                                                    (= key :donations-type)
+                                                    (not= (key initial-values) val))) form-values)))
+              (:socials @form-data) (update :socials socials-kw->gql)
+              (:notification-categories @form-data) (update :notification-categories notification-categories->gql)
+              (:notification-types @form-data) (update :notification-types notification-types->gql)
+              (and (:photo @form-data) (-> @form-data :photo :error)) (dissoc :photo)
+              (and (:photo @form-data) (-> @form-data :photo :error not)) (update :photo photo->gql)
+              (and (:bg-photo @form-data) (-> @form-data :bg-photo :error)) (dissoc :bg-photo)
+              (and (:bg-photo @form-data) (-> @form-data :bg-photo :error not)) (update :bg-photo photo->gql)
+              (or (not (:donations-type @form-data)) (= (:donations-type @form-data) "eth")) (dissoc :vibe-market-drop-address)
+              (= (:donations-type @form-data) "vibe-market") (dissoc :min-donation)
+              (:min-donation @form-data) (update :min-donation #(if (empty? %) "0" (web3/to-wei % :ether))))]
+      (cond-> f
+              (and (= (:donations-type f) (:donations-type initial-values))
+                   (or
+                     (and (= (:donations-type f) "eth") (not (:min-donation f)))
+                     (and (= (:donations-type f) "vibe-market") (not (:vibe-market-drop-address f)))))
+              (dissoc :donations-type)))
     (catch :default e
       (dispatch [::error-notification/show-error "Invalid data" e])
       (throw e))))
@@ -516,9 +538,14 @@
         restore-settings-loaded? (r/atom false)
         form-data (r/atom {})
         errors (reaction {:local (cond-> {}
-                                         (and (:min-donation @form-data)
+                                         (and (or (not (:donations-type @form-data)) (= (:donations-type @form-data) "eth"))
+                                              (:min-donation @form-data)
                                               (not (re-matches #"^\d+(\.\d{0,18})?$" (:min-donation @form-data))))
                                          (assoc :min-donation "Amount not valid")
+                                         (and (= (:donations-type @form-data) "vibe-market")
+                                              (or (empty? (:vibe-market-drop-address @form-data))
+                                                  (not (ui-utils/valid-address-format? (:vibe-market-drop-address @form-data)))))
+                                         (assoc :vibe-market-drop-address "Address not valid")
 
                                          (some-invalid-url? (:url @form-data))
                                          (assoc :url "URL not valid")
@@ -544,7 +571,7 @@
     (add-watch form-data :store-settings-local
                (fn [_ _ _ new-state]
                  (when (-> new-state meta :touched?)
-                  (dispatch [::ms-events/store-settings-local new-state]))))
+                   (dispatch [::ms-events/store-settings-local new-state]))))
     (fn []
       (check-session)
       (let [restore-settings-popup-open? (r/atom (restore-settings? active-account restore-settings-loaded?))
@@ -556,8 +583,9 @@
             initial-values (when user-settings (-> @user-settings
                                                    :user
                                                    remove-ns
-                                                   (select-keys [:name :description :tagline :handle :url :photo :bg-photo :perks :min-donation])
+                                                   (select-keys [:name :description :tagline :handle :url :photo :bg-photo :perks :donations-type :min-donation :vibe-market-drop-address])
                                                    select-photos
+                                                   parse-donations-type
                                                    parse-min-donation))
             form-values (deep-merge initial-values @form-data)
             input-params {:read-only loading?
@@ -632,16 +660,42 @@
               [:hr.lineProfileEdit]
               [grant-info grant-status show-grant-popup-fn errors]
               (when (= grant-status :grant.status/approved)
-                [:<>
-                 [:div.min-donation
-                  [:h2 "Minimum donation amount"]
-                  [:p "Donations smaller to this amount will not unlock your 'supporter only' content"]
+                [:div.donations-configs
+                 [:h2 "Donations config"]
+                 [:p "Select how donations will reach you."]
+                 [initializable-select
+                  {:id :donations-type
+                   :form-data form-data
+                   :form-values form-values
+                   :options [{:label "ETH Donation" :value "eth" }
+                             {:label "Vibe Market Cards Pack" :value "vibe-market"}]}]
 
-                  [:label.inputField
-                   [:span "ETH"]
-                   [initializable-text-input
-                    (merge input-params
-                           {:id :min-donation})]]]
+                 [:div.donations-config
+                 (case (:donations-type form-values)
+                   "eth"
+                   [:div.min-donation
+                    [:p "Donations will be done in ETH and full amount will be transferred to your address."]
+                    [:h2 "Minimum donation amount"]
+                    [:p "Donations smaller to this amount will not unlock your 'supporter only' content"]
+
+                    [:label.inputField
+                     [:span "ETH"]
+                     [initializable-text-input
+                      (merge input-params
+                             {:id :min-donation
+                              :on-change #(swap! form-data assoc :donations-type "eth")})]]]
+
+                   "vibe-market"
+                   [:div.vibe-market
+                    [:p "Donations will buy Liquid Trading Cards (LTC) and send them to the buyer."]
+
+                    [:label.inputField
+                     [:span "Drop Address"]
+                     [initializable-text-input
+                      (merge input-params
+                             {:id :vibe-market-drop-address
+                              :placeholder zero-address
+                              :on-change #(swap! form-data assoc :donations-type "vibe-market")})]]])]
                  [:div.perks
                   [:h2 "Perks Button URL"]
                   [:p "Add a redemption link for your supporters to claim when they support you. This could be anything from a swag discount code, Web3 redemtpion link, private streams, etc."]

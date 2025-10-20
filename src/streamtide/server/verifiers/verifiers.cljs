@@ -1,4 +1,6 @@
-(ns streamtide.server.verifiers.verifiers)
+(ns streamtide.server.verifiers.verifiers
+  (:require
+    [district.shared.async-helpers :refer [<? safe-go]]))
 
 (defmulti verify
           "Verify social network authentication"
@@ -6,4 +8,5 @@
             network))
 
 (defmethod verify :default [network _]
-  (js/Error. (str "Network not supported: " network)))
+  (safe-go
+    (throw (js/Error. (str "Network not supported: " network)))))
