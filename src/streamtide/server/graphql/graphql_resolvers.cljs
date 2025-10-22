@@ -110,6 +110,11 @@
           (map #(update % :notification/type (fn [t] (db-name->gql-enum :notification-type t)))
                notification-types))))))
 
+(defn user->coin-resolver [{:keys [:user/donation-coin :user/donation-chain-id] :as user-donation-coin} _ {:keys [:current-user]}]
+  (log/debug "user->coin-resolver args" user-donation-coin)
+  (wrap-as-promise
+    (logic/get-coin (user-id current-user) donation-coin donation-chain-id)))
+
 (defn grant->user-resolver [{:keys [:grant/user] :as user-grant}]
   (log/debug "grant->user-resolver args" user-grant)
   user-grant)
@@ -505,7 +510,8 @@
           :user/has-private-content user->has-private-content-resolver
           :user/unlocked user->unlocked-resolver
           :user/notification-categories user->notification-categories-resolver
-          :user/notification-types user->notification-types-resolver}
+          :user/notification-types user->notification-types-resolver
+          :user/donation-coin user->coin-resolver}
    :Grant {:grant/user grant->user-resolver
            :grant/status grant->status-resolver}
    :Content {:content/user content->user-resolver

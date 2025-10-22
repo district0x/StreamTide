@@ -4,9 +4,18 @@
 
 (defmulti verify
           "Verify donation config"
-          (fn [donation-type _args]
+          (fn [donation-type _coin-address]
+            donation-type))
+
+(defmulti parse-call-data
+          "Parse donation event call-data"
+          (fn [donation-type {:keys [:target :call-data :amount] :as _args}]
             donation-type))
 
 (defmethod verify :default [donation-type _]
+  (safe-go
+    (throw (js/Error. (str "Donation config type not supported: " donation-type)))))
+
+(defmethod parse-call-data :default [donation-type _]
   (safe-go
     (throw (js/Error. (str "Donation config type not supported: " donation-type)))))

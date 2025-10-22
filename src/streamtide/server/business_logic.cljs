@@ -224,9 +224,9 @@
             (not (shared-utils/valid-url? url)))
     (throw (js/Error. (str "invalid URL: " url)))))
 
-(defn- check-donations-config [{:keys [:user/donations-type] :as args}]
+(defn- check-donations-config [{:keys [:user/donations-type :user/vibe-market-drop-address] :as args}]
   (safe-go
-    (<? (donations-configs/verify (keyword donations-type) args))))
+    (<? (donations-configs/verify (keyword donations-type) vibe-market-drop-address))))
 
 (defn update-user-info! [current-user {:keys [:user/socials :user/perks :user/photo :user/bg-photo :user/notification-categories :user/notification-types :user/donations-type] :as args} config]
   "Sets the user info"
@@ -236,14 +236,16 @@
 
     (check-user-urls args)
     (check-socials socials)
-    (when donations-type
-      (<? (check-donations-config args)))
 
     ;; TODO images come encoded in base64 directly in the request. They should come separated from the API
-    (let [args (cond-> args
+    (let [donations-coin (when donations-type (<? (check-donations-config args)))
+          _ (<? (stdb/add-coin! donations-coin))
+          args (cond-> args
                        (not donations-type) (dissoc :min-donation :vibe-market-drop-address)
                        bg-photo (update :user/bg-photo upload-photo current-user :bg-photo config)
-                       photo (update :user/photo upload-photo current-user :photo config))]
+                       photo (update :user/photo upload-photo current-user :photo config)
+                       donations-coin (-> (assoc :user/donation-coin (:coin/address donations-coin))
+                                          (assoc :user/donation-chain-id (:coin/chain-id donations-coin))))]
       (<? (stdb/upsert-user-info! (merge args {:user/address current-user})))
       (<? (stdb/set-user-timestamp! {:user-addresses [current-user]
                                      :timestamp/last-modification (shared-utils/now-secs)}))

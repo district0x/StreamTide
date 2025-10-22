@@ -6,9 +6,10 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
-contract MVPCLR is OwnableUpgradeable {
+contract MVPCLR is OwnableUpgradeable, ReentrancyGuard {
 
     event AdminAdded(address _admin);
     event AdminRemoved(address _admin);
@@ -31,6 +32,16 @@ contract MVPCLR is OwnableUpgradeable {
         uint256 value,
         address patronAddress,
         uint256 roundId
+    );
+
+    event DonateExternal(
+        address sender,
+        uint256 value,
+        address patronAddress,
+        uint256 roundId,
+        uint16 externalType,
+        address target,
+        bytes callData
     );
 
     event FailedDistribute(
@@ -130,24 +141,50 @@ contract MVPCLR is OwnableUpgradeable {
         emit PatronsAdded(addresses);
     }
 
-    function donate(address[] memory patronAddresses, uint256[] memory amounts) public payable {
+    function donate(address[] memory patronAddresses, uint256[] memory amounts, bytes[] calldata metadata) public payable nonReentrant {
         require(patronAddresses.length == amounts.length, "CLR:donate - Mismatch between number of patrons and amounts");
+        require(patronAddresses.length == metadata.length, "CLR:donate - mismatch patrons/metadata");
         uint256 totalAmount = 0;
         uint256 donationRoundId = roundIsClosed() ? 0 : roundId;
+        require(!isBlacklisted[_msgSender()], "Sender address is blacklisted");
         for (uint256 i = 0; i < patronAddresses.length; i++) {
             address patronAddress = patronAddresses[i];
             uint256 amount = amounts[i];
+            bytes calldata data = metadata[i];
             totalAmount += amount;
-            require(!isBlacklisted[_msgSender()], "Sender address is blacklisted");
+            require(!isBlacklisted[patronAddress], "Patron address is blacklisted");
             require(isPatron[patronAddress], "CLR:donate - Not a valid recipient");
-            emit Donate(_msgSender(), amount, patronAddress, donationRoundId);
-            bool success = payable(patronAddress).send(amount);
-            require(success, "CLR:donate - Failed to send funds to recipient");
+            if (data.length > 0) {
+                (uint16 externalType, address target, bytes memory callData) = abi.decode(data, (uint16, address, bytes));
+
+                require(target != address(0), "CLR:donate - invalid target");
+                require(isContract(target), "CLR:donate - target must be contract");
+
+                (bool success, bytes memory returndata) = payable(target).call{value: amount}(callData);
+                require(success, _getRevertMsg(returndata));
+
+                emit DonateExternal(msg.sender, amount, patronAddress, donationRoundId, externalType, target, callData);
+            } else {
+                bool success = payable(patronAddress).send(amount);
+                require(success, "CLR:donate - Failed to send funds to recipient");
+                emit Donate(_msgSender(), amount, patronAddress, donationRoundId);
+            }
         }
 
         require(totalAmount <= msg.value, "CLR:donate - Total amount donated is greater than the value sent");
     }
 
+    function isContract(address account) internal view returns (bool) {
+        return account.code.length > 0;
+    }
+
+    function _getRevertMsg(bytes memory returnData) private pure returns (string memory) {
+        if (returnData.length < 68) return "CLR:donate - external call failed";
+        assembly {
+            returnData := add(returnData, 0x04)
+        }
+        return abi.decode(returnData, (string));
+    }
 
     function distribute(address payable[] memory patrons, uint[] memory amounts, address token) public onlyAdmin {
         require(patrons.length == amounts.length, "Length of patrons and amounts must be the same");

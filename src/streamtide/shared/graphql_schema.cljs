@@ -258,6 +258,7 @@ type User {
     user_donationsType: String
     user_minDonation: String
     user_vibeMarketDropAddress: String
+    user_donationCoin: Coin
     user_socials: [SocialLink!]
     user_photo: String
     user_bgPhoto: String

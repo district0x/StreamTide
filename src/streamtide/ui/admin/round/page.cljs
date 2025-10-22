@@ -299,7 +299,6 @@
         matchings (compute-matchings (:matching-pool/amount matching-pool) donations-by-receiver
                                      @(subscribe [::r-subs/all-multipliers])
                                      @(subscribe [::r-subs/all-donations]))]
-    (pr matching-pool)
     [:<>
      (if (empty? all-donations)
        [no-items-found]

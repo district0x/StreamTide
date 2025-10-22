@@ -90,8 +90,11 @@
    [:user/donations-type :varchar default-nil]
    [:user/min-donation :amount default-nil]
    [:user/vibe-market-drop-address address default-nil]
+   [:user/donation-coin address not-nil]
+   [:user/donation-chain-id :unsigned :integer not-nil]
    [:user/creation-date :timestamp not-nil]
-   [:user/blacklisted :bool default-false]])
+   [:user/blacklisted :bool default-false]
+   [(sql/call :foreign-key :user/donation-coin :user/donation-chain-id) :references (sql/call :coin :coin/address :coin/chain-id)]])
 
 (def social-link-columns
   [[:user/address address not-nil]

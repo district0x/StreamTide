@@ -12,7 +12,8 @@
    :streamtide/matching-pool-donation-token-event [:streamtide-fwd :MatchingPoolDonationToken]
    :streamtide/distribute-event [:streamtide-fwd :Distribute]
    :streamtide/distribute-round-event [:streamtide-fwd :DistributeRound]
-   :streamtide/donate-event [:streamtide-fwd :Donate]})
+   :streamtide/donate-event [:streamtide-fwd :Donate]
+   :streamtide/donate-external-event [:streamtide-fwd :DonateExternal]})
 
 (def web3-matching-pool-events
   {:matching-pool/admin-added-event [:matching-pool-fwd :AdminAdded]

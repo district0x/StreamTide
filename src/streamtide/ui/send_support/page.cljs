@@ -2,6 +2,8 @@
   "Page to make donations. Shows the content of card and allow triggering a TX to send donations"
   (:require
     [cljs-time.coerce :as tc]
+    [cljs-web3-next.helpers :refer [zero-address]]
+    [clojure.string :as str]
     [district.ui.component.form.input :refer [text-input pending-button get-by-path]]
     [district.ui.component.page :refer [page]]
     [district.ui.graphql.events :as graphql-events]
@@ -28,10 +30,15 @@
 (defn build-user-info-query [{:keys [:user/address]}]
   [:user
    {:user/address address}
-   [:user/name
+   [:user/address
+    :user/name
     :user/tagline
     :user/photo
-    :user/min-donation]])
+    :user/donations-type
+    :user/min-donation
+    :user/vibe-market-drop-address
+    [:user/donation-coin [:coin/address
+                          :coin/symbol]]]])
 
 (defn build-donations-query [{:keys [:user/address]} after]
   [:search-donations
@@ -46,8 +53,8 @@
     [:items [:donation/id
              :donation/date
              :donation/amount
-             ;[:donation/coin [:coin/symbol
-             ;                 :coin/decimals]]
+             [:donation/coin [:coin/symbol
+                              :coin/decimals]]
              [:donation/receiver [:user/address
                                   :user/name
                                   :user/photo]]]]]])
@@ -55,43 +62,41 @@
 
 (def default-min-donation "0.005")
 
-(defn send-support-card [user-address form-data errors]
-  (let [user-info-query (subscribe [::gql/query {:queries [(build-user-info-query {:user/address user-address})]}])]
-    (fn []
-      (let [loading? (or (nil? user-info-query) (:graphql/loading? @user-info-query))]
-        (if loading?
-          [spinner/spin]
-          (let [user-info (:user @user-info-query)
-                nav (partial nav-anchor {:route :route.profile/index :params {:address user-address}})
-                min-donation (shared-utils/from-wei (or (:user/min-donation user-info) "0"))]
-            (when-not (get-in @form-data [user-address :amount])
-              (swap! form-data assoc-in [user-address :amount]
-                     (if (= "0" min-donation) default-min-donation min-donation)))
-            [:div.cardSendSupport
-             [nav [user-photo {:src (:user/photo user-info)}]]
-             [:div.content
-              [nav [:h3 (ui-utils/user-or-address (:user/name user-info) user-address)]]
-              [:p.d-none.d-lg-block (:user/tagline user-info)]]
-             [:div.field.field-amount
-              [:span.titleField "Amount"]
-              [text-input {:id [user-address :amount]
-                           :form-data form-data
-                           :class "inputField"
-                           :errors errors}]
-              (when (and (nil? (get-in @errors [:local user-address :amount]))
-                         (< (js/parseFloat (get-in @form-data [user-address :amount]))
-                            (js/parseFloat min-donation)))
-                [:span.warning "Min amount not reached. This donation will not unlock hidden content"])]
-             [:div.field.field-currency
-              [:span.titleField "Currency"]
-              [:div.inputField.simple.disabled
-               [:span "ETH"]]]
-             [:button.btClose
-              {:on-click (fn []
-                           (swap! form-data dissoc user-address)
-                           (dispatch [::st-events/remove-from-cart {:user/address user-address}]))}]]))))))
+(defn send-support-card [user-info form-data errors]
+  (let [user-address (:user/address user-info)
+        nav (partial nav-anchor {:route :route.profile/index :params {:address user-address}})
+        coin (:user/donation-coin user-info)
+        erc721? (not= (:coin/address coin) zero-address)
+        min-donation (shared-utils/from-wei (or (:user/min-donation user-info) "0"))]
+    (when-not (get-in @form-data [user-address :amount])
+      (swap! form-data assoc-in [user-address :amount]
+             (if erc721? "1"
+              (if (= "0" min-donation) default-min-donation min-donation))))
+    [:div.cardSendSupport
+     [nav [user-photo {:src (:user/photo user-info)}]]
+     [:div.content
+      [nav [:h3 (ui-utils/user-or-address (:user/name user-info) user-address)]]
+      [:p.d-none.d-lg-block (:user/tagline user-info)]]
+     [:div.field.field-amount
+      [:span.titleField "Amount"]
+      [text-input {:id [user-address :amount]
+                   :form-data form-data
+                   :class "inputField"
+                   :errors errors}]
+      (when (and (nil? (get-in @errors [:local user-address :amount]))
+                 (< (js/parseFloat (get-in @form-data [user-address :amount]))
+                    (js/parseFloat min-donation)))
+        [:span.warning "Min amount not reached. This donation will not unlock hidden content"])]
+     [:div.field.field-currency
+      [:span.titleField "Currency"]
+      [:div.inputField.simple.disabled
+       [:span (:coin/symbol coin)]]]
+     [:button.btClose
+      {:on-click (fn []
+                   (swap! form-data dissoc user-address)
+                   (dispatch [::st-events/remove-from-cart {:user/address user-address}]))}]]))
 
-(defn donation-entry [{:keys [:donation/id :donation/receiver :donation/amount :donation/date] :as donation}]
+(defn donation-entry [{:keys [:donation/id :donation/receiver :donation/amount :donation/date :donation/coin] :as donation}]
   (let [receiver-address (:user/address receiver)
         nav (partial nav-anchor {:route :route.profile/index :params {:address receiver-address}})]
     [:div.donation
@@ -104,7 +109,7 @@
        [:span (ui-utils/format-graphql-time date)]]
       [:li
        [:h4.d-lg-none "Amount"]
-       [:span (shared-utils/format-price amount {:coin/decimals 18 :coin/symbol "ETH"})]]]]))
+       [:span (shared-utils/format-price amount coin)]]]]))
 
 (defn donations []
   (let [active-account (subscribe [::accounts-subs/active-account])]
@@ -146,17 +151,28 @@
         form-data (r/atom
                     (reduce (fn [aggr [address _]]
                               (merge aggr {address nil})) {} @cart))
-        errors (reaction {:local
-                          (reduce (fn [aggr [addr {:keys [:amount]}]]
-                                    (if (and amount (or (not (re-matches #"^\d+(\.\d{0,18})?$" amount))
-                                                        (re-matches #"^0+\.?0*$" amount)))
-                                      (assoc-in aggr [addr :amount] "Amount not valid")
-                                      aggr))
-                                  {} @form-data)})
+        queries (map-indexed (fn [idx [address _]] {:query/data (build-user-info-query {:user/address address})
+                                                    :query/alias (keyword (str "a-" idx))}) @cart)
+        user-info-query (when-not (empty? @cart) (subscribe [::gql/query {:queries queries}]))
         tx-id (str "donate_" (random-uuid))
         active-account (subscribe [::accounts-subs/active-account])]
     (fn []
-      (let [donate-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/donate tx-id}])
+      (let [loading? (and (some? user-info-query) (:graphql/loading? @user-info-query))
+            users-map (when (and (some? user-info-query) (not loading?))
+                        (into {} (keep (fn [[_ v]]
+                                         (when-let [addr (:user/address v)]
+                                           [addr v])))
+                              @user-info-query))
+            errors (reaction {:local
+                              (when-not loading? (reduce (fn [aggr [addr {:keys [:amount]}]]
+                                                           (let [erc721? (not= (-> users-map (get addr) :user/donation-coin :coin/address) zero-address)]
+                                                             (if (and amount (or (and erc721? (not (re-matches #"\d+" amount)))
+                                                                                 (not (re-matches #"^\d+(\.\d{0,18})?$" amount))
+                                                                                 (re-matches #"^0+\.?0*$" amount)))
+                                                               (assoc-in aggr [addr :amount] "Amount not valid")
+                                                               aggr)))
+                                                         {} @form-data))})
+            donate-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/donate tx-id}])
             donate-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/donate tx-id}])
             waiting-wallet? (subscribe [::st-subs/waiting-wallet? {:streamtide/donate tx-id}])]
         [app-layout
@@ -165,29 +181,33 @@
           [:div.container
             [:div.headerSendSupport
               [:h1.titlePage "Simping"]]
-            [:div.cart
-             (if (empty? @form-data)
-               [no-items-found {:message "Your cart is empty 😢"}]
-               [:div.contentSendSupport
-                [support-seal]
-                (doall
-                  (for [[address _] @form-data]
-                    ^{:key address} [send-support-card address form-data errors]))])
-                [:div.buttons
-                 [pending-button {:pending? (or @donate-tx-pending? @waiting-wallet?)
-                                  :pending-text "Simping in Progress 💸"
-                                  :disabled (or @donate-tx-pending? @donate-tx-success? @waiting-wallet?
-                                                (empty? @form-data)
-                                                (some #(or (zero? %) (nil? %)) (map :amount (vals @form-data))))
-                                  :class (str "btBasic btBasic-light btCheckout" (when @donate-tx-success? " checkedOut"))
-                                  :on-click (fn [e]
-                                              (.stopPropagation e)
-                                              (dispatch [::ss-events/send-support {:donations @form-data
-                                                                                   :send-tx/id tx-id}]))}
-                  (if @donate-tx-success? "Thanks champ! 😉" "SIMP TODAY! 🤑")]
-                 [:button.btBasic.btBasic-light.btKeep
-                  {:on-click #(dispatch [::router-events/navigate :route.grants/index])}
-                  "KEEP BROWSING"]]]]
+           (if loading?
+             [spinner/spin]
+             [:div.cart
+              (if (empty? @form-data)
+                [no-items-found {:message "Your cart is empty 😢"}]
+                [:div.contentSendSupport
+                 [support-seal]
+                 (doall
+                   (for [[alias user-info] @user-info-query]
+                     (when (str/starts-with? (str alias) ":a-")
+                       ^{:key alias} [send-support-card user-info form-data errors])))])
+                 [:div.buttons
+                  [pending-button {:pending? (or @donate-tx-pending? @waiting-wallet?)
+                                   :pending-text "Simping in Progress 💸"
+                                   :disabled (or @donate-tx-pending? @donate-tx-success? @waiting-wallet?
+                                                 (empty? @form-data)
+                                                 (some #(or (zero? %) (nil? %)) (map :amount (vals @form-data))))
+                                   :class (str "btBasic btBasic-light btCheckout" (when @donate-tx-success? " checkedOut"))
+                                   :on-click (fn [e]
+                                               (.stopPropagation e)
+                                               (dispatch [::ss-events/send-support {:donations @form-data
+                                                                                    :users-info users-map
+                                                                                    :send-tx/id tx-id}]))}
+                   (if @donate-tx-success? "Thanks champ! 😉" "SIMP TODAY! 🤑")]
+                  [:button.btBasic.btBasic-light.btKeep
+                   {:on-click #(dispatch [::router-events/navigate :route.grants/index])}
+                   "KEEP BROWSING"]]])]
           (when @active-account
             [:div.container
              [:div.headerPastDonations
