@@ -441,6 +441,7 @@ type Coin {
     coin_name: String
     coin_symbol: String
     coin_decimals: Int
+    coin_type: String
 }
 
 type Campaign {

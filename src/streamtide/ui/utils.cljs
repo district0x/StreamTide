@@ -1,6 +1,7 @@
 (ns streamtide.ui.utils
   "Frontend utilities"
   (:require [cljs-time.coerce :as tc]
+            [clojure.string :as str]
             [clojure.string :as string]
             [district.ui.router.events :as router-events]
             [district.ui.web3-accounts.subs :as accounts-subs]
@@ -73,3 +74,7 @@
 (defn chain-name [chain-id]
   (let [chain-id (str chain-id)]
     (:chain-name (some #(when (= chain-id (:chain-id %)) % ) all-chains))))
+
+(defn erc721? [coin]
+  (and (:coin/type coin)
+       (= (keyword (str/lower-case (:coin/type coin))) :erc721)))

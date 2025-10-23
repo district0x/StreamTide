@@ -127,7 +127,8 @@
         {:coin/address (string/lower-case coin-address)
          :coin/symbol symbol
          :coin/name name
-         :coin/decimals decimals}))))
+         :coin/decimals decimals
+         :coin/type :erc20}))))
 
 (defn ensure-coin-exists!
   ([coin-address chain-id]
@@ -141,7 +142,8 @@
                  {:coin/address zero-address
                   :coin/decimals 18
                   :coin/symbol "ETH"
-                  :coin/name "Ether"}
+                  :coin/name "Ether"
+                  :coin/type :native}
                  (<? (fetch-coin-info coin-address donation-type)))]
            (<! (db/add-coin! (merge coin-info {:coin/chain-id chain-id})))))))))
 

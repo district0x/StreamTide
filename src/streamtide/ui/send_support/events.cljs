@@ -31,8 +31,8 @@
 (defn build-metadata [db donations]
   (map (fn [donation]
          (let [user-info (-> donation val :user-info)
-               erc721? (-> user-info :user/donations-type (= "vibe-market"))]
-           (if erc721?
+               vibe-market? (-> user-info :user/donations-type (= "vibe-market"))]
+           (if vibe-market?
              (build-vibemarket-metadata db (-> donation val :original-amount) (-> user-info :user/donation-coin :coin/address))
              "0x")))
        donations))
@@ -69,8 +69,8 @@
   ::compute-amount
   (fn [{:keys [db]} [_ {:keys [:donation :user-info :send-tx/id] :as data}]]
     (let [[receiver {:keys [:amount]}] donation
-          erc721? (-> user-info :user/donations-type (= "vibe-market"))]
-      (if erc721?
+          vibe-market? (-> user-info :user/donations-type (= "vibe-market"))]
+      (if vibe-market?
         {:dispatch [::compute-vibe-market-amount data]}
         (let [amount (web3/to-wei (shared-utils/safe-number-str amount) :ether)]
           {:db (update db :amounts assoc receiver {:amount amount :user-info user-info :original-amount amount})

@@ -37,7 +37,8 @@
     :user/donations-type
     :user/min-donation
     [:user/donation-coin [:coin/address
-                          :coin/symbol]]]])
+                          :coin/symbol
+                          :coin/type]]]])
 
 (defn build-donations-query [{:keys [:user/address]} after]
   [:search-donations
@@ -65,7 +66,7 @@
   (let [user-address (:user/address user-info)
         nav (partial nav-anchor {:route :route.profile/index :params {:address user-address}})
         coin (:user/donation-coin user-info)
-        erc721? (not= (:coin/address coin) zero-address)
+        erc721? (ui-utils/erc721? coin)
         min-donation (shared-utils/from-wei (or (:user/min-donation user-info) "0"))]
     (when-not (get-in @form-data [user-address :amount])
       (swap! form-data assoc-in [user-address :amount]
@@ -164,7 +165,7 @@
                               @user-info-query))
             errors (reaction {:local
                               (when-not loading? (reduce (fn [aggr [addr {:keys [:amount]}]]
-                                                           (let [erc721? (not= (-> users-map (get addr) :user/donation-coin :coin/address) zero-address)]
+                                                           (let [erc721? (ui-utils/erc721? (-> users-map (get addr) :user/donation-coin))]
                                                              (if (and amount (or (and erc721? (not (re-matches #"\d+" amount)))
                                                                                  (not (re-matches #"^\d+(\.\d{0,18})?$" amount))
                                                                                  (re-matches #"^0+\.?0*$" amount)))

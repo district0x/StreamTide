@@ -219,6 +219,7 @@
    [:coin/name :varchar default-nil]
    [:coin/symbol :varchar default-nil]
    [:coin/decimals :unsigned :integer default-nil]
+   [:coin/type :varchar default-nil]
    [(sql/call :primary-key :coin/address :coin/chain-id)]])
 
 (def farcaster-campaign-columns
@@ -802,10 +803,13 @@
 
 (defn add-coin! [args]
   (log/debug "add-coin" args)
-  (db-run! {:insert-into :coin
-            :values [(update (select-keys args coin-column-names) :coin/address string/lower-case)]
-            :upsert {:on-conflict [:coin/address :coin/chain-id]
-                     :do-nothing []}}))
+  (let [values (cond-> (select-keys args coin-column-names)
+                       true (update :coin/address string/lower-case)
+                       (keyword? (:coin/type args)) (update :coin/type (comp string/lower-case name)))]
+    (db-run! {:insert-into :coin
+              :values [values]
+              :upsert {:on-conflict [:coin/address :coin/chain-id]
+                       :do-nothing []}})))
 
 (defn blacklisted? [{:keys [:user/address] :as args}]
   (go

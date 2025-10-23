@@ -25,7 +25,8 @@
        :coin/chain-id (-> @config :donations-configs :vibe-market :chain-id)
        :coin/name (-> data .-contractInfo .-tokenName)
        :coin/symbol (-> data .-contractInfo .-tokenSymbol)
-       :coin/decimals 0})))
+       :coin/decimals 0
+       :coin/type :erc721})))
 
 (defn parse-call-data [target call-data]
   (safe-go
