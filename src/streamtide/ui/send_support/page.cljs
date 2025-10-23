@@ -36,7 +36,6 @@
     :user/photo
     :user/donations-type
     :user/min-donation
-    :user/vibe-market-drop-address
     [:user/donation-coin [:coin/address
                           :coin/symbol]]]])
 

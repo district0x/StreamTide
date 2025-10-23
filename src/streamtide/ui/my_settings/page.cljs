@@ -41,7 +41,8 @@
     :user/url
     :user/donations-type
     :user/min-donation
-    :user/vibe-market-drop-address
+    [:user/donation-coin
+     [:coin/address]]
     :user/perks
     :user/photo
     :user/bg-photo]])
@@ -180,7 +181,15 @@
           notification-settings))
 
 (defn- parse-donations-type [entries]
-  (update entries :donations-type #(if % % "eth")))
+  (let [entries (cond-> entries
+          (not (:donations-type entries)) (assoc :donations-type "eth"))]
+    (cond-> entries
+            (= (:donations-type entries) "eth")
+            (assoc :vibe-market-drop-address "")
+            (= (:donations-type entries) "vibe-market")
+            (->
+              (assoc :vibe-market-drop-address (-> entries :donation-coin :coin/address))
+              (assoc :min-donation "0")))))
 
 (defn- parse-min-donation [entries]
   (update entries :min-donation #(if % (from-wei %) "0")))
@@ -483,26 +492,28 @@
 (defn clean-form-data [form-data form-values initial-values]
   (try
     (let [f (cond-> form-values
-              true (select-keys (keys (filter (fn [[key val]]
-                                                (or (= key :name)
-                                                    (= key :donations-type)
-                                                    (not= (key initial-values) val))) form-values)))
-              (:socials @form-data) (update :socials socials-kw->gql)
-              (:notification-categories @form-data) (update :notification-categories notification-categories->gql)
-              (:notification-types @form-data) (update :notification-types notification-types->gql)
-              (and (:photo @form-data) (-> @form-data :photo :error)) (dissoc :photo)
-              (and (:photo @form-data) (-> @form-data :photo :error not)) (update :photo photo->gql)
-              (and (:bg-photo @form-data) (-> @form-data :bg-photo :error)) (dissoc :bg-photo)
-              (and (:bg-photo @form-data) (-> @form-data :bg-photo :error not)) (update :bg-photo photo->gql)
-              (or (not (:donations-type @form-data)) (= (:donations-type @form-data) "eth")) (dissoc :vibe-market-drop-address)
-              (= (:donations-type @form-data) "vibe-market") (dissoc :min-donation)
-              (:min-donation @form-data) (update :min-donation #(if (empty? %) "0" (web3/to-wei % :ether))))]
+                    true (select-keys (keys (filter (fn [[key val]]
+                                                      (or (= key :name)
+                                                          (not= (key initial-values) val))) form-values)))
+                    (:socials @form-data) (update :socials socials-kw->gql)
+                    (:notification-categories @form-data) (update :notification-categories notification-categories->gql)
+                    (:notification-types @form-data) (update :notification-types notification-types->gql)
+                    (and (:photo @form-data) (-> @form-data :photo :error)) (dissoc :photo)
+                    (and (:photo @form-data) (-> @form-data :photo :error not)) (update :photo photo->gql)
+                    (and (:bg-photo @form-data) (-> @form-data :bg-photo :error)) (dissoc :bg-photo)
+                    (and (:bg-photo @form-data) (-> @form-data :bg-photo :error not)) (update :bg-photo photo->gql)
+                    (= (:donations-type form-values) "eth") (dissoc :vibe-market-drop-address)
+                    (= (:donations-type form-values) "vibe-market") (dissoc :min-donation))]
       (cond-> f
-              (and (= (:donations-type f) (:donations-type initial-values))
-                   (or
-                     (and (= (:donations-type f) "eth") (not (:min-donation f)))
-                     (and (= (:donations-type f) "vibe-market") (not (:vibe-market-drop-address f)))))
-              (dissoc :donations-type)))
+              (and (= (:donations-type f) "eth") (empty? (:min-donation f))) (assoc :min-donation "0")
+              (:min-donation f)
+              (->
+                (update :min-donation #(if (empty? %) "0" (web3/to-wei % :ether)))
+                (assoc :donations-type "eth"))
+              (:vibe-market-drop-address f)
+              (->
+                (assoc :donations-type "vibe-market")
+                (assoc :donation-coin (:vibe-market-drop-address f)))))
     (catch :default e
       (dispatch [::error-notification/show-error "Invalid data" e])
       (throw e))))
@@ -536,38 +547,7 @@
                               (when e (.stopPropagation e))
                      (switch-popup grant-popup-open? show))
         restore-settings-loaded? (r/atom false)
-        form-data (r/atom {})
-        errors (reaction {:local (cond-> {}
-                                         (and (or (not (:donations-type @form-data)) (= (:donations-type @form-data) "eth"))
-                                              (:min-donation @form-data)
-                                              (not (re-matches #"^\d+(\.\d{0,18})?$" (:min-donation @form-data))))
-                                         (assoc :min-donation "Amount not valid")
-                                         (and (= (:donations-type @form-data) "vibe-market")
-                                              (or (empty? (:vibe-market-drop-address @form-data))
-                                                  (not (ui-utils/valid-address-format? (:vibe-market-drop-address @form-data)))))
-                                         (assoc :vibe-market-drop-address "Address not valid")
-
-                                         (some-invalid-url? (:url @form-data))
-                                         (assoc :url "URL not valid")
-                                         (some-invalid-url? (:perks @form-data))
-                                         (assoc :perks "URL not valid")
-                                         (some-invalid-url? (-> @form-data :socials :facebook :url) (:facebook social-domains))
-                                         (assoc-in [:socials :facebook :url] "URL not valid")
-                                         (some-invalid-url? (-> @form-data :socials :instagram :url) (:instagram social-domains))
-                                         (assoc-in [:socials :instagram :url] "URL not valid")
-                                         (some-invalid-url? (-> @form-data :socials :linkedin :url) (:linkedin social-domains))
-                                         (assoc-in [:socials :linkedin :url] "URL not valid")
-                                         (some-invalid-url? (-> @form-data :socials :pinterest :url) (:pinterest social-domains))
-                                         (assoc-in [:socials :pinterest :url] "URL not valid")
-                                         (some-invalid-url? (-> @form-data :socials :patreon :url) (:patreon social-domains))
-                                         (assoc-in [:socials :patreon :url] "URL not valid")
-                                         (some-invalid-email? (-> @form-data :notification-types :notification-type/email))
-                                         (assoc-in [:notification-types :notification-type/email] "Email not valid")
-
-                                         (-> @form-data :photo :error)
-                                         (assoc :photo (-> @form-data :photo :error))
-                                         (-> @form-data :bg-photo :error)
-                                         (assoc :bg-photo (-> @form-data :bg-photo :error)))})]
+        form-data (r/atom {})]
     (add-watch form-data :store-settings-local
                (fn [_ _ _ new-state]
                  (when (-> new-state meta :touched?)
@@ -583,11 +563,43 @@
             initial-values (when user-settings (-> @user-settings
                                                    :user
                                                    remove-ns
-                                                   (select-keys [:name :description :tagline :handle :url :photo :bg-photo :perks :donations-type :min-donation :vibe-market-drop-address])
+                                                   (select-keys [:name :description :tagline :handle :url :photo :bg-photo :perks :donations-type :min-donation :donation-coin])
                                                    select-photos
                                                    parse-donations-type
                                                    parse-min-donation))
             form-values (deep-merge initial-values @form-data)
+            errors (reaction {:local (cond-> {}
+                                             (and (= (:donations-type form-values) "eth")
+                                                  (:min-donation @form-data)
+                                                  (not (re-matches #"^\d+(\.\d{0,18})?$" (:min-donation @form-data))))
+                                             (assoc :min-donation "Amount not valid")
+                                             (and (= (:donations-type form-values) "vibe-market")
+                                                  (or (empty? (:vibe-market-drop-address form-values))
+                                                      (= (:vibe-market-drop-address form-values) zero-address)
+                                                      (not (ui-utils/valid-address-format? (:vibe-market-drop-address form-values)))))
+                                             (assoc :vibe-market-drop-address "Address not valid")
+
+                                             (some-invalid-url? (:url @form-data))
+                                             (assoc :url "URL not valid")
+                                             (some-invalid-url? (:perks @form-data))
+                                             (assoc :perks "URL not valid")
+                                             (some-invalid-url? (-> @form-data :socials :facebook :url) (:facebook social-domains))
+                                             (assoc-in [:socials :facebook :url] "URL not valid")
+                                             (some-invalid-url? (-> @form-data :socials :instagram :url) (:instagram social-domains))
+                                             (assoc-in [:socials :instagram :url] "URL not valid")
+                                             (some-invalid-url? (-> @form-data :socials :linkedin :url) (:linkedin social-domains))
+                                             (assoc-in [:socials :linkedin :url] "URL not valid")
+                                             (some-invalid-url? (-> @form-data :socials :pinterest :url) (:pinterest social-domains))
+                                             (assoc-in [:socials :pinterest :url] "URL not valid")
+                                             (some-invalid-url? (-> @form-data :socials :patreon :url) (:patreon social-domains))
+                                             (assoc-in [:socials :patreon :url] "URL not valid")
+                                             (some-invalid-email? (-> @form-data :notification-types :notification-type/email))
+                                             (assoc-in [:notification-types :notification-type/email] "Email not valid")
+
+                                             (-> @form-data :photo :error)
+                                             (assoc :photo (-> @form-data :photo :error))
+                                             (-> @form-data :bg-photo :error)
+                                             (assoc :bg-photo (-> @form-data :bg-photo :error)))})
             input-params {:read-only loading?
                           :form-values form-values
                           :form-data form-data
@@ -682,8 +694,7 @@
                      [:span "ETH"]
                      [initializable-text-input
                       (merge input-params
-                             {:id :min-donation
-                              :on-change #(swap! form-data assoc :donations-type "eth")})]]]
+                             {:id :min-donation})]]]
 
                    "vibe-market"
                    [:div.vibe-market
@@ -694,8 +705,7 @@
                      [initializable-text-input
                       (merge input-params
                              {:id :vibe-market-drop-address
-                              :placeholder zero-address
-                              :on-change #(swap! form-data assoc :donations-type "vibe-market")})]]])]
+                              :placeholder zero-address})]]])]
                  [:div.perks
                   [:h2 "Perks Button URL"]
                   [:p "Add a redemption link for your supporters to claim when they support you. This could be anything from a swag discount code, Web3 redemtpion link, private streams, etc."]

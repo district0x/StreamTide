@@ -224,11 +224,11 @@
             (not (shared-utils/valid-url? url)))
     (throw (js/Error. (str "invalid URL: " url)))))
 
-(defn- check-donations-config [{:keys [:user/donations-type :user/vibe-market-drop-address] :as args}]
+(defn- check-donations-config [{:keys [:user/donations-type :user/donation-coin] :as args}]
   (safe-go
-    (<? (donations-configs/verify (keyword donations-type) vibe-market-drop-address))))
+    (<? (donations-configs/verify (keyword donations-type) donation-coin))))
 
-(defn update-user-info! [current-user {:keys [:user/socials :user/perks :user/photo :user/bg-photo :user/notification-categories :user/notification-types :user/donations-type] :as args} config]
+(defn update-user-info! [current-user {:keys [:user/socials :user/perks :user/photo :user/bg-photo :user/notification-categories :user/notification-types :user/donations-type :user/min-donation] :as args} config]
   "Sets the user info"
   (require-auth current-user)
   (safe-go
@@ -239,9 +239,12 @@
 
     ;; TODO images come encoded in base64 directly in the request. They should come separated from the API
     (let [donations-coin (when donations-type (<? (check-donations-config args)))
-          _ (<? (stdb/add-coin! donations-coin))
+          _ (when donations-coin (<? (stdb/add-coin! donations-coin)))
           args (cond-> args
-                       (not donations-type) (dissoc :min-donation :vibe-market-drop-address)
+                       (not donations-type) (dissoc :user/min-donation :user/donation-coin)
+                       (and donations-type
+                            (or (not= donations-type "eth")
+                                (empty? min-donation))) (assoc :user/min-donation "0")
                        bg-photo (update :user/bg-photo upload-photo current-user :bg-photo config)
                        photo (update :user/photo upload-photo current-user :photo config)
                        donations-coin (-> (assoc :user/donation-coin (:coin/address donations-coin))

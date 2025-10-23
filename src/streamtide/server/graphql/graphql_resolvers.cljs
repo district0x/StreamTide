@@ -292,7 +292,7 @@
                             (:user/notification-types input)
                             (update :user/notification-types adjust-notification-types)
                             (= (:user/donations-type input) "eth")
-                            (assoc :user/vibe-market-drop-address nil)
+                            (assoc :user/donation-coin nil)
                             (= (:user/donations-type input) "vibe-market")
                             (assoc :user/min-donation nil))]
           (<? (logic/update-user-info! user-id input config))

@@ -89,7 +89,6 @@
    [:user/url :varchar default-nil]
    [:user/donations-type :varchar default-nil]
    [:user/min-donation :amount default-nil]
-   [:user/vibe-market-drop-address address default-nil]
    [:user/donation-coin address not-nil]
    [:user/donation-chain-id :unsigned :integer not-nil]
    [:user/creation-date :timestamp not-nil]
