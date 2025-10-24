@@ -21,6 +21,7 @@
     [streamtide.server.donations-configs.vibe-market-donation]
     [streamtide.server.notifiers.notifiers :as notifiers]
     [streamtide.server.db :as db]
+    [streamtide.server.utils :as server-utils]
     [streamtide.shared.utils :as shared-utils :refer [abi-reduced-erc20 donations-ids-types]]
     [taoensso.timbre :as log]))
 
@@ -151,10 +152,13 @@
   (let [{:keys [:sender :value :patron-address :round-id :timestamp]} args]
     (safe-go
       (let [round-id (when (not= (str round-id) "0") round-id)
+            amount-usd (<? (server-utils/eth->usd-amount value timestamp))
             donation {:donation/sender sender
                       :donation/receiver patron-address
                       :donation/date timestamp
                       :donation/amount value
+                      :donation/amount-eth value
+                      :donation/amount-usd amount-usd
                       :donation/coin zero-address
                       :donation/chain-id chain-id
                       :round/id round-id}]
@@ -175,13 +179,15 @@
           (log/error (str "Invalid external type: " external-type ". Event will be ignored."))
           (let [{:keys [coin amount]} (<? (donations-configs/parse-call-data donation-type {:amount value :target target :call-data call-data}))
                 round-id (when (not= (str round-id) "0") round-id)
+                amount-usd (<? (server-utils/eth->usd-amount value timestamp))
                 donation {:donation/sender sender
                           :donation/receiver patron-address
                           :donation/date timestamp
                           :donation/amount (str amount)
                           :donation/coin (string/lower-case coin)
                           :donation/chain-id chain-id
-                          ;:donation/eth-amount value
+                          :donation/amount-eth value
+                          :donation/amount-usd amount-usd
                           :round/id round-id}]
             (<! (db/upsert-user-info! {:user/address sender}))
             (<! (ensure-coin-exists! coin chain-id donation-type))
@@ -221,12 +227,16 @@
   (let [{:keys [:to :amount :timestamp :round-id :token]} args]
     (safe-go
       (<! (db/ensure-users-exist! [to]))
-      (<! (db/add-matching! {:matching/receiver to
-                             :matching/amount amount
-                             :matching/date timestamp
-                             :matching/coin (string/lower-case token)
-                             :matching/chain-id chain-id
-                             :round/id round-id})))))
+      (let [coin (<? (db/get-coin token chain-id))
+            {:keys [amount-wei amount-usd]} (<? (server-utils/token->wei-usd-amount amount token timestamp (:coin/decimals coin)))]
+        (<! (db/add-matching! {:matching/receiver to
+                               :matching/amount amount
+                               :matching/amount-eth amount-wei
+                               :matching/amount-usd amount-usd
+                               :matching/date timestamp
+                               :matching/coin (string/lower-case token)
+                               :matching/chain-id chain-id
+                               :round/id round-id}))))))
 
 (defn distribute-round-event [_ {:keys [:args :chain-id]}]
   (let [{:keys [:round-id :amount :token]} args]

@@ -28,7 +28,9 @@
 (def big-numbers-fields [:matching-pool/amount
                          :matching-pool/distributed
                          :matching/amount
+                         :matching/amount-eth
                          :donation/amount
+                         :donation/amount-eth
                          :user/min-donation])
 
 (defn- fix-exp-numbers [results]
@@ -59,11 +61,13 @@
 
 (def db-types {:sqlite {:amount [:unsigned :integer]
                         :bool [:tinyint]
-                        :serial [:integer]}
+                        :serial [:integer]
+                        :money [:numeric]}
                :postgresql {:amount [:numeric (sql/raw "(78,0)")]
                             :autoincrement []
                             :unsigned []
-                            :timestamp [:bigint]}})
+                            :timestamp [:bigint]
+                            :money [:numeric (sql/raw "(12,2)")]}})
 
 (defn mod-types [columns]
   (let [db-client (or (-> @config :db :db-client) :sqlite)]
@@ -154,6 +158,8 @@
    [:donation/receiver address not-nil]
    [:donation/date :timestamp not-nil]
    [:donation/amount :amount not-nil]  ;; TODO use string to avoid precision errors? order-by is important
+   [:donation/amount-eth :amount]
+   [:donation/amount-usd :money]
    [:donation/coin address not-nil]
    [:donation/chain-id :unsigned :integer not-nil]
    [:round/id :unsigned :integer]
@@ -167,6 +173,8 @@
    [:matching/receiver address not-nil]
    [:matching/date :timestamp not-nil]
    [:matching/amount :amount not-nil]  ;; TODO use string to avoid precision errors? order-by is important
+   [:matching/amount-eth :amount]
+   [:matching/amount-usd :money]
    [:matching/coin address not-nil]
    [:matching/chain-id :unsigned :integer not-nil]
    [:round/id :unsigned :integer]
