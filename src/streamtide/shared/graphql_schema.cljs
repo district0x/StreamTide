@@ -442,6 +442,7 @@ type Coin {
     coin_symbol: String
     coin_decimals: Int
     coin_type: String
+    coin_imageUrl: String
 }
 
 type Campaign {

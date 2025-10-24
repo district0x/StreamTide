@@ -26,7 +26,8 @@
        :coin/name (-> data .-contractInfo .-tokenName)
        :coin/symbol (-> data .-contractInfo .-tokenSymbol)
        :coin/decimals 0
-       :coin/type :erc721})))
+       :coin/type :erc721
+       :coin/image-url (-> data .-contractInfo .-packImage)})))
 
 (defn parse-call-data [target call-data]
   (safe-go

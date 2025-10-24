@@ -228,6 +228,7 @@
    [:coin/symbol :varchar default-nil]
    [:coin/decimals :unsigned :integer default-nil]
    [:coin/type :varchar default-nil]
+   [:coin/image-url :varchar default-nil]
    [(sql/call :primary-key :coin/address :coin/chain-id)]])
 
 (def farcaster-campaign-columns
