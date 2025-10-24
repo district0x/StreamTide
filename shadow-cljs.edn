@@ -47,6 +47,14 @@
                  :js-options      {:keep-as-import #{"d3"}}}
            :release {:compiler-options {:optimizations :simple}}}
 
+          :dummy-coin-service
+          {:target :node-script
+           :main coin-service.dummy-api/-main
+           :output-dir "test/coin_service/out"
+           :output-to "test/coin_service/out/dummy_service.js"
+           :dev {:closure-defines {goog.DEBUG true}}
+           :release {:compiler-options {:optimizations :simple}}}
+
           :server-tests
           {:target :node-test
            :output-dir "server/tests"

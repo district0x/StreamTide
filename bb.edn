@@ -74,6 +74,18 @@
                                        (do
                                          (println "Starting Streamtide sidechain server")
                                          (shell (format "node sidechain_server/streamtide_sidechain_server.js %s" command-args))))}
+         watch-dummy-coin-service
+         {:doc "Watch and compile dummy coin service code CLJS -> JS in test/coin_service/**"
+          :requires ([babashka.cli :as cli])
+          :task (let [aliases (or *command-line-args* [])
+                      command-args (format "-M:dev:shadow-cljs%s watch dummy-coin-service"
+                                     (clojure.string/join "" aliases))]
+                  (println "Starting watch dummy-coin-service args:" command-args)
+                  (clojure command-args))}
+         run-dummy-coin-server {:doc "Start Node.js API server process"
+                           :task (do
+                                   (println "Starting Coin Dummy API server")
+                                   (shell "node test/coin_service/out/dummy_service.js"))}
          watch-server-tests {:doc "watch server tests"
                            :task (do
                                    (println "Watch and compile server code changes tests")
