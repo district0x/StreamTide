@@ -376,6 +376,8 @@ type Donation {
     donation_receiver: User!
     donation_date: Date
     donation_amount: String
+    donation_amountEth: String
+    donation_amountUsd: String
     donation_coin: Coin
     donation_round: Round
 }

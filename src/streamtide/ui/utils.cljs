@@ -78,3 +78,6 @@
 (defn erc721? [coin]
   (and (:coin/type coin)
        (= (keyword (str/lower-case (:coin/type coin))) :erc721)))
+
+(defn format-to-usd [amount]
+  (-> amount js/parseFloat (.toFixed 2) (.replace #"\.?0+$", "")))

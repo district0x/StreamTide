@@ -28,6 +28,7 @@
                                                  :symbol "ETH"
                                                  :decimals 18}}]
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
+   :conversion-rates {:from-currencies [:ETH] :to-currencies [:USD]}
    :thirdweb {:client-id "."}
    })
 
@@ -52,6 +53,7 @@
                                                  :symbol "ETH"
                                                  :decimals 18}}]
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
+   :conversion-rates {:from-currencies [:ETH] :to-currencies [:USD]}
    :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
    })
 
@@ -71,6 +73,7 @@
                 :block-explorer-urls ["https://base.blockscout.com"]}
    :multichain-matching-pool []
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
+   :conversion-rates {:from-currencies [:ETH] :to-currencies [:USD]}
    :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
    })
 

@@ -2,10 +2,10 @@
   "Page to make donations. Shows the content of card and allow triggering a TX to send donations"
   (:require
     [cljs-time.coerce :as tc]
-    [cljs-web3-next.helpers :refer [zero-address]]
     [clojure.string :as str]
     [district.ui.component.form.input :refer [text-input pending-button get-by-path]]
     [district.ui.component.page :refer [page]]
+    [district.ui.conversion-rates.subs :as conversation-rates-subs]
     [district.ui.graphql.events :as graphql-events]
     [district.ui.graphql.subs :as gql]
     [district.ui.router.events :as router-events]
@@ -13,6 +13,7 @@
     [district.ui.web3-tx-id.subs :as tx-id-subs]
     [re-frame.core :as re-frame :refer [subscribe dispatch]]
     [reagent.core :as r]
+    [reagent.ratom :refer [reaction]]
     [reagent.ratom :refer [reaction]]
     [streamtide.shared.utils :as shared-utils]
     [streamtide.ui.components.app-layout :refer [app-layout]]
@@ -22,6 +23,7 @@
     [streamtide.ui.components.user :refer [user-photo]]
     [streamtide.ui.events :as st-events]
     [streamtide.ui.send-support.events :as ss-events]
+    [streamtide.ui.send-support.subs :as ss-subs]
     [streamtide.ui.subs :as st-subs]
     [streamtide.ui.utils :as ui-utils]))
 
@@ -53,6 +55,7 @@
     [:items [:donation/id
              :donation/date
              :donation/amount
+             :donation/amount-usd
              [:donation/coin [:coin/symbol
                               :coin/decimals]]
              [:donation/receiver [:user/address
@@ -67,7 +70,15 @@
         nav (partial nav-anchor {:route :route.profile/index :params {:address user-address}})
         coin (:user/donation-coin user-info)
         erc721? (ui-utils/erc721? coin)
-        min-donation (shared-utils/from-wei (or (:user/min-donation user-info) "0"))]
+        min-donation (shared-utils/from-wei (or (:user/min-donation user-info) "0"))
+        eth->usd @(subscribe [::conversation-rates-subs/conversion-rate :ETH :USD])
+        token->wei (when erc721? @(subscribe [::ss-subs/coin-conversion (:coin/address coin)]))
+        amount (get-in @form-data [user-address :amount])
+        usd-amount (when (and amount eth->usd)
+                     (if erc721?
+                       (when token->wei
+                         (-> amount (* (shared-utils/from-wei token->wei) eth->usd) ui-utils/format-to-usd))
+                       (-> amount (* eth->usd) ui-utils/format-to-usd)))]
     (when-not (get-in @form-data [user-address :amount])
       (swap! form-data assoc-in [user-address :amount]
              (if erc721? "1"
@@ -94,9 +105,10 @@
      [:button.btClose
       {:on-click (fn []
                    (swap! form-data dissoc user-address)
-                   (dispatch [::st-events/remove-from-cart {:user/address user-address}]))}]]))
+                   (dispatch [::st-events/remove-from-cart {:user/address user-address}]))}]
+     [:div.usd-price (when usd-amount (str "$" usd-amount))]]))
 
-(defn donation-entry [{:keys [:donation/id :donation/receiver :donation/amount :donation/date :donation/coin] :as donation}]
+(defn donation-entry [{:keys [:donation/id :donation/receiver :donation/amount :donation/date :donation/coin :donation/amount-usd] :as donation}]
   (let [receiver-address (:user/address receiver)
         nav (partial nav-anchor {:route :route.profile/index :params {:address receiver-address}})]
     [:div.donation
@@ -109,7 +121,8 @@
        [:span (ui-utils/format-graphql-time date)]]
       [:li
        [:h4.d-lg-none "Amount"]
-       [:span (shared-utils/format-price amount coin)]]]]))
+       [:span (shared-utils/format-price amount coin)
+        (when amount-usd [:span.usd-price (str " ($" (ui-utils/format-to-usd amount-usd) ")")])]]]]))
 
 (defn donations []
   (let [active-account (subscribe [::accounts-subs/active-account])]

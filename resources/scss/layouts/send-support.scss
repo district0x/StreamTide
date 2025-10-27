@@ -98,6 +98,22 @@
 				color: $textColor;
 			}
 		}
+        .field-currency {
+            span {
+                display: inline-block;
+                white-space: nowrap;
+                overflow-x: auto;
+                scrollbar-width: none;
+                max-width: 100%;
+            }
+        }
+        .usd-price {
+            font-size: 14px;
+            font-style: italic;
+            position: absolute;
+            bottom: 5px;
+            right: calc(50% + 20px);
+        }
 		.btClose {
 			position: absolute;
 			top: 12.48px;
@@ -183,7 +199,7 @@
 	}
 	@include media-breakpoint-up(md) {
 		.cardSendSupport {
-			height: 166px;
+			height: 140px;
 			margin-bottom: 20px;
 			padding: 25px 30px;
 			flex-wrap: nowrap;
@@ -200,20 +216,25 @@
 				width: auto;
 				margin: 0 0 0 auto;
 				.titleField {
-					margin: 0 25px 0 0;
+					margin: 0 15px 0 0;
 				}
 			}
 			.field-amount {
 				margin-right: 35px;
 				.inputField {
-					width: 200px;
+					width: 180px;
 				}
 			}
 			.field-currency {
 				.inputField {
-					width: 136px;
+					width: 120px;
 				}
 			}
+            .usd-price {
+                font-size: 16px;
+                bottom: 20px;
+                right: 260px;
+            }
 		}
 	}
 	@include media-breakpoint-up(lg) {
@@ -231,8 +252,10 @@
 		}
 		.cardSendSupport {
 			z-index: 5;
+            height: 166px;
 			padding-right: 48px;
 			position: relative;
+            min-width: 1032px;
 			.user {
 				width: 116px;
 				height: 116px;
@@ -257,6 +280,7 @@
 				.titleField {
 					font-size: 18px;
 					line-height: 25px;
+                    margin: 0 25px 0 0;
 				}
 				.inputField {
 					height: 65px;
@@ -264,9 +288,21 @@
 					font-size: 18px;
 				}
 			}
+            .field-amount {
+                .inputField {
+                    width: 200px;
+                }
+            }
 			.field-currency {
 				margin-right: 48px;
+                .inputField {
+                    width: 136px;
+                }
 			}
+            .usd-price {
+                bottom: 22px;
+                right: 400px;
+            }
 			.btClose {
 				position: relative;
 				top: auto;
@@ -365,6 +401,10 @@
 					text-align: center;
 					font-size: 18px;
 					line-height: 26px;
+                    .usd-price {
+                        font-size: 16px;
+                        font-style: italic;
+                    }
 				}
 			}
 		}

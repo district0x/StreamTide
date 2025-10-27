@@ -37,19 +37,40 @@
              "0x")))
        donations))
 
+(defn compute-vibe-market-amount [web3 amount drop-address on-success]
+  (let [instance (web3-eth/contract-at web3 abi-reduced-vibemarket-booster-drop drop-address)]
+    {:web3/call {:web3 web3
+                 :fns [{:instance instance
+                        :fn :getMintPrice
+                        :args [amount]
+                        :on-success on-success
+                        :on-error [::st-events/dispatch-n [[::logging/error "Cannot fetch Mint Price for vibe market card"]
+                                                           [::error-notification/show-error "Cannot fetch Mint Price for vibe market card"]]]}]}}))
+
+(re-frame/reg-event-fx
+  ::compute-vibe-market-price
+  (fn [{:keys [db]} [_ {:keys [:drop-address] :as data}]]
+      (compute-vibe-market-amount (web3-queries/web3 db)
+                                  1
+                                  drop-address
+                                  [::compute-vibe-market-price-success data])))
+
+
+(re-frame/reg-event-fx
+  ::compute-vibe-market-price-success
+  (fn [{:keys [db]} [_ {:keys [:drop-address] :as data} amount]]
+    {:db (update db :coin-conversion assoc (keyword drop-address) amount)}))
+
+
 (re-frame/reg-event-fx
   ::compute-vibe-market-amount
   (fn [{:keys [db]} [_ {:keys [:donation :user-info :send-tx/id] :as data}]]
     (let [[_ {:keys [:amount]}] donation
-          drop-address (-> user-info :user/donation-coin :coin/address)
-          instance (web3-eth/contract-at (web3-queries/web3 db) abi-reduced-vibemarket-booster-drop drop-address)]
-      {:web3/call {:web3 (web3-queries/web3 db)
-                   :fns [{:instance instance
-                          :fn :getMintPrice
-                          :args [amount]
-                          :on-success [::compute-vibe-market-amount-success data]
-                          :on-error [::st-events/dispatch-n [[::logging/error "Cannot fetch Mint Price for vibe market card"]
-                                                             [::error-notification/show-error "Cannot fetch Mint Price for vibe market card"]]]}]}})))
+          drop-address (-> user-info :user/donation-coin :coin/address)]
+      (compute-vibe-market-amount (web3-queries/web3 db)
+                                  amount
+                                  drop-address
+                                  [::compute-vibe-market-amount-success data]))))
 
 (re-frame/reg-event-fx
   ::compute-vibe-market-amount-success
