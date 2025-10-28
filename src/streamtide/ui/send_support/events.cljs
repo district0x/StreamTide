@@ -4,6 +4,7 @@
     [cljsjs.bignumber]
     [cljs-web3-next.core :as web3]
     [cljs-web3-next.eth :as web3-eth]
+    [cljs-web3-next.helpers :refer [zero-address]]
     [district.ui.logging.events :as logging]
     [district.ui.notification.events :as notification-events]
     [district.ui.smart-contracts.queries :as contract-queries]
@@ -13,10 +14,13 @@
     [re-frame.core :as re-frame]
     [streamtide.shared.utils :as shared-utils :refer [donations-types-ids]]
     [streamtide.ui.components.error-notification :as error-notification]
+    [streamtide.ui.config :refer [config-map]]
     [streamtide.ui.events :as st-events :refer [wallet-chain-interceptors]]
     [streamtide.ui.utils :refer [build-tx-opts]]))
 
 (def abi-reduced-vibemarket-booster-drop (js/JSON.parse "[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"referrer\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"originReferrer\",\"type\":\"address\"}],\"name\":\"mint\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"getMintPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"))
+
+(def abi-reduced-toshimart-portal (js/JSON.parse "[{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"inputToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"outputToken\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"inputAmount\",\"type\":\"uint256\"}],\"name\":\"params\",\"type\":\"tuple\"}],\"name\":\"quoteExactInput\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"outputAmount\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"inputToken\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"outputToken\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"inputAmount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"minOutputAmount\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"permitData\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"extensionData\",\"type\":\"bytes\"}],\"name\":\"params\",\"type\":\"tuple\"}],\"name\":\"swapExactInputV3\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"outputAmount\",\"type\":\"uint256\"}],\"stateMutability\":\"payable\",\"type\":\"function\"}]"))
 
 (defn build-vibemarket-metadata [db amount drop-address]
   (let [instance (web3-eth/contract-at (web3-queries/web3 db) abi-reduced-vibemarket-booster-drop drop-address)
@@ -28,13 +32,38 @@
         abi (.. ^js (web3-queries/web3 db) -eth -abi)]
     (.encodeParameters abi fn-sig args)))
 
+(defn build-toshimart-metadata [db eth-amount token-amount contract-address]
+  (let [portal-address (-> config-map :toshi-mart :portal-address)
+        instance (web3-eth/contract-at (web3-queries/web3 db) abi-reduced-toshimart-portal portal-address)
+        params {:inputToken zero-address
+                :outputToken contract-address
+                :inputAmount eth-amount
+                :minOutputAmount token-amount
+                :permitData "0x"
+                :extensionData "0x"}
+        encoded-abi (web3-eth/encode-abi instance :swapExactInputV3 [params])
+        fn-sig (clj->js ["uint16" "address" "bytes"])
+        args (clj->js [(donations-types-ids :toshi-mart) portal-address encoded-abi])
+        abi (.. ^js (web3-queries/web3 db) -eth -abi)]
+    (.encodeParameters abi fn-sig args)))
+
 (defn build-metadata [db donations]
   (map (fn [donation]
          (let [user-info (-> donation val :user-info)
-               vibe-market? (-> user-info :user/donations-type (= "vibe-market"))]
-           (if vibe-market?
-             (build-vibemarket-metadata db (-> donation val :original-amount) (-> user-info :user/donation-coin :coin/address))
+               donations-type (:user/donations-type user-info)]
+           (case donations-type
+             "vibe-market" (build-vibemarket-metadata db (-> donation val :original-amount) (-> user-info :user/donation-coin :coin/address))
+             "toshi-mart" (build-toshimart-metadata db (-> donation val :amount) (-> donation val :original-amount) (-> user-info :user/donation-coin :coin/address))
              "0x")))
+       donations))
+
+(defn build-tokens [_db donations]
+  (map (fn [donation]
+         (let [user-info (-> donation val :user-info)
+               donations-type (:user/donations-type user-info)]
+           (case donations-type
+             "toshi-mart" (-> user-info :user/donation-coin :coin/address)
+             zero-address)))
        donations))
 
 (defn compute-vibe-market-amount [web3 amount drop-address on-success]
@@ -47,36 +76,87 @@
                         :on-error [::st-events/dispatch-n [[::logging/error "Cannot fetch Mint Price for vibe market card"]
                                                            [::error-notification/show-error "Cannot fetch Mint Price for vibe market card"]]]}]}}))
 
+(defn compute-toshi-mart-amount [web3 amount contract-address on-success]
+  (let [portal-address (-> config-map :toshi-mart :portal-address)
+        instance (web3-eth/contract-at web3 abi-reduced-toshimart-portal portal-address)
+        params {:inputToken zero-address
+                :outputToken contract-address
+                :inputAmount amount}]
+    {:web3/call {:web3 web3
+                 :fns [{:instance instance
+                        :fn :quoteExactInput
+                        :args [params]
+                        :on-success on-success
+                        :on-error [::st-events/dispatch-n [[::logging/error "Cannot fetch trade Price for toshi mart token"]
+                                                           [::error-notification/show-error "Cannot fetch trade Price for toshi mart token"]]]}]}}))
+
 (re-frame/reg-event-fx
   ::compute-vibe-market-price
-  (fn [{:keys [db]} [_ {:keys [:drop-address] :as data}]]
+  (fn [{:keys [db]} [_ {:keys [:contract-address] :as data}]]
       (compute-vibe-market-amount (web3-queries/web3 db)
                                   1
-                                  drop-address
-                                  [::compute-vibe-market-price-success data])))
-
+                                  contract-address
+                                  [::compute-coin-price-success data])))
 
 (re-frame/reg-event-fx
-  ::compute-vibe-market-price-success
-  (fn [{:keys [db]} [_ {:keys [:drop-address] :as data} amount]]
-    {:db (update db :coin-conversion assoc (keyword drop-address) amount)}))
+  ::compute-toshi-mart-price
+  (fn [{:keys [db]} [_ {:keys [:contract-address :decimals :amount-eth] :as data}]]
+    (compute-toshi-mart-amount (web3-queries/web3 db)
+                               (web3/to-wei (str amount-eth) :ether)
+                               contract-address
+                               [::compute-coin-amount-success data])))
 
+(re-frame/reg-event-fx
+  ::compute-coin-price-success
+  (fn [{:keys [db]} [_ {:keys [:contract-address] :as data} amount]]
+    {:db (update db :coin-conversion assoc (keyword contract-address) amount)}))
+
+(re-frame/reg-event-fx
+  ::compute-coin-amount-success
+  (fn [{:keys [db]} [_ {:keys [:user-address :contract-address :amount-eth :amount-path] :as data} amount]]
+    (when (= (get-in db [:coin-conversion-in-progress (keyword user-address) (keyword contract-address)]) amount-eth)
+      {:db (-> db
+               (update :coin-conversion assoc (keyword contract-address) amount)
+               (dissoc :coin-conversion-in-progress (keyword user-address) (keyword contract-address)))})))
+
+(re-frame/reg-event-fx
+  ::set-coin-conversion-in-progress
+  (fn [{:keys [db]} [_ {:keys [:user-address :contract-address :amount-eth] :as data}]]
+    {:db (assoc-in db [:coin-conversion-in-progress (keyword user-address) (keyword contract-address)] amount-eth)}))
 
 (re-frame/reg-event-fx
   ::compute-vibe-market-amount
   (fn [{:keys [db]} [_ {:keys [:donation :user-info :send-tx/id] :as data}]]
-    (let [[_ {:keys [:amount]}] donation
+    (let [[_ {:keys [:amount-token]}] donation
           drop-address (-> user-info :user/donation-coin :coin/address)]
       (compute-vibe-market-amount (web3-queries/web3 db)
-                                  amount
+                                  amount-token
                                   drop-address
-                                  [::compute-vibe-market-amount-success data]))))
+                                  [::compute-amount-success data]))))
 
 (re-frame/reg-event-fx
-  ::compute-vibe-market-amount-success
+  ::compute-toshi-mart-amount
+  (fn [{:keys [db]} [_ {:keys [:donation :user-info :send-tx/id] :as data}]]
+    (let [[_ {:keys [:amount-eth]}] donation
+          coin (:user/donation-coin user-info)
+          contract-address (:coin/address coin)]
+      (compute-toshi-mart-amount (web3-queries/web3 db)
+                                 (web3/to-wei amount-eth :ether)
+                                 contract-address
+                                 [::compute-toshi-mart-amount-success data]))))
+
+(re-frame/reg-event-fx
+  ::compute-toshi-mart-amount-success
   (fn [{:keys [db]} [_ {:keys [:donation :user-info :send-tx/id] :as data} amount]]
     (let [[receiver original-amount] donation]
-      {:db (update db :amounts assoc receiver {:amount amount :user-info user-info :original-amount (:amount original-amount)})
+      {:db (update db :amounts assoc receiver {:amount (web3/to-wei (:amount-eth original-amount) :ether) :user-info user-info :original-amount amount })
+       :dispatch [::complete-amount {:send-tx/id id}]})))
+
+(re-frame/reg-event-fx
+  ::compute-amount-success
+  (fn [{:keys [db]} [_ {:keys [:donation :user-info :send-tx/id] :as data} amount]]
+    (let [[receiver original-amount] donation]
+      {:db (update db :amounts assoc receiver {:amount amount :user-info user-info :original-amount (or (:amount-eth original-amount) (:amount-token original-amount))})
        :dispatch [::complete-amount {:send-tx/id id}]})))
 
 (re-frame/reg-event-fx
@@ -89,11 +169,12 @@
 (re-frame/reg-event-fx
   ::compute-amount
   (fn [{:keys [db]} [_ {:keys [:donation :user-info :send-tx/id] :as data}]]
-    (let [[receiver {:keys [:amount]}] donation
-          vibe-market? (-> user-info :user/donations-type (= "vibe-market"))]
-      (if vibe-market?
-        {:dispatch [::compute-vibe-market-amount data]}
-        (let [amount (web3/to-wei (shared-utils/safe-number-str amount) :ether)]
+    (let [[receiver amount-info] donation
+          donations-type (:user/donations-type user-info)]
+      (case donations-type
+        "vibe-market" {:dispatch [::compute-vibe-market-amount data]}
+        "toshi-mart" {:dispatch [::compute-toshi-mart-amount data]}
+        (let [amount (web3/to-wei (shared-utils/safe-number-str (:amount-eth amount-info)) :ether)]
           {:db (update db :amounts assoc receiver {:amount amount :user-info user-info :original-amount amount})
            :dispatch [::complete-amount {:send-tx/id id}]})))))
 
@@ -121,7 +202,8 @@
                                 (map js/BigNumber.)
                                 (reduce bn/+)
                                 bn/fixed)
-          metadata (build-metadata db donations)]
+          metadata (build-metadata db donations)
+          tokens (build-tokens db donations)]
       {:dispatch (if (some #{"0"} amounts)
                    [::logging/error (str "amount cannot be zero")
                     {:user {:id active-account}
@@ -129,7 +211,7 @@
                     ::send-support]
                    [::tx-events/send-tx {:instance (contract-queries/instance db :streamtide (contract-queries/contract-address db :streamtide-fwd))
                                          :fn :donate
-                                         :args [receivers amounts metadata]
+                                         :args [receivers amounts metadata tokens]
                                          :tx-opts (build-tx-opts {:from active-account :value total-amount-wei})
                                          :tx-id {:streamtide/donate id}
                                          :tx-log {:name tx-name

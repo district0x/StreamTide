@@ -185,11 +185,19 @@
           (not (:donations-type entries)) (assoc :donations-type "eth"))]
     (cond-> entries
             (= (:donations-type entries) "eth")
-            (assoc :vibe-market-drop-address "")
+            (->
+              (assoc :vibe-market-drop-address "")
+              (assoc :toshi-mart-contract-address ""))
             (= (:donations-type entries) "vibe-market")
             (->
               (assoc :vibe-market-drop-address (-> entries :donation-coin :coin/address))
-              (assoc :min-donation "0")))))
+              (assoc :min-donation "0")
+              (assoc :toshi-mart-contract-address ""))
+            (= (:donations-type entries) "toshi-mart")
+            (->
+              (assoc :toshi-mart-contract-address (-> entries :donation-coin :coin/address))
+              (assoc :min-donation "0")
+              (assoc :vibe-market-drop-address "")))))
 
 (defn- parse-min-donation [entries]
   (update entries :min-donation #(if % (from-wei %) "0")))
@@ -502,7 +510,9 @@
                     (and (:photo @form-data) (-> @form-data :photo :error not)) (update :photo photo->gql)
                     (and (:bg-photo @form-data) (-> @form-data :bg-photo :error)) (dissoc :bg-photo)
                     (and (:bg-photo @form-data) (-> @form-data :bg-photo :error not)) (update :bg-photo photo->gql)
-                    (= (:donations-type form-values) "eth") (dissoc :vibe-market-drop-address)
+                    (= (:donations-type form-values) "eth") (->
+                                                              (dissoc :vibe-market-drop-address)
+                                                              (dissoc :toshi-mart-contract-address))
                     (= (:donations-type form-values) "vibe-market") (dissoc :min-donation))]
       (cond-> f
               (and (= (:donations-type f) "eth") (empty? (:min-donation f))) (assoc :min-donation "0")
@@ -513,7 +523,11 @@
               (:vibe-market-drop-address f)
               (->
                 (assoc :donations-type "vibe-market")
-                (assoc :donation-coin (:vibe-market-drop-address f)))))
+                (assoc :donation-coin (:vibe-market-drop-address f)))
+              (:toshi-mart-contract-address f)
+              (->
+                (assoc :donations-type "toshi-mart")
+                (assoc :donation-coin (:toshi-mart-contract-address f)))))
     (catch :default e
       (dispatch [::error-notification/show-error "Invalid data" e])
       (throw e))))
@@ -578,6 +592,11 @@
                                                       (= (:vibe-market-drop-address form-values) zero-address)
                                                       (not (ui-utils/valid-address-format? (:vibe-market-drop-address form-values)))))
                                              (assoc :vibe-market-drop-address "Address not valid")
+                                             (and (= (:donations-type form-values) "toshi-mart")
+                                                  (or (empty? (:toshi-mart-contract-address form-values))
+                                                      (= (:toshi-mart-contract-address form-values) zero-address)
+                                                      (not (ui-utils/valid-address-format? (:toshi-mart-contract-address form-values)))))
+                                             (assoc :toshi-mart-contract-address "Address not valid")
 
                                              (some-invalid-url? (:url @form-data))
                                              (assoc :url "URL not valid")
@@ -680,12 +699,13 @@
                    :form-data form-data
                    :form-values form-values
                    :options [{:label "ETH Donation" :value "eth" }
-                             {:label "Vibe Market Cards Pack" :value "vibe-market"}]}]
+                             {:label "Vibe Market Cards Pack" :value "vibe-market"}
+                             {:label "Toshi Mart Tokens" :value "toshi-mart"}]}]
 
                  [:div.donations-config
                  (case (:donations-type form-values)
                    "eth"
-                   [:div.min-donation
+                   [:div.donation-config.min-donation
                     [:p "Donations will be done in ETH and full amount will be transferred to your address."]
                     [:h2 "Minimum donation amount"]
                     [:p "Donations smaller to this amount will not unlock your 'supporter only' content"]
@@ -697,14 +717,25 @@
                              {:id :min-donation})]]]
 
                    "vibe-market"
-                   [:div.vibe-market
-                    [:p "Donations will buy Liquid Trading Cards (LTC) and send them to the buyer."]
+                   [:div.donation-config.vibe-market
+                    [:p "Donations will buy " [:a {:href "https://vibechain.com/market" :target "_blank"} "vibe.market"] " Liquid Trading Cards (LTC) and send them to the buyer."]
 
                     [:label.inputField
                      [:span "Drop Address"]
                      [initializable-text-input
                       (merge input-params
                              {:id :vibe-market-drop-address
+                              :placeholder zero-address})]]]
+
+                   "toshi-mart"
+                   [:div.donation-config.toshi-mart
+                    [:p "Donations will buy " [:a {:href "https://toshimart.xyz" :target "_blank"} "Toshi Mart"] " tokens and send them to the buyer."]
+
+                    [:label.inputField
+                     [:span "Contract Address"]
+                     [initializable-text-input
+                      (merge input-params
+                             {:id :toshi-mart-contract-address
                               :placeholder zero-address})]]])]
                  [:div.perks
                   [:h2 "Perks Button URL"]

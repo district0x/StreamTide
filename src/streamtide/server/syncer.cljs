@@ -133,7 +133,7 @@
 
 (defn ensure-coin-exists!
   ([coin-address chain-id]
-   ensure-coin-exists! coin-address chain-id nil)
+   (ensure-coin-exists! coin-address chain-id nil))
   ([coin-address chain-id donation-type]
    (safe-go
      (let [coin (<! (db/get-coin coin-address chain-id))]
@@ -165,19 +165,19 @@
         (<! (db/upsert-user-info! {:user/address sender}))
         (<! (ensure-coin-exists! zero-address chain-id))
         (<! (db/add-donation! donation))
-        (<! (notifiers/notify-donation donation))
+        (<! (notifiers/notify-donation (merge donation {:donation/coin {:coin/decimals 18 :coin/symbol "ETH"}})))
         (let [min-donation (:user/min-donation (db/get-user patron-address))]
           (when (or (nil? min-donation) (bn/>= (js/BigNumber. value) (js/BigNumber. min-donation)))
             (<! (db/add-user-content-permission! {:user/source-user sender
                                               :user/target-user patron-address}))))))))
 
 (defn donate-external-event [_ {:keys [:args :chain-id]}]
-  (let [{:keys [:sender :value :patron-address :round-id :target :external-type :call-data :timestamp]} args]
+  (let [{:keys [:sender :value :patron-address :round-id :target :external-type :call-data :timestamp :gained :token]} args]
     (safe-go
       (let [donation-type (donations-ids-types (int external-type))]
         (if (nil? donation-type)
           (log/error (str "Invalid external type: " external-type ". Event will be ignored."))
-          (let [{:keys [coin amount]} (<? (donations-configs/parse-call-data donation-type {:amount value :target target :call-data call-data}))
+          (let [{:keys [coin amount]} (<? (donations-configs/parse-call-data donation-type {:amount value :target target :call-data call-data :gained gained :token token}))
                 round-id (when (not= (str round-id) "0") round-id)
                 amount-usd (<? (server-utils/eth->usd-amount value timestamp))
                 donation {:donation/sender sender
@@ -192,7 +192,7 @@
             (<! (db/upsert-user-info! {:user/address sender}))
             (<! (ensure-coin-exists! coin chain-id donation-type))
             (<! (db/add-donation! donation))
-            (<! (notifiers/notify-donation donation))
+            (<! (notifiers/notify-donation (merge donation {:donation/coin (<! (db/get-coin coin chain-id))})))
             (let [min-donation (:user/min-donation (db/get-user patron-address))]
               (when (or (nil? min-donation) (bn/>= (js/BigNumber. value) (js/BigNumber. min-donation)))
                 (<! (db/add-user-content-permission! {:user/source-user sender

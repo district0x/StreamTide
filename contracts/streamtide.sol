@@ -41,7 +41,9 @@ contract MVPCLR is OwnableUpgradeable, ReentrancyGuard {
         uint256 roundId,
         uint16 externalType,
         address target,
-        bytes callData
+        bytes callData,
+        address token,
+        uint256 gained
     );
 
     event FailedDistribute(
@@ -141,37 +143,101 @@ contract MVPCLR is OwnableUpgradeable, ReentrancyGuard {
         emit PatronsAdded(addresses);
     }
 
-    function donate(address[] memory patronAddresses, uint256[] memory amounts, bytes[] calldata metadata) public payable nonReentrant {
+    function donate(
+        address[] memory patronAddresses,
+        uint256[] memory amounts,
+        bytes[] calldata metadata,
+        address[] calldata tokens
+    ) public payable nonReentrant {
         require(patronAddresses.length == amounts.length, "CLR:donate - Mismatch between number of patrons and amounts");
         require(patronAddresses.length == metadata.length, "CLR:donate - mismatch patrons/metadata");
+        require(!isBlacklisted[_msgSender()], "Sender address is blacklisted");
+
         uint256 totalAmount = 0;
         uint256 donationRoundId = roundIsClosed() ? 0 : roundId;
-        require(!isBlacklisted[_msgSender()], "Sender address is blacklisted");
+
         for (uint256 i = 0; i < patronAddresses.length; i++) {
-            address patronAddress = patronAddresses[i];
-            uint256 amount = amounts[i];
-            bytes calldata data = metadata[i];
-            totalAmount += amount;
-            require(!isBlacklisted[patronAddress], "Patron address is blacklisted");
-            require(isPatron[patronAddress], "CLR:donate - Not a valid recipient");
-            if (data.length > 0) {
-                (uint16 externalType, address target, bytes memory callData) = abi.decode(data, (uint16, address, bytes));
+            totalAmount += _processDonation(
+                patronAddresses[i],
+                amounts[i],
+                metadata[i],
+                tokens[i],
+                donationRoundId
+            );
+        }
 
-                require(target != address(0), "CLR:donate - invalid target");
-                require(isContract(target), "CLR:donate - target must be contract");
+        require(totalAmount <= msg.value, "CLR:donate - Total amount donated exceeds value sent");
+    }
 
-                (bool success, bytes memory returndata) = payable(target).call{value: amount}(callData);
-                require(success, _getRevertMsg(returndata));
+    function _processDonation(
+        address patronAddress,
+        uint256 amount,
+        bytes calldata data,
+        address token,
+        uint256 donationRoundId
+    ) internal returns (uint256) {
+        require(!isBlacklisted[patronAddress], "Patron address is blacklisted");
+        require(isPatron[patronAddress], "CLR:donate - Not a valid recipient");
 
-                emit DonateExternal(msg.sender, amount, patronAddress, donationRoundId, externalType, target, callData);
-            } else {
-                bool success = payable(patronAddress).send(amount);
-                require(success, "CLR:donate - Failed to send funds to recipient");
-                emit Donate(_msgSender(), amount, patronAddress, donationRoundId);
+        if (data.length > 0) {
+            _handleExternalDonation(patronAddress, amount, data, token, donationRoundId);
+        } else {
+            _handleDirectDonation(patronAddress, amount, donationRoundId);
+        }
+
+        return amount;
+    }
+
+    function _handleDirectDonation(
+        address patronAddress,
+        uint256 amount,
+        uint256 donationRoundId
+    ) internal {
+        bool success = payable(patronAddress).send(amount);
+        require(success, "CLR:donate - Failed to send funds to recipient");
+
+        emit Donate(_msgSender(), amount, patronAddress, donationRoundId);
+    }
+
+    function _handleExternalDonation(
+        address patronAddress,
+        uint256 amount,
+        bytes calldata data,
+        address token,
+        uint256 donationRoundId
+    ) internal {
+        (uint16 externalType, address target, bytes memory callData) = abi.decode(data, (uint16, address, bytes));
+        require(target != address(0), "CLR:donate - invalid target");
+        require(isContract(target), "CLR:donate - target must be contract");
+
+        uint256 gained = 0;
+        uint256 beforeBal = 0;
+
+        if (token != address(0)) {
+            beforeBal = IERC20(token).balanceOf(address(this));
+        }
+        {
+            (bool success, bytes memory returndata) = payable(target).call{value: amount}(callData);
+            require(success, _getRevertMsg(returndata));
+        }
+        if (token != address(0)) {
+            gained = IERC20(token).balanceOf(address(this)) - beforeBal;
+            if (gained > 0) {
+                IERC20(token).transfer(_msgSender(), gained);
             }
         }
 
-        require(totalAmount <= msg.value, "CLR:donate - Total amount donated is greater than the value sent");
+        emit DonateExternal(
+            _msgSender(),
+            amount,
+            patronAddress,
+            donationRoundId,
+            externalType,
+            target,
+            callData,
+            token,
+            gained
+        );
     }
 
     function isContract(address account) internal view returns (bool) {

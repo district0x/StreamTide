@@ -99,7 +99,7 @@
 				}
 			}
 		}
-		.generalInfo, .min-donation, .vibe-market, .perks {
+		.generalInfo, .donation-config, .perks {
 			margin-bottom: 23px;
 			label.inputField {
 				display: flex;
@@ -522,12 +522,15 @@
 			}
 			.donations-configs {
 				margin-top: 3em;
+                a {
+                  color: goldenrod;
+                }
 			}
             .donations-config {
               margin-top: 15px;
               margin-left: 1em;
             }
-            .vibe-market {
+            .donation-config {
               span {
                 min-width: fit-content;
               }

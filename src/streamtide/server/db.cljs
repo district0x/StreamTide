@@ -1,6 +1,7 @@
 (ns streamtide.server.db
   "Module for defining database structure and managing and abstracting queries to the database"
   (:require [cljs-web3-next.helpers :refer [zero-address]]
+            [clojure.string :as str]
             [clojure.string :as string]
             [district.server.config :refer [config]]
             [cljs.core.async :refer [go <! go-loop] :as async]
@@ -660,7 +661,8 @@
             :where [:and [:= :user/address user-address] [:= :role/role (name role)]]}))
 
 (defn upsert-user-info! [args]
-  (let [user-info (select-keys args user-column-names)]
+  (let [user-info (cond-> (select-keys args user-column-names)
+                          (:user/donation-coin args) (update :user/donation-coin str/lower-case))]
     (db-run! {:insert-into :st-user
               :values [(merge {:user/creation-date (shared-utils/now-secs)}
                               user-info)]

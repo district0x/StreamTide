@@ -190,11 +190,16 @@
                       [:<>
                        (when-not (= @active-account user-account)
                          [:button.btBasic.btBasic-light {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
-                          (if (= donations-type "vibe-market")
-                            (str "SUPPORT THIS CREATOR AND EARN '" (str/upper-case (:coin/name coin)) "' ($" (:coin/symbol coin) ") CARDS")
+                          (case donations-type
+                            "vibe-market" (str "SUPPORT THIS CREATOR AND EARN '" (str/upper-case (:coin/name coin)) "' ($" (:coin/symbol coin) ") CARDS")
+                            "toshi-mart" (str "SUPPORT THIS CREATOR AND EARN '" (str/upper-case (:coin/name coin)) "' ($" (:coin/symbol coin) ") TOKENS")
                             "SUPPORT THIS CREATOR")])
-                       (when (= donations-type "vibe-market")
-                         [:a.coin-link {:href (str "https://vibechain.com/market/" (:coin/address coin)) :target "_blank"}
+                       (when (or (= donations-type "vibe-market")
+                                 (= donations-type "toshi-mart"))
+                         [:a.coin-link {:href (case donations-type
+                                                "vibe-market" (str "https://vibechain.com/market/" (:coin/address coin))
+                                                "toshi-mart" (str "https://toshimart.xyz/" (:coin/address coin))
+                                                "") :target "_blank"}
                           (if (:coin/image-url coin)
                             [:img.coin-logo {:src (:coin/image-url coin)}]
                             [:div.coin-custom-logo (:coin/symbol coin)])])])

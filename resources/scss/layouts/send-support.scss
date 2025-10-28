@@ -64,6 +64,7 @@
 				line-height: 18px;
 				margin-bottom: 12px;
 				display: block;
+                white-space: nowrap;
 			}
 			.inputField {
 				height: 44px;
@@ -81,8 +82,16 @@
 				height: 143px;
 			}
 		}
-		.field-amount {
+		.field-amount-eth {
 			margin-right: 19px;
+            position: relative;
+            .input-group {
+              width: unset;
+            }
+            .inputField.currency {
+                width: fit-content;
+                padding: 0 7px;
+            }
 			.help-block {
 				margin-top: 7px;
 				line-height: 0;
@@ -98,21 +107,22 @@
 				color: $textColor;
 			}
 		}
-        .field-currency {
-            span {
-                display: inline-block;
-                white-space: nowrap;
-                overflow-x: auto;
-                scrollbar-width: none;
-                max-width: 100%;
+		.field-amount-currency {
+			margin-right: 19px;
+            .input-group {
+              width: unset;
             }
-        }
+            .inputField.currency {
+                width: fit-content;
+                padding: 0 7px;
+            }
+		}
         .usd-price {
             font-size: 14px;
             font-style: italic;
             position: absolute;
-            bottom: 5px;
-            right: calc(50% + 20px);
+            bottom: -24px;
+            right: 62px;
         }
 		.btClose {
 			position: absolute;
@@ -189,7 +199,7 @@
 	}
 	@include media-breakpoint-down(sm) {
 		.cardSendSupport {
-			.field-amount {
+			.field-amount-eth {
 				.warning {
 					top: 180px;
 					padding-left: 4px;
@@ -219,21 +229,22 @@
 					margin: 0 15px 0 0;
 				}
 			}
-			.field-amount {
+			.field-amount-eth {
 				margin-right: 35px;
 				.inputField {
 					width: 180px;
 				}
 			}
-			.field-currency {
+			.field-amount-currency {
+				margin-right: 35px;
 				.inputField {
-					width: 120px;
+					width: 180px;
 				}
 			}
             .usd-price {
                 font-size: 16px;
-                bottom: 20px;
-                right: 260px;
+                bottom: -24px;
+                right: 56px;
             }
 		}
 	}
@@ -288,20 +299,19 @@
 					font-size: 18px;
 				}
 			}
-            .field-amount {
+            .field-amount-eth {
+                .inputField {
+                    width: 130px;
+                }
+            }
+            .field-amount-currency {
                 .inputField {
                     width: 200px;
                 }
             }
-			.field-currency {
-				margin-right: 48px;
-                .inputField {
-                    width: 136px;
-                }
-			}
             .usd-price {
-                bottom: 22px;
-                right: 400px;
+                bottom: -24px;
+                right: 62px;
             }
 			.btClose {
 				position: relative;

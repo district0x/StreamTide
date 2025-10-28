@@ -14,6 +14,7 @@
             [streamtide.server.donations-configs.donations-configs :as donations-configs]
             [streamtide.server.donations-configs.eth-donation]
             [streamtide.server.donations-configs.vibe-market-donation]
+            [streamtide.server.donations-configs.toshi-mart-donation]
             [streamtide.server.notifiers.notifiers :as notifiers]
             [streamtide.server.verifiers.discord-verifier]
             [streamtide.server.verifiers.eth-verifier]

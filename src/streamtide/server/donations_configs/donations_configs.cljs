@@ -9,7 +9,7 @@
 
 (defmulti parse-call-data
           "Parse donation event call-data"
-          (fn [donation-type {:keys [:target :call-data :amount] :as _args}]
+          (fn [donation-type {:keys [:target :call-data :amount :gained :token] :as _args}]
             donation-type))
 
 (defmethod verify :default [donation-type _]

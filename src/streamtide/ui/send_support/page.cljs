@@ -40,7 +40,8 @@
     :user/min-donation
     [:user/donation-coin [:coin/address
                           :coin/symbol
-                          :coin/type]]]])
+                          :coin/type
+                          :coin/decimals]]]])
 
 (defn build-donations-query [{:keys [:user/address]} after]
   [:search-donations
@@ -65,48 +66,119 @@
 
 (def default-min-donation "0.005")
 
+
+(defn amount-card-eth [user-info form-data errors eth->usd]
+  (let [user-address (:user/address user-info)
+        not-errors? (nil? (get-in @errors [:local user-address :amount-eth]))
+        amount (get-in @form-data [user-address :amount-eth])
+        min-donation (shared-utils/from-wei (or (:user/min-donation user-info) "0"))
+        usd-amount (when (and not-errors? amount eth->usd)
+                     (-> amount (* eth->usd) ui-utils/format-to-usd))]
+    (when-not amount
+      (swap! form-data assoc-in [user-address :amount-eth]
+             (if (= "0" min-donation) default-min-donation min-donation)))
+    [:<>
+      [:div.field.field-amount-eth
+       [:span.titleField "You simp"]
+       [text-input {:id [user-address :amount-eth]
+                    :form-data form-data
+                    :class "inputField"
+                    :errors errors}]
+       [:div.inputField.simple.disabled.currency
+        [:span "ETH"]]
+       [:div.usd-price (when (and usd-amount (not (js/isNaN usd-amount))) (str "$" usd-amount))]
+       (when (and not-errors?
+                  (< (js/parseFloat (get-in @form-data [user-address :amount]))
+                     (js/parseFloat min-donation)))
+         [:span.warning "Min amount not reached. This donation will not unlock hidden content"])]]))
+
+(defn amount-card-erc20 [user-info form-data errors eth->usd]
+  (let [user-address (:user/address user-info)
+        not-errors? (nil? (get-in @errors [:local user-address :amount-eth]))
+        amount-eth (get-in @form-data [user-address :amount-eth])
+        coin (:user/donation-coin user-info)
+        donation-type (:user/donations-type user-info)
+        token->wei (when (and not-errors? amount-eth) @(subscribe [::ss-subs/coin-amount-conversion user-address coin donation-type amount-eth]))
+        conversion-in-progress? (when (and not-errors? amount-eth) @(subscribe [::ss-subs/coin-conversion-in-progress? user-address (:coin/address coin)]))
+        usd-amount (when (and not-errors? amount-eth eth->usd)
+                     (-> amount-eth (* eth->usd) ui-utils/format-to-usd))
+        amount-token (when (and not-errors? token->wei (not conversion-in-progress?))
+                       (shared-utils/from-base-amount token->wei (:coin/decimals coin)))]
+    (when-not amount-eth
+      (swap! form-data assoc-in [user-address :amount-eth] default-min-donation))
+    [:<>
+      [:div.field.field-amount-eth
+       [:span.titleField "You simp"]
+       [text-input {:id [user-address :amount-eth]
+                    :form-data form-data
+                    :class "inputField"
+                    :errors errors}]
+       [:div.inputField.simple.disabled.currency
+        [:span "ETH"]]
+       [:div.usd-price (when usd-amount (str "$" usd-amount))]]
+     [:div.field.field-amount-currency
+      [:span.titleField "You get"]
+      [text-input {:id [user-address :amount-token]
+                   :form-data form-data
+                   :class "inputField disabled"
+                   :disabled true
+                   :value amount-token}]
+      [:div.inputField.simple.disabled.currency
+       [:span (:coin/symbol coin)]]]]))
+
+(defn amount-card-erc721 [user-info form-data errors eth->usd]
+  (let [user-address (:user/address user-info)
+        amount (get-in @form-data [user-address :amount-token])
+        not-errors? (nil? (get-in @errors [:local user-address :amount-token]))
+        coin (:user/donation-coin user-info)
+        donation-type (:user/donations-type user-info)
+        token->wei @(subscribe [::ss-subs/coin-conversion coin donation-type])
+        amount-eth (when (and not-errors? amount token->wei)
+                     (* amount (shared-utils/from-wei token->wei)))
+        usd-amount (when (and amount-eth eth->usd)
+                     (-> amount-eth (* eth->usd) ui-utils/format-to-usd))]
+    (when-not amount
+      (swap! form-data assoc-in [user-address :amount-token] "1"))
+    [:<>
+      [:div.field.field-amount-eth
+       [:span.titleField "You simp"]
+       [text-input {:id [user-address :amount-eth]
+                    :form-data form-data
+                    :class "inputField disabled"
+                    :disabled true
+                    :value amount-eth}]
+       [:div.inputField.simple.disabled.currency
+        [:span "ETH"]]
+       [:div.usd-price (when usd-amount (str "$" usd-amount))]]
+     [:div.field.field-amount-currency
+      [:span.titleField "You get"]
+      [text-input {:id [user-address :amount-token]
+                   :form-data form-data
+                   :class "inputField"
+                   :errors errors}]
+      [:div.inputField.simple.disabled.currency
+       [:span (:coin/symbol coin)]]]]))
+
 (defn send-support-card [user-info form-data errors]
   (let [user-address (:user/address user-info)
         nav (partial nav-anchor {:route :route.profile/index :params {:address user-address}})
         coin (:user/donation-coin user-info)
-        erc721? (ui-utils/erc721? coin)
-        min-donation (shared-utils/from-wei (or (:user/min-donation user-info) "0"))
         eth->usd @(subscribe [::conversation-rates-subs/conversion-rate :ETH :USD])
-        token->wei (when erc721? @(subscribe [::ss-subs/coin-conversion (:coin/address coin)]))
-        amount (get-in @form-data [user-address :amount])
-        usd-amount (when (and amount eth->usd)
-                     (if erc721?
-                       (when token->wei
-                         (-> amount (* (shared-utils/from-wei token->wei) eth->usd) ui-utils/format-to-usd))
-                       (-> amount (* eth->usd) ui-utils/format-to-usd)))]
-    (when-not (get-in @form-data [user-address :amount])
-      (swap! form-data assoc-in [user-address :amount]
-             (if erc721? "1"
-              (if (= "0" min-donation) default-min-donation min-donation))))
+        amount-card-form (case (:coin/type coin)
+                           "erc721" amount-card-erc721
+                           "erc20" amount-card-erc20
+                           amount-card-eth)]
     [:div.cardSendSupport
      [nav [user-photo {:src (:user/photo user-info)}]]
      [:div.content
       [nav [:h3 (ui-utils/user-or-address (:user/name user-info) user-address)]]
       [:p.d-none.d-lg-block (:user/tagline user-info)]]
-     [:div.field.field-amount
-      [:span.titleField "Amount"]
-      [text-input {:id [user-address :amount]
-                   :form-data form-data
-                   :class "inputField"
-                   :errors errors}]
-      (when (and (nil? (get-in @errors [:local user-address :amount]))
-                 (< (js/parseFloat (get-in @form-data [user-address :amount]))
-                    (js/parseFloat min-donation)))
-        [:span.warning "Min amount not reached. This donation will not unlock hidden content"])]
-     [:div.field.field-currency
-      [:span.titleField "Currency"]
-      [:div.inputField.simple.disabled
-       [:span (:coin/symbol coin)]]]
+      [amount-card-form user-info form-data errors eth->usd]
      [:button.btClose
       {:on-click (fn []
                    (swap! form-data dissoc user-address)
-                   (dispatch [::st-events/remove-from-cart {:user/address user-address}]))}]
-     [:div.usd-price (when usd-amount (str "$" usd-amount))]]))
+                   (dispatch [::st-events/remove-from-cart {:user/address user-address}]))}]]))
+
 
 (defn donation-entry [{:keys [:donation/id :donation/receiver :donation/amount :donation/date :donation/coin :donation/amount-usd] :as donation}]
   (let [receiver-address (:user/address receiver)
@@ -177,13 +249,16 @@
                                            [addr v])))
                               @user-info-query))
             errors (reaction {:local
-                              (when-not loading? (reduce (fn [aggr [addr {:keys [:amount]}]]
+                              (when-not loading? (reduce (fn [aggr [addr {:keys [:amount-eth :amount-token]}]]
                                                            (let [erc721? (ui-utils/erc721? (-> users-map (get addr) :user/donation-coin))]
-                                                             (if (and amount (or (and erc721? (not (re-matches #"\d+" amount)))
-                                                                                 (not (re-matches #"^\d+(\.\d{0,18})?$" amount))
-                                                                                 (re-matches #"^0+\.?0*$" amount)))
-                                                               (assoc-in aggr [addr :amount] "Amount not valid")
-                                                               aggr)))
+                                                              (cond-> aggr
+                                                                      (and erc721? amount-token (or (not (re-matches #"\d+" amount-token)) (re-matches #"0+" amount-token)))
+                                                                      (assoc-in [addr :amount-token] "Amount not valid")
+
+                                                                      (and (not erc721?) amount-eth (or (not (re-matches #"^\d+(\.\d{0,18})?$" amount-eth))
+                                                                                                        (re-matches #"^0+\.?0*$" amount-eth)))
+                                                                      (assoc-in [addr :amount-eth] "Amount not valid")
+                                                                      )))
                                                          {} @form-data))})
             donate-tx-pending? (subscribe [::tx-id-subs/tx-pending? {:streamtide/donate tx-id}])
             donate-tx-success? (subscribe [::tx-id-subs/tx-success? {:streamtide/donate tx-id}])
@@ -210,7 +285,7 @@
                                    :pending-text "Simping in Progress 💸"
                                    :disabled (or @donate-tx-pending? @donate-tx-success? @waiting-wallet?
                                                  (empty? @form-data)
-                                                 (some #(or (zero? %) (nil? %)) (map :amount (vals @form-data))))
+                                                 (not-empty (-> @errors :local)))
                                    :class (str "btBasic btBasic-light btCheckout" (when @donate-tx-success? " checkedOut"))
                                    :on-click (fn [e]
                                                (.stopPropagation e)

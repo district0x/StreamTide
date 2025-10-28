@@ -30,6 +30,7 @@
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    :conversion-rates {:from-currencies [:ETH] :to-currencies [:USD]}
    :thirdweb {:client-id "."}
+   :toshi-mart {:portal-address "0xBda0eec443C03F6405Fc6e560D94fe7672450958"}
    })
 
 (def qa-config
@@ -55,6 +56,7 @@
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    :conversion-rates {:from-currencies [:ETH] :to-currencies [:USD]}
    :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
+   :toshi-mart {:portal-address "0x561e4410DD8d4428Fb43127F1B19488F33523810"}
    })
 
 (def production-config
@@ -75,6 +77,7 @@
    :notifiers {:web-push {:public-key "BGtkUrXx0vlsFpfmf8rDNqswKAlrSUQUE8xN4Jf6F3rtQCpbdR-vakwnUnhnVWYl1kdfUXzjfNini19ZyGVtaMM"}}
    :conversion-rates {:from-currencies [:ETH] :to-currencies [:USD]}
    :thirdweb {:client-id "f478f4123340f16303e57df57b6e26ef"}
+   :toshi-mart {:portal-address "0x1ea172Fb88C24DFC21Ff6Fa38762511C123bA948"}
    })
 
 (def config-map
