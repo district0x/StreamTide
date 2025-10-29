@@ -100,7 +100,7 @@
         coin (:user/donation-coin user-info)
         donation-type (:user/donations-type user-info)
         token->wei (when (and not-errors? amount-eth) @(subscribe [::ss-subs/coin-amount-conversion user-address coin donation-type amount-eth]))
-        conversion-in-progress? (when (and not-errors? amount-eth) @(subscribe [::ss-subs/coin-conversion-in-progress? user-address (:coin/address coin)]))
+        conversion-in-progress? (when (and not-errors? amount-eth) @(subscribe [::ss-subs/coin-amount-conversion-in-progress? user-address (:coin/address coin)]))
         usd-amount (when (and not-errors? amount-eth eth->usd)
                      (-> amount-eth (* eth->usd) ui-utils/format-to-usd))
         amount-token (when (and not-errors? token->wei (not conversion-in-progress?))
