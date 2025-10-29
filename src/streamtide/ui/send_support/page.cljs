@@ -80,12 +80,13 @@
     [:<>
       [:div.field.field-amount-eth
        [:span.titleField "You simp"]
-       [text-input {:id [user-address :amount-eth]
-                    :form-data form-data
-                    :class "inputField"
-                    :errors errors}]
-       [:div.inputField.simple.disabled.currency
-        [:span "ETH"]]
+       [:div.amount-container
+        [text-input {:id [user-address :amount-eth]
+                     :form-data form-data
+                     :class "inputField amount"
+                     :errors errors}]
+        [:div.inputField.simple.disabled.currency
+         [:span "ETH"]]]
        [:div.usd-price (when (and usd-amount (not (js/isNaN usd-amount))) (str "$" usd-amount))]
        (when (and not-errors?
                   (< (js/parseFloat (get-in @form-data [user-address :amount]))
@@ -109,22 +110,24 @@
     [:<>
       [:div.field.field-amount-eth
        [:span.titleField "You simp"]
-       [text-input {:id [user-address :amount-eth]
-                    :form-data form-data
-                    :class "inputField"
-                    :errors errors}]
-       [:div.inputField.simple.disabled.currency
-        [:span "ETH"]]
+       [:div.amount-container
+        [text-input {:id [user-address :amount-eth]
+                     :form-data form-data
+                     :class "inputField amount"
+                     :errors errors}]
+        [:div.inputField.simple.disabled.currency
+         [:span "ETH"]]]
        [:div.usd-price (when usd-amount (str "$" usd-amount))]]
      [:div.field.field-amount-currency
       [:span.titleField "You get"]
-      [text-input {:id [user-address :amount-token]
-                   :form-data form-data
-                   :class "inputField disabled"
-                   :disabled true
-                   :value amount-token}]
-      [:div.inputField.simple.disabled.currency
-       [:span (:coin/symbol coin)]]]]))
+      [:div.amount-container
+       [text-input {:id [user-address :amount-token]
+                    :form-data form-data
+                    :class "inputField amount disabled"
+                    :disabled true
+                    :value amount-token}]
+       [:div.inputField.simple.disabled.currency
+        [:span (:coin/symbol coin)]]]]]))
 
 (defn amount-card-erc721 [user-info form-data errors eth->usd]
   (let [user-address (:user/address user-info)
@@ -142,22 +145,24 @@
     [:<>
       [:div.field.field-amount-eth
        [:span.titleField "You simp"]
-       [text-input {:id [user-address :amount-eth]
-                    :form-data form-data
-                    :class "inputField disabled"
-                    :disabled true
-                    :value amount-eth}]
-       [:div.inputField.simple.disabled.currency
-        [:span "ETH"]]
+       [:div.amount-container
+        [text-input {:id [user-address :amount-eth]
+                     :form-data form-data
+                     :class "inputField amount disabled"
+                     :disabled true
+                     :value amount-eth}]
+        [:div.inputField.simple.disabled.currency
+         [:span "ETH"]]]
        [:div.usd-price (when usd-amount (str "$" usd-amount))]]
      [:div.field.field-amount-currency
       [:span.titleField "You get"]
-      [text-input {:id [user-address :amount-token]
-                   :form-data form-data
-                   :class "inputField"
-                   :errors errors}]
-      [:div.inputField.simple.disabled.currency
-       [:span (:coin/symbol coin)]]]]))
+      [:div.amount-container
+       [text-input {:id [user-address :amount-token]
+                    :form-data form-data
+                    :class "inputField amount"
+                    :errors errors}]
+       [:div.inputField.simple.disabled.currency
+        [:span (:coin/symbol coin)]]]]]))
 
 (defn send-support-card [user-info form-data errors]
   (let [user-address (:user/address user-info)
@@ -169,7 +174,7 @@
                            "erc20" amount-card-erc20
                            amount-card-eth)]
     [:div.cardSendSupport
-     [nav [user-photo {:src (:user/photo user-info)}]]
+     [:div.user-container [nav [user-photo {:src (:user/photo user-info)}]]]
      [:div.content
       [nav [:h3 (ui-utils/user-or-address (:user/name user-info) user-address)]]
       [:p.d-none.d-lg-block (:user/tagline user-info)]]
@@ -184,7 +189,7 @@
   (let [receiver-address (:user/address receiver)
         nav (partial nav-anchor {:route :route.profile/index :params {:address receiver-address}})]
     [:div.donation
-     [nav [user-photo {:src (:user/photo receiver)}]]
+     [:div.user-container [nav [user-photo {:src (:user/photo receiver)}]]]
      [:div.data
       [nav [:h3 (ui-utils/user-or-address (:user/name receiver) receiver-address)]]]
      [:ul.score
