@@ -283,7 +283,7 @@
                  [support-seal]
                  (doall
                    (for [[alias user-info] @user-info-query]
-                     (when (str/starts-with? (str alias) ":a-")
+                     (when (and (str/starts-with? (str alias) ":a-") (contains? @form-data (:user/address user-info)))
                        ^{:key alias} [send-support-card user-info form-data errors])))])
                  [:div.buttons
                   [pending-button {:pending? (or @donate-tx-pending? @waiting-wallet?)
