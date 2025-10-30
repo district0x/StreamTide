@@ -364,11 +364,12 @@
                  :where [:!= :user/blacklisted true]}
                 statuses-set (sqlh/merge-where [:in :st-grant.grant/status statuses-set])
                 search-term  (sqlh/merge-where [:like :st-user.user/name (str "%" search-term "%")])
-                order-by (sqlh/merge-order-by [[(get {:grants.order-by/request-date :st-grant.grant/request-date
+                order-by (-> (sqlh/merge-order-by [[(get {:grants.order-by/request-date :st-grant.grant/request-date
                                                       :grants.order-by/decision-date :st-grant.grant/decision-date
                                                       :grants.order-by/username [:st-user.user/name [:collate :nocase]]}
                                                      order-by)
-                                                (or (keyword order-dir) :asc)]]))]
+                                                (or (keyword order-dir) :asc)]])
+                             (sqlh/merge-order-by [[:st-grant.user/address (or (keyword order-dir) :asc)]])))]
     (paged-query query page-size page-start-idx)))
 
 (defn get-users [{:keys [:user/name :user/address :user/blacklisted :search-term :order-by :order-dir :first :after] :as args}]
@@ -388,13 +389,14 @@
                 search-term (sqlh/merge-where [:or
                                                [:like :st-user.user/name (str "%" search-term "%")]
                                                [:like :st-user.user/address (str "%" search-term "%")]])
-                order-by (sqlh/merge-order-by [[(get {:users.order-by/address [:st-user.user/address [:collate :nocase]]
+                order-by (-> (sqlh/merge-order-by [[(get {:users.order-by/address [:st-user.user/address [:collate :nocase]]
                                                       :users.order-by/username [:st-user.user/name [:collate :nocase]]
                                                       :users.order-by/creation-date :st-user.user/creation-date
                                                       :users.order-by/last-seen :st-user-timestamp.timestamp/last-seen
                                                       :users.order-by/last-modification :st-user-timestamp.timestamp/last-modification}
                                                      order-by)
-                                                (or (keyword order-dir) :asc)]]))]
+                                                (or (keyword order-dir) :asc)]])
+                             (sqlh/merge-order-by [[:st-user.user/address (or (keyword order-dir) :asc)]])))]
     (paged-query query page-size page-start-idx)))
 
 (defn get-announcements [{:keys [:first :after] :as args}]
@@ -424,9 +426,10 @@
                   address (sqlh/merge-where [:= :u.user/address address])
                   only-public (sqlh/merge-where [:= :c.content/public 1])
                   (some? pinned) (sqlh/merge-where [:= :c.content/pinned pinned])
-                  order-by (sqlh/merge-order-by [[(get {:contents.order-by/creation-date :c.content/creation-date}
+                  order-by (-> (sqlh/merge-order-by [[(get {:contents.order-by/creation-date :c.content/creation-date}
                                                        order-by)
-                                                  (or (keyword order-dir) :asc)]]))]
+                                                  (or (keyword order-dir) :asc)]])
+                               (sqlh/merge-order-by [[:c.content/id (or (keyword order-dir) :asc)]])))]
       (paged-query query page-size page-start-idx)))
 
 (defn get-donations [{:keys [:sender :receiver :round :search-term :order-by :order-dir :first :after] :as args}]
@@ -440,11 +443,12 @@
                 sender (sqlh/merge-where [:= :d.donation/sender sender])
                 receiver (sqlh/merge-where [:= :d.donation/receiver receiver])
                 round (sqlh/merge-where [:= :d.round/id round])
-                order-by (sqlh/merge-order-by [[(get {:donations.order-by/date :d.donation/date
+                order-by (-> (sqlh/merge-order-by [[(get {:donations.order-by/date :d.donation/date
                                                       :donations.order-by/username [:u.user/name [:collate :nocase]]
                                                       :donations.order-by/amount :d.donation/amount}
                                                      order-by)
-                                                (or (keyword order-dir) :asc)]]))]
+                                                (or (keyword order-dir) :asc)]])
+                             (sqlh/merge-order-by [[:d.donation/id (or (keyword order-dir) :asc)]])))]
     (paged-query query page-size page-start-idx)))
 
 (defn get-matchings [{:keys [:receiver :round :search-term :order-by :order-dir :first :after] :as args}]
@@ -457,11 +461,12 @@
                 search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
                 receiver (sqlh/merge-where [:= :m.matching/receiver receiver])
                 round (sqlh/merge-where [:= :m.round/id round])
-                order-by (sqlh/merge-order-by [[(get {:matchings.order-by/date :m.matching/date
+                order-by (-> (sqlh/merge-order-by [[(get {:matchings.order-by/date :m.matching/date
                                                       :matchings.order-by/username [:u.user/name [:collate :nocase]]
                                                       :matchings.order-by/amount :m.matching/amount}
                                                      order-by)
-                                                (or (keyword order-dir) :asc)]]))]
+                                                (or (keyword order-dir) :asc)]])
+                             (sqlh/merge-order-by [[:m.matching/id (or (keyword order-dir) :asc)]])))]
     (paged-query query page-size page-start-idx)))
 
 (defn group-leaders [leaders]
@@ -511,12 +516,13 @@
                    :where [:and [:> :donations 0]
                            [:= :user/blacklisted false]]}
                   search-term (sqlh/merge-where [:like :u.user/name (str "%" search-term "%")])
-                  order-by (sqlh/merge-order-by [[(get {:leaders.order-by/username [:u.user/name [:collate :nocase]]
-                                                        :leaders.order-by/donation-amount :leader/donation-amount
-                                                        :leaders.order-by/matching-amount :leader/matching-amount
-                                                        :leaders.order-by/total-amount :leader/total-amount}
-                                                       order-by)
-                                                  (or (keyword order-dir) :asc)]]))
+                  order-by (-> (sqlh/merge-order-by [[(get {:leaders.order-by/username [:u.user/name [:collate :nocase]]
+                                                            :leaders.order-by/donation-amount :leader/donation-amount
+                                                            :leaders.order-by/matching-amount :leader/matching-amount
+                                                            :leaders.order-by/total-amount :leader/total-amount}
+                                                           order-by)
+                                                      (or (keyword order-dir) :asc)]])
+                               (sqlh/merge-order-by [[:u.user/address (or (keyword order-dir) :asc)]])))
           leaders (<! (paged-query query page-size page-start-idx))]
       (if (empty? (:items leaders))
         []
@@ -564,10 +570,11 @@
           round-query (cond->
                   {:select [:*]
                    :from [[:round :r]]}
-                  order-by (sqlh/merge-order-by [[(get {:rounds.order-by/date :r.round/start
+                  order-by (-> (sqlh/merge-order-by [[(get {:rounds.order-by/date :r.round/start
                                                         :rounds.order-by/id :r.round/id}
                                                        order-by)
-                                                  (or (keyword order-dir) :asc)]]))
+                                                  (or (keyword order-dir) :asc)]])
+                               (sqlh/merge-order-by [[:r.round/id (or (keyword order-dir) :asc)]])))
           rounds (<! (paged-query round-query page-size page-start-idx))]
       (if (empty? (:items rounds))
         []
@@ -604,11 +611,12 @@
                 {:select [:fc.* :st-user.*]
                  :from [[:farcaster-campaign :fc]]
                  :join [:st-user [:= :fc.user/address :st-user.user/address]]}
-                order-by (sqlh/merge-order-by [[(get {:campaigns.order-by/id :fc.campaign/id
+                order-by (-> (sqlh/merge-order-by [[(get {:campaigns.order-by/id :fc.campaign/id
                                                       :campaigns.order-by/start-date :fc.campaign/start-date
                                                       :campaigns.order-by/end-date :fc.campaign/end-date}
                                                      order-by)
-                                                (or (keyword order-dir) :asc)]]))]
+                                                (or (keyword order-dir) :asc)]])
+                             (sqlh/merge-order-by [[:fc.campaign/id (or (keyword order-dir) :asc)]])))]
     (paged-query query page-size page-start-idx)))
 
 (defn get-user-timestamps [{:keys [:user/address]}]
