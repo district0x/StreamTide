@@ -202,7 +202,9 @@ input UserInput {
     user_photo: String
     user_bgPhoto: String
     user_perks: String
+    user_donationsType: String
     user_minDonation: String
+    user_donationCoin: String
     user_socials: [SocialLinkInput!]
     user_notificationCategories: [NotificationCategorySettingInput!]
     user_notificationTypes: [NotificationTypeSettingInput!]
@@ -253,7 +255,9 @@ type User {
     user_handle: String
     user_url: String
     user_perks: String
+    user_donationsType: String
     user_minDonation: String
+    user_donationCoin: Coin
     user_socials: [SocialLink!]
     user_photo: String
     user_bgPhoto: String
@@ -372,6 +376,8 @@ type Donation {
     donation_receiver: User!
     donation_date: Date
     donation_amount: String
+    donation_amountEth: String
+    donation_amountUsd: String
     donation_coin: Coin
     donation_round: Round
 }
@@ -437,6 +443,8 @@ type Coin {
     coin_name: String
     coin_symbol: String
     coin_decimals: Int
+    coin_type: String
+    coin_imageUrl: String
 }
 
 type Campaign {

@@ -8,11 +8,11 @@
 	}
 	.contentSendSupport {
 		margin-bottom: 22.57px;
-		.spinner-outer {
-			margin-top: 0px;
-			padding-top: 0px;
-		}
 	}
+    .spinner-outer {
+      margin-top: 0px;
+      padding-top: 0px;
+    }
 	.cart {
 		.no-items-found {
 			text-align: center;
@@ -22,7 +22,7 @@
 		}
 	}
 	.cardSendSupport {
-		height: 201px;
+        justify-content: space-between;
 		width: 100%;
 		border-radius: 7px;
 		background-color: $bgCard;
@@ -43,14 +43,15 @@
 		&:last-child {
 			margin-bottom: 0;
 		}
+		.user-container {
+			margin-right: 21px;
+		}
 		.user {
 			height: 54.5px;
 			width: 54.5px;
-			margin: 0 25px 21px 0;
 		}
 		.content {
 			width: calc(100% - 79.5px);
-			margin-bottom: 21px;
 			h3 {
 				font-weight: $bold;
 				font-size: 16px;
@@ -58,21 +59,33 @@
 			}
 		}
 		.field {
-			width: calc(50% - 9.5px);
+            &.field-amount-currency {
+                width: auto;
+            }
 			.titleField {
 				font-size: 13px;
 				line-height: 18px;
-				margin-bottom: 12px;
+				margin-bottom: 4px;
+                margin-top: 6px;
 				display: block;
+                white-space: nowrap;
 			}
 			.inputField {
 				height: 44px;
 				line-height: 38px;
-				padding: 0 17px;
+				padding: 0 8px;
 				font-size: 13px;
 				&.disabled {
 					background: $disabled;
 				}
+                &.amount {
+                  border-right: none;
+                  border-radius: 7px 0 0 7px;
+                }
+                &.currency {
+                  border-left-width: 2px;
+                  border-radius: 0 7px 7px 0;
+                }
 			}
 			.select-selected {
 				padding: 0 40px 0 17px;
@@ -81,8 +94,23 @@
 				height: 143px;
 			}
 		}
-		.field-amount {
+        .amount-container {
+            display: flex;
+        }
+		.field-amount-eth {
 			margin-right: 19px;
+            position: relative;
+            .input-group {
+              width: unset;
+            }
+            .inputField.currency {
+                width: fit-content;
+                padding: 0 7px;
+            }
+            .inputField {
+                width: 90px;
+            }
+
 			.help-block {
 				margin-top: 7px;
 				line-height: 0;
@@ -98,6 +126,25 @@
 				color: $textColor;
 			}
 		}
+		.field-amount-currency {
+            .input-group {
+              width: unset;
+            }
+            .inputField.currency {
+                width: fit-content;
+                padding: 0 7px;
+            }
+            .inputField {
+                width: 120px;
+            }
+		}
+        .usd-price {
+            font-size: 12px;
+            font-style: italic;
+            position: absolute;
+            bottom: -14px;
+            right: 50px;
+        }
 		.btClose {
 			position: absolute;
 			top: 12.48px;
@@ -139,9 +186,9 @@
 		overflow: hidden;
 		background: $bgCard;
 		padding: 13.36px 13.83px 18.83px;
-		.user {
-			margin-right: 21.05px;
-		}
+        .user-container {
+            margin-right: 21px;
+        }
 		.data {
 			width: calc(100% - 80px);
 			font-size: 16px;
@@ -173,7 +220,7 @@
 	}
 	@include media-breakpoint-down(sm) {
 		.cardSendSupport {
-			.field-amount {
+			.field-amount-eth {
 				.warning {
 					top: 180px;
 					padding-left: 4px;
@@ -183,9 +230,9 @@
 	}
 	@include media-breakpoint-up(md) {
 		.cardSendSupport {
-			height: 166px;
+			height: 140px;
 			margin-bottom: 20px;
-			padding: 25px 30px;
+			padding: 25px 10px 25px 30px;
 			flex-wrap: nowrap;
 			.user {
 				margin-bottom: 0;
@@ -200,20 +247,24 @@
 				width: auto;
 				margin: 0 0 0 auto;
 				.titleField {
-					margin: 0 25px 0 0;
+					margin: 0 5px 0 10px;
 				}
 			}
-			.field-amount {
-				margin-right: 35px;
+			.field-amount-eth {
 				.inputField {
-					width: 200px;
+					width: 90px;
 				}
 			}
-			.field-currency {
+			.field-amount-currency {
 				.inputField {
-					width: 136px;
+					width: 120px;
 				}
 			}
+            .usd-price {
+                font-size: 13px;
+                bottom: -20px;
+                right: 56px;
+            }
 		}
 	}
 	@include media-breakpoint-up(lg) {
@@ -231,12 +282,16 @@
 		}
 		.cardSendSupport {
 			z-index: 5;
-			padding-right: 48px;
+            height: 166px;
+			padding-right: 20px;
 			position: relative;
+            min-width: 1000px;
+            .user-container {
+              margin-right: 29px;
+            }
 			.user {
 				width: 116px;
 				height: 116px;
-				margin-right: 29px;
 				.photo {
 					box-shadow: 0px 0px 0px 4px $lilac;
 				}
@@ -257,17 +312,34 @@
 				.titleField {
 					font-size: 18px;
 					line-height: 25px;
+                    margin: 0 10px 0 10px;
 				}
 				.inputField {
+                    padding: 0 10px;
 					height: 65px;
 					line-height: 59px;
 					font-size: 18px;
 				}
 			}
-			.field-currency {
-				margin-right: 48px;
-			}
+            .field-amount-eth {
+              margin-right: 5px;
+                .inputField {
+                    width: 120px;
+                }
+            }
+            .field-amount-currency {
+              margin-right: 5px;
+                .inputField {
+                    width: 170px;
+                }
+            }
+            .usd-price {
+                font-size: 16px;
+                bottom: -24px;
+                right: 62px;
+            }
 			.btClose {
+                margin-left: 10px;
 				position: relative;
 				top: auto;
 				right: auto;
@@ -328,9 +400,11 @@
 			display: flex;
 			flex-wrap: nowrap;
 			padding: 13.36px 13.83px 18.83px;
+            .user-container {
+				margin-right: 23.66px;
+            }
 			.user {
 				width: 56px;
-				margin-right: 23.66px;
 			}
 			.data {
 				width: 100%;
@@ -341,7 +415,6 @@
 				h3 {
 					font-size: 20px;
 					line-height: 26px;
-					width: calc(100% - 164px);
 					margin-bottom: 0;
 				}
 				span {
@@ -365,9 +438,42 @@
 					text-align: center;
 					font-size: 18px;
 					line-height: 26px;
+                    .usd-price {
+                        font-size: 16px;
+                        font-style: italic;
+                    }
 				}
 			}
 		}
 
 	}
+
+  @include media-breakpoint-up(llg) {
+    .cardSendSupport {
+      padding-right: 48px;
+
+      .field {
+        .titleField {
+          margin: 0 25px 0 10px;
+        }
+        .inputField {
+          padding: 0 17px;
+        }
+      }
+
+      .field-amount-eth {
+        margin-right: 25px;
+        .inputField {
+          width: 130px;
+        }
+      }
+
+      .field-amount-currency {
+        margin-right: 25px;
+        .inputField {
+          width: 200px;
+        }
+      }
+    }
+  }
 }

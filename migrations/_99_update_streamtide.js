@@ -25,7 +25,7 @@ module.exports = async(deployer, network, accounts) => {
     }
 
     await status.step(async () => {
-        const streamtide = await deployer.deploy(Streamtide, Object.assign(opts, {gas: 2000000}));
+        const streamtide = await deployer.deploy(Streamtide, Object.assign(opts, {gas: 3000000}));
         return {[sk.streamtideAddr]: streamtide.address};
     });
 

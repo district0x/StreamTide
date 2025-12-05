@@ -3,6 +3,7 @@
   It shows the users profile info, their content and allows making donations"
   (:require
     [cljs.core.match :refer-macros [match]]
+    [clojure.string :as str]
     [clojure.string :refer [blank?]]
     [district.graphql-utils :as gql-utils]
     [district.ui.component.page :refer [page]]
@@ -34,9 +35,14 @@
             :user/bg-photo
             :user/blacklisted
             :user/has-private-content
+            :user/donations-type
             [:user/socials [:social/network
                             :social/url]]
-            [:user/grant [:grant/status]]]
+            [:user/grant [:grant/status]]
+            [:user/donation-coin [:coin/name
+                                  :coin/symbol
+                                  :coin/image-url
+                                  :coin/address]]]
            active-session (conj :user/perks :user/unlocked))])
 
 (defn build-user-content-query [{:keys [:user/address :pinned]} after]
@@ -161,7 +167,9 @@
               user-info-query (subscribe [::gql/query {:queries [(build-user-info-query {:user/address user-account :active-session @active-session})]}
                                           {:id {:user-content user-account :active-account @active-account :active-session @active-session}}])
               loading? (or (nil? user-info-query) (:graphql/loading? (last @user-info-query)))
-              user-info (:user (last @user-info-query))]
+              user-info (:user (last @user-info-query))
+              coin (:user/donation-coin user-info)
+              donations-type (:user/donations-type user-info)]
           [app-layout
            [:main.pageSite.pageProfile
             {:id "profile"}
@@ -178,10 +186,23 @@
                       [:h2 "A Little About Me"]
                       [:p (:user/description user-info)]])
                    [:div.btsProfile
-                    (when (and (= (-> user-info :user/grant :grant/status gql-utils/gql-name->kw) :grant.status/approved)
-                               (not= @active-account user-account))
-                      [:button.btBasic.btBasic-light {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
-                       "SUPPORT THIS CREATOR"])
+                    (when (= (-> user-info :user/grant :grant/status gql-utils/gql-name->kw) :grant.status/approved)
+                      [:<>
+                       (when-not (= @active-account user-account)
+                         [:button.btBasic.btBasic-light {:on-click #(dispatch [::p-events/add-to-cart {:user/address user-account}])}
+                          (case donations-type
+                            "vibe-market" (str "SUPPORT THIS CREATOR AND EARN '" (str/upper-case (:coin/name coin)) "' ($" (:coin/symbol coin) ") CARDS")
+                            "toshi-mart" (str "SUPPORT THIS CREATOR AND EARN '" (str/upper-case (:coin/name coin)) "' ($" (:coin/symbol coin) ") TOKENS")
+                            "SUPPORT THIS CREATOR")])
+                       (when (or (= donations-type "vibe-market")
+                                 (= donations-type "toshi-mart"))
+                         [:a.coin-link {:href (case donations-type
+                                                "vibe-market" (str "https://vibechain.com/market/" (:coin/address coin))
+                                                "toshi-mart" (str "https://toshimart.xyz/" (:coin/address coin))
+                                                "") :target "_blank"}
+                          (if (:coin/image-url coin)
+                            [:img.coin-logo {:src (:coin/image-url coin)}]
+                            [:div.coin-custom-logo (:coin/symbol coin)])])])
                     (when (not (blank? (:user/perks user-info)))
                       [embed/safe-external-link (:user/perks user-info) {:class "btBasic btBasic-light" :text "PERKS"} ])]
                    [contents user-account user-info]]]

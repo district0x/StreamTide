@@ -9,6 +9,13 @@
 
 (def abi-reduced-erc20 (js/JSON.parse "[{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"}]"))
 
+(def donations-ids-types
+  {1 :vibe-market
+   2 :toshi-mart})
+
+(def donations-types-ids
+  (into {} (map (fn [[k v]] [v k]) donations-ids-types)))
+
 (defn now []
   "Gets current time in millisecons"
   (.getTime (js/Date.)))
@@ -54,11 +61,10 @@
     #"\.?0*$" ""))
 
 (defn format-price [price {:keys [:coin/symbol :coin/decimals]}]
-  (let [price (from-base-amount price decimals)
-        min-fraction-digits (if (= "0" price) 0 4)]
+  (let [price (from-base-amount price decimals)]
     (format/format-token (bn/number price) {:max-fraction-digits 5
                                             :token symbol
-                                            :min-fraction-digits min-fraction-digits})))
+                                            :min-fraction-digits 0})))
 
 (def auth-data-msg
   ; message to sign for log-in. '%s' is replaced by the OTP

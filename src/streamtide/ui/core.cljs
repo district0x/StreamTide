@@ -8,6 +8,7 @@
             [district.cljs-utils :as cljs-utils]
             [district.shared.error-handling :refer [try-catch]]
             [district.ui.component.router :refer [router]]
+            [district.ui.conversion-rates]
             [district.ui.graphql.events :as gql-events]
             [district.ui.graphql]
             [district.ui.notification]

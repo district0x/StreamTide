@@ -133,18 +133,51 @@
 			}
 		}
 		.btsProfile {
-			width: 100%;
-			max-width: 412px;
-			margin: 0 auto 28.22px;
+			width: fit-content;
+			margin: 0 auto 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
 			.btBasic {
-				width: 100%;
-				margin-bottom: 13.38px;
-				font-size: 18px;
-				letter-spacing: 1.87px;
-				&:last-child {
-					margin-bottom: 0;
-				}
+              line-height: 24px;
+              display: inline-block;
+              white-space: normal;
+              text-align: center;
+              max-width: 100%;
+              height: unset;
+              padding: 14px 50px;
+              min-width: 280px;
+              margin-bottom: 13.38px;
+              font-size: 16px;
+              &:last-child {
+                  margin-bottom: 0;
+              }
 			}
+            .coin-link {
+                margin-bottom: 12px;
+                height: 100%;
+                display: block;
+                .coin-logo {
+                    height: 200px;
+                }
+                .coin-custom-logo {
+                    width: 138px;
+                    height: 200px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    font-family: Arial, sans-serif;
+                    font-size: 26px;
+                    font-weight: bold;
+                    color: white;
+                    background: linear-gradient(135deg, #ff1edc, #0064ff);
+                    border-radius: 20px;
+                    text-transform: uppercase;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                }
+
+
+            }
 		}
 		.medias {
 			.media {
@@ -309,7 +342,13 @@
 				margin-bottom: 34px;
 				.btBasic {
 					margin-bottom: 24px;
+                    font-size: 18px;
+                    letter-spacing: 1.87px;
+                    min-width: 350px;
 				}
+                .coin-link {
+                  margin-bottom: 20px;
+                }
 			}
 		}
 	}

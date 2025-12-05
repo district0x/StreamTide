@@ -17,9 +17,12 @@
     [district.server.config :refer [config]]
     [district.server.web3 :refer [ping-start ping-stop web3]]
     [mount.core :as mount :refer [defstate]]
+    [streamtide.server.donations-configs.donations-configs :as donations-configs]
+    [streamtide.server.donations-configs.vibe-market-donation]
     [streamtide.server.notifiers.notifiers :as notifiers]
     [streamtide.server.db :as db]
-    [streamtide.shared.utils :as shared-utils :refer [abi-reduced-erc20]]
+    [streamtide.server.utils :as server-utils]
+    [streamtide.shared.utils :as shared-utils :refer [abi-reduced-erc20 donations-ids-types]]
     [taoensso.timbre :as log]))
 
 
@@ -114,49 +117,86 @@
 (defn nullify-err [v]
   (if (cljs.core/instance? js/Error v) nil v))
 
-(defn fetch-coin-info [coin-address]
+(defn fetch-coin-info [coin-address donation-type]
   (safe-go
-    (let [contract (web3-eth/contract-at @web3 abi-reduced-erc20 coin-address)
-          decimals (<! (smart-contracts/contract-call contract "decimals"))
-          symbol (nullify-err (<! (smart-contracts/contract-call contract "symbol")))
-          name (nullify-err (<! (smart-contracts/contract-call contract "name")))]
-      {:coin/address (string/lower-case coin-address)
-       :coin/symbol symbol
-       :coin/name name
-       :coin/decimals decimals})))
+    (if donation-type
+      (<? (donations-configs/verify donation-type coin-address))
+      (let [contract (web3-eth/contract-at @web3 abi-reduced-erc20 coin-address)
+            decimals (<! (smart-contracts/contract-call contract "decimals"))
+            symbol (nullify-err (<! (smart-contracts/contract-call contract "symbol")))
+            name (nullify-err (<! (smart-contracts/contract-call contract "name")))]
+        {:coin/address (string/lower-case coin-address)
+         :coin/symbol symbol
+         :coin/name name
+         :coin/decimals decimals
+         :coin/type :erc20}))))
 
-(defn ensure-coin-exists! [coin-address chain-id]
-  (safe-go
-    (let [coin (<! (db/get-coin coin-address chain-id))]
-      (when-not (:coin/address coin)
-        (let [coin-info
-              (if (= zero-address coin-address)
-                {:coin/address zero-address
-                 :coin/decimals 18
-                 :coin/symbol "ETH"
-                 :coin/name "Ether"}
-                (<? (fetch-coin-info coin-address)))]
-          (<! (db/add-coin! (merge coin-info {:coin/chain-id chain-id}))))))))
+(defn ensure-coin-exists!
+  ([coin-address chain-id]
+   (ensure-coin-exists! coin-address chain-id nil))
+  ([coin-address chain-id donation-type]
+   (safe-go
+     (let [coin (<! (db/get-coin coin-address chain-id))]
+       (when-not (:coin/address coin)
+         (let [coin-info
+               (if (= zero-address coin-address)
+                 {:coin/address zero-address
+                  :coin/decimals 18
+                  :coin/symbol "ETH"
+                  :coin/name "Ether"
+                  :coin/type :native}
+                 (<? (fetch-coin-info coin-address donation-type)))]
+           (<! (db/add-coin! (merge coin-info {:coin/chain-id chain-id})))))))))
 
 (defn donate-event [_ {:keys [:args :chain-id]}]
   (let [{:keys [:sender :value :patron-address :round-id :timestamp]} args]
     (safe-go
       (let [round-id (when (not= (str round-id) "0") round-id)
+            amount-usd (<? (server-utils/eth->usd-amount value timestamp))
             donation {:donation/sender sender
                       :donation/receiver patron-address
                       :donation/date timestamp
                       :donation/amount value
+                      :donation/amount-eth value
+                      :donation/amount-usd amount-usd
                       :donation/coin zero-address
                       :donation/chain-id chain-id
                       :round/id round-id}]
         (<! (db/upsert-user-info! {:user/address sender}))
         (<! (ensure-coin-exists! zero-address chain-id))
         (<! (db/add-donation! donation))
-        (<! (notifiers/notify-donation donation))
+        (<! (notifiers/notify-donation (merge donation {:donation/coin {:coin/decimals 18 :coin/symbol "ETH"}})))
         (let [min-donation (:user/min-donation (db/get-user patron-address))]
           (when (or (nil? min-donation) (bn/>= (js/BigNumber. value) (js/BigNumber. min-donation)))
             (<! (db/add-user-content-permission! {:user/source-user sender
                                               :user/target-user patron-address}))))))))
+
+(defn donate-external-event [_ {:keys [:args :chain-id]}]
+  (let [{:keys [:sender :value :patron-address :round-id :target :external-type :call-data :timestamp :gained :token]} args]
+    (safe-go
+      (let [donation-type (donations-ids-types (int external-type))]
+        (if (nil? donation-type)
+          (log/error (str "Invalid external type: " external-type ". Event will be ignored."))
+          (let [{:keys [coin amount]} (<? (donations-configs/parse-call-data donation-type {:amount value :target target :call-data call-data :gained gained :token token}))
+                round-id (when (not= (str round-id) "0") round-id)
+                amount-usd (<? (server-utils/eth->usd-amount value timestamp))
+                donation {:donation/sender sender
+                          :donation/receiver patron-address
+                          :donation/date timestamp
+                          :donation/amount (str amount)
+                          :donation/coin (string/lower-case coin)
+                          :donation/chain-id chain-id
+                          :donation/amount-eth value
+                          :donation/amount-usd amount-usd
+                          :round/id round-id}]
+            (<! (db/upsert-user-info! {:user/address sender}))
+            (<! (ensure-coin-exists! coin chain-id donation-type))
+            (<! (db/add-donation! donation))
+            (<! (notifiers/notify-donation (merge donation {:donation/coin (<! (db/get-coin coin chain-id))})))
+            (let [min-donation (:user/min-donation (db/get-user patron-address))]
+              (when (or (nil? min-donation) (bn/>= (js/BigNumber. value) (js/BigNumber. min-donation)))
+                (<! (db/add-user-content-permission! {:user/source-user sender
+                                                      :user/target-user patron-address}))))))))))
 
 (defn update-matching-pool [{:keys [:value :round-id :token :chain-id]}]
   (safe-go
@@ -187,12 +227,16 @@
   (let [{:keys [:to :amount :timestamp :round-id :token]} args]
     (safe-go
       (<! (db/ensure-users-exist! [to]))
-      (<! (db/add-matching! {:matching/receiver to
-                             :matching/amount amount
-                             :matching/date timestamp
-                             :matching/coin (string/lower-case token)
-                             :matching/chain-id chain-id
-                             :round/id round-id})))))
+      (let [coin (<? (db/get-coin token chain-id))
+            {:keys [amount-wei amount-usd]} (<? (server-utils/token->wei-usd-amount amount token timestamp (:coin/decimals coin)))]
+        (<! (db/add-matching! {:matching/receiver to
+                               :matching/amount amount
+                               :matching/amount-eth amount-wei
+                               :matching/amount-usd amount-usd
+                               :matching/date timestamp
+                               :matching/coin (string/lower-case token)
+                               :matching/chain-id chain-id
+                               :round/id round-id}))))))
 
 (defn distribute-round-event [_ {:keys [:args :chain-id]}]
   (let [{:keys [:round-id :amount :token]} args]
@@ -309,7 +353,8 @@
                          :streamtide/matching-pool-donation-token-event matching-pool-donation-token-event
                          :streamtide/distribute-event distribute-event
                          :streamtide/distribute-round-event distribute-round-event
-                         :streamtide/donate-event donate-event}))
+                         :streamtide/donate-event donate-event
+                         :streamtide/donate-external-event donate-external-event}))
 
 
 (defn stop [syncer]
