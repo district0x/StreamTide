@@ -6,10 +6,9 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
-contract MVPCLR is OwnableUpgradeable, ReentrancyGuard {
+contract MVPCLR is OwnableUpgradeable {
 
     event AdminAdded(address _admin);
     event AdminRemoved(address _admin);
@@ -62,6 +61,8 @@ contract MVPCLR is OwnableUpgradeable, ReentrancyGuard {
     mapping(address => bool) public isBlacklisted;
 
     address public multisigAddress;
+
+    uint256 private _reentrancyStatus;
 
     function construct(address _multisigAddress, uint _lastRound) external initializer {
         __Ownable_init(); // Add this line to initialize the OwnableUpgradeable contract
@@ -290,6 +291,13 @@ contract MVPCLR is OwnableUpgradeable, ReentrancyGuard {
     modifier onlyMultisig() {
         require(msg.sender == multisigAddress, "Not authorized");
         _;
+    }
+
+    modifier nonReentrant() {
+        require(_reentrancyStatus != 2, "ReentrancyGuard: reentrant call");
+        _reentrancyStatus = 2;
+        _;
+        _reentrancyStatus = 1;
     }
 
 }

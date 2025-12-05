@@ -1,7 +1,7 @@
 (ns streamtide.shared.smart-contracts-qa)
   (def smart-contracts
     {:migrations {:name "Migrations" :address "0xb2B33a219a48324C3BC47aD141FE164D7F3F4535"}
-     :streamtide {:name "MVPCLR" :address "0x7E8aaB7312B06919e03E3d1892d183F1D75F2Dae"}
+     :streamtide {:name "MVPCLR" :address "0xF3f291352Bb2a2A2e29A2380f94143Ce02C5aa3e"}
      :streamtide-fwd {:name "MutableForwarder" :address "0x2D1A3e2CAec7402eBCE45c787D878F70cB504802" :forwards-to :streamtide}})
   (def multichain-smart-contracts
     {:11155111 {:matching-pool {:name "MatchingPool" :address "0xa7f3c5c60f65b55469468a6212b16c813b44701a"}
