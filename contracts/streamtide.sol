@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./DonationRunner.sol";
 
 
 contract MVPCLR is OwnableUpgradeable {
@@ -64,14 +65,22 @@ contract MVPCLR is OwnableUpgradeable {
 
     uint256 private _reentrancyStatus;
 
+    DonationRunner public runner;
+
     function construct(address _multisigAddress, uint _lastRound) external initializer {
         __Ownable_init(); // Add this line to initialize the OwnableUpgradeable contract
         multisigAddress = _multisigAddress;
         roundId = _lastRound;
+        runner = new DonationRunner(address(this));
     }
 
     function setMultisigAddress(address _multisigAddress) external onlyMultisig {
         multisigAddress = _multisigAddress;
+    }
+
+    function setRunner(address _newRunner) external onlyOwner {
+        require(_newRunner != address(0), "Invalid runner");
+        runner = DonationRunner(_newRunner);
     }
 
     function fillUpMatchingPool() public payable onlyAdmin {
@@ -211,22 +220,7 @@ contract MVPCLR is OwnableUpgradeable {
         require(target != address(0), "CLR:donate - invalid target");
         require(isContract(target), "CLR:donate - target must be contract");
 
-        uint256 gained = 0;
-        uint256 beforeBal = 0;
-
-        if (token != address(0)) {
-            beforeBal = IERC20(token).balanceOf(address(this));
-        }
-        {
-            (bool success, bytes memory returndata) = payable(target).call{value: amount}(callData);
-            require(success, _getRevertMsg(returndata));
-        }
-        if (token != address(0)) {
-            gained = IERC20(token).balanceOf(address(this)) - beforeBal;
-            if (gained > 0) {
-                IERC20(token).transfer(_msgSender(), gained);
-            }
-        }
+        uint256 gained = runner.execute{value: amount}(target, callData, token, _msgSender());
 
         emit DonateExternal(
             _msgSender(),
