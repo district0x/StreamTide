@@ -26,7 +26,8 @@
 (defn build-user-info-query [{:keys [:user/address :active-session]}]
   [:user
    {:user/address address}
-   (cond-> [:user/name
+   (cond-> [:user/address
+            :user/name
             :user/description
             :user/tagline
             :user/handle
