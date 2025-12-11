@@ -34,7 +34,8 @@
 (defn build-user-settings-query [{:keys [:user/address]}]
   [:user
    {:user/address address}
-   [:user/name
+   [:user/address
+    :user/name
     :user/description
     :user/tagline
     :user/handle
