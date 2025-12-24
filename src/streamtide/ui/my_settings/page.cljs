@@ -500,7 +500,9 @@
 
 (defn clean-form-data [form-data form-values initial-values]
   (try
-    (let [f (cond-> form-values
+    (let [;; Check if donations-type changed from initial value
+          donations-type-changed? (not= (:donations-type form-values) (:donations-type initial-values))
+          f (cond-> form-values
                     true (select-keys (keys (filter (fn [[key val]]
                                                       (or (= key :name)
                                                           (not= (key initial-values) val))) form-values)))
@@ -514,17 +516,23 @@
                     (= (:donations-type form-values) "eth") (->
                                                               (dissoc :vibe-market-drop-address)
                                                               (dissoc :toshi-mart-contract-address))
-                    (= (:donations-type form-values) "vibe-market") (dissoc :min-donation))]
+                    (= (:donations-type form-values) "vibe-market") (dissoc :min-donation)
+                    (= (:donations-type form-values) "toshi-mart") (dissoc :min-donation))]
       (cond-> f
-              (and (= (:donations-type f) "eth") (empty? (:min-donation f))) (assoc :min-donation "0")
-              (:min-donation f)
+              ;; When switching TO eth, always include donations-type and min-donation
+              (and donations-type-changed? (= (:donations-type form-values) "eth"))
               (->
-                (update :min-donation #(if (empty? %) "0" (web3/to-wei % :ether)))
-                (assoc :donations-type "eth"))
+                (assoc :donations-type "eth")
+                (assoc :min-donation (or (:min-donation form-values) "0")))
+              ;; For eth donations, convert min-donation to wei
+              (and (= (:donations-type form-values) "eth") (:min-donation f))
+              (update :min-donation #(if (empty? %) "0" (web3/to-wei % :ether)))
+              ;; For vibe-market, set donation-coin from the drop address
               (:vibe-market-drop-address f)
               (->
                 (assoc :donations-type "vibe-market")
                 (assoc :donation-coin (:vibe-market-drop-address f)))
+              ;; For toshi-mart, set donation-coin from the contract address
               (:toshi-mart-contract-address f)
               (->
                 (assoc :donations-type "toshi-mart")

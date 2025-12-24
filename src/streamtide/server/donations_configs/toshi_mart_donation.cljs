@@ -38,23 +38,36 @@
 (defn verify [coin-address]
   (safe-go
     (when-not (web3-next/address? coin-address)
-      (throw (js/Error. (str "invalid coin address: " coin-address))))
-    (let [portal-address (-> @config :donations-configs :toshi-mart :portal-address)
-          portal-contract (web3-eth/contract-at @web3 abi-reduced-portal portal-address)
-          params [zero-address coin-address 1]
-          _ (<? (smart-contracts/contract-call portal-contract "quoteExactInput" [params])) ; this will throw an error if contract is not registered in Toshi Mart
-          token-contract (web3-eth/contract-at @web3 abi-reduced-token coin-address)
-          image-url (<? (get-image-url token-contract))
-          name (<? (smart-contracts/contract-call token-contract "name"))
-          symbol (<? (smart-contracts/contract-call token-contract "symbol"))
-          decimals (<? (smart-contracts/contract-call token-contract "decimals"))]
-      {:coin/address coin-address
-       :coin/chain-id (-> @config :donations-configs :toshi-mart :chain-id)
-       :coin/name name
-       :coin/symbol symbol
-       :coin/decimals decimals
-       :coin/type :erc20
-       :coin/image-url image-url})))
+      (throw (js/Error. (str "Invalid contract address format: " coin-address))))
+    (let [portal-address (-> @config :donations-configs :toshi-mart :portal-address)]
+      (when-not portal-address
+        (throw (js/Error. "Toshi Mart portal address not configured on server")))
+      (let [portal-contract (web3-eth/contract-at @web3 abi-reduced-portal portal-address)
+            params [zero-address coin-address 1]]
+        ;; Check if token is registered in Toshi Mart
+        (try
+          (<? (smart-contracts/contract-call portal-contract "quoteExactInput" [params]))
+          (catch :default e
+            (log/error "Token not registered in Toshi Mart" {:coin-address coin-address :error e})
+            (throw (js/Error. (str "Token not found in Toshi Mart. Please verify the contract address is correct and the token is listed on Toshi Mart: " coin-address)))))
+        ;; Get token details
+        (let [token-contract (web3-eth/contract-at @web3 abi-reduced-token coin-address)
+              image-url (<? (get-image-url token-contract))
+              name (try (<? (smart-contracts/contract-call token-contract "name"))
+                        (catch :default _ nil))
+              symbol (try (<? (smart-contracts/contract-call token-contract "symbol"))
+                          (catch :default _ nil))
+              decimals (try (<? (smart-contracts/contract-call token-contract "decimals"))
+                            (catch :default _ 18))]
+          (when-not (and name symbol)
+            (throw (js/Error. (str "Could not read token name/symbol. The contract may not be a valid ERC20 token: " coin-address))))
+          {:coin/address coin-address
+           :coin/chain-id (-> @config :donations-configs :toshi-mart :chain-id)
+           :coin/name name
+           :coin/symbol symbol
+           :coin/decimals decimals
+           :coin/type :erc20
+           :coin/image-url image-url})))))
 
 (defn parse-call-data [gained token]
   (safe-go
