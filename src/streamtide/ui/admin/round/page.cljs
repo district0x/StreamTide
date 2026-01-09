@@ -78,9 +78,7 @@
       :has-next-page
       [:items [:donation/id
                :donation/date
-               :donation/amount
-               [:donation/coin [:coin/symbol
-                                :coin/decimals]]
+               :donation/amount-eth
                [:donation/receiver [:user/address
                                     :user/name
                                     :user/photo
@@ -119,7 +117,7 @@
        count
        (nth (sort multiplier-factors))))
 
-(defn donation-entry [{:keys [:donation/id :donation/sender :donation/amount :donation/date] :as donation} disabled?]
+(defn donation-entry [{:keys [:donation/id :donation/sender :donation/amount-eth :donation/date] :as donation} disabled?]
   (let [enabled? (subscribe [::r-subs/donation id])]
     (fn [_ disabled?]
       (let [nav-sender (partial nav-anchor {:route :route.profile/index :params {:address (:user/address sender)}})
@@ -134,7 +132,7 @@
          [:div.cell.col-date
           [:span (ui-utils/format-graphql-time date)]]
          [:div.cell.col-amount
-          [:span (shared-utils/format-price amount {:coin/decimals 18 :coin/symbol "ETH"})]]
+          [:span (shared-utils/format-price amount-eth {:coin/decimals 18 :coin/symbol "ETH"})]]
          [:div.cell.col-include [:span.checkmark
                {:on-click #(dispatch [::r-events/enable-donation {:id id :enabled? (not enabled?)}])
                 :class (when enabled? "checked")}]]]))))
@@ -214,7 +212,7 @@
                                (:user/address receiver)
                                (-> (reduce (fn [acc donation]
                                              (if (donation-enabled? donation donations-enabled)
-                                               (bn/+ acc (bn/sqrt (new-bn (:donation/amount donation))))
+                                               (bn/+ acc (bn/sqrt (new-bn (:donation/amount-eth donation))))
                                                acc))
                                            (new-bn 0) donations)
                                    (bn/pow 2))))
@@ -273,7 +271,7 @@
 ;                               (:user/address receiver)
 ;                               (-> (reduce (fn [acc donation]
 ;                                             (if (donation-enabled? donation donations-enabled)
-;                                               (bn/+ acc (bn/sqrt (new-bn (:donation/amount donation))))
+;                                               (bn/+ acc (bn/sqrt (new-bn (:donation/amount-eth donation))))
 ;                                               acc))
 ;                                           (new-bn 0) donations)
 ;                                   (bn/* (new-bn (matching-factor receiver multipliers)))
