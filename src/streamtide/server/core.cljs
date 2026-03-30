@@ -1,15 +1,27 @@
 (ns streamtide.server.core
-  "Main entry point of the server. Reads the config and starts all modules with mount"
+  "Main entry point of the server. Reads the config and starts all modules with mount.
+
+   Architecture Notes:
+   - Uses mount for component lifecycle management
+   - PostgreSQL via district.server.async-db (connection pooling with pg)
+   - Web3 via WebSocket for blockchain event syncing
+   - GraphQL API on port 6300
+
+   Local Development:
+   - Run ./dev.sh for one-command startup (Docker + contracts + server)
+   - PostgreSQL on port 5433 (Docker), Ganache on 8545"
   (:require ["body-parser" :as body-parser]
             [clojure.string :as str]
             [district.graphql-utils :as graphql-utils]
             [district.server.config :as district.server.config]
-            [district.server.db-async :as district.server.db]
+            [district.server.async-db :as district.server.db]
             [district.server.graphql :as district.server.graphql]
             [district.server.graphql.utils :as graph-utils]
             [district.server.logging :as district.server.logging]
             [district.server.middleware.logging :refer [logging-middlewares]]
             [district.server.smart-contracts :as district.server.smart-contracts]
+            [district.server.web3 :as district.server.web3]
+            [district.server.web3-events :as district.server.web3-events]
             [district.shared.async-helpers :as async-helpers]
             [mount.core :as mount]
             [streamtide.server.constants :as constants]
@@ -76,7 +88,11 @@
                                                        formatted-error))
                                       :context-fn     user-context-fn
                                       :graphiql       false}
-                            :db {:transform-result-keys-fn (comp keyword demunge #(str/replace % #"_slash_" "_SLASH_"))}
+                            :district/db {:host "localhost"
+                                          :port 5433  ;; Docker container on 5433 to avoid local PG conflict
+                                          :database "streamtide"
+                                          :user "streamtide"
+                                          :password "streamtide"}
                             :avatar-images {:fs-path "resources/public/img/avatar/"
                                             :url-path "/img/avatar/"}
                             :verifiers {:twitter {:consumer-key "PLACEHOLDER"
@@ -86,7 +102,7 @@
                                               :static-public "resources/public"
                                               :title "StreamTide Farcaster Frame"
                                               :on-error #(js/process.exit 1)}
-                            :web3 {:url "ws://127.0.0.1:8546"
+                            :web3 {:url "ws://127.0.0.1:8545"
                                    :on-offline (fn []
                                                  (log/warn "Ethereum node went offline, stopping syncing modules" {:resyncs @resync-count} ::web3-watcher)
                                                  (mount/stop #'district.server.web3-events/web3-events
@@ -96,7 +112,8 @@
                                                 (mount/start #'district.server.web3-events/web3-events
                                                              #'streamtide.server.syncer/syncer))}
                             :syncer {:reload-interval 7200000}
-                            :smart-contracts {:contracts-var contracts-var}
+                            :smart-contracts {:contracts-var contracts-var
+                                              :contracts-build-path "./resources/public/contracts/build/"}
                             :web3-events {:events constants/web3-events
                                           :on-error #(js/process.exit 1)}}}})
       (mount/start)

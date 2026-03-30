@@ -1,0 +1,89 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: streamtide-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: streamtide
+      POSTGRES_PASSWORD: streamtide
+      POSTGRES_DB: streamtide
+    ports:
+      - "5433:5432"  # Using 5433 to avoid conflict with local PostgreSQL
+    volumes:
+      - streamtide-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U streamtide"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Local Ethereum Testnet (Ganache)
+  ganache:
+    image: trufflesuite/ganache:latest
+    container_name: streamtide-ganache
+    ports:
+      - "8545:8545"
+    command:
+      - --chain.chainId=1337
+      - --chain.networkId=1337
+      - --wallet.mnemonic=easy leave proof verb wait patient fringe laptop intact opera slab shine
+      - --server.host=0.0.0.0
+      - --server.ws=true
+      - --miner.blockGasLimit=20000000
+      - --chain.allowUnlimitedContractSize=true
+      - --miner.blockTime=0
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://localhost:8545"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # StreamTide Server (API + GraphQL)
+  server:
+    build:
+      context: .
+      dockerfile: docker-builds/server/Dockerfile
+      args:
+        BUILD_ENV: dev
+    container_name: streamtide-server
+    ports:
+      - "6300:6300"
+      - "3000:3000"
+    environment:
+      STREAMTIDE_ENV: dev
+      STREAMTIDE_CONFIG_PATH: /config/server-config-dev.edn
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: streamtide
+      DB_USER: streamtide
+      DB_PASSWORD: streamtide
+      WEB3_URL: http://ganache:8545
+    volumes:
+      - ./config:/config:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      ganache:
+        condition: service_healthy
+
+  # StreamTide UI (Nginx + Static Assets)
+  ui:
+    build:
+      context: .
+      dockerfile: docker-builds/ui/Dockerfile
+      args:
+        BUILD_ENV: dev
+        FONTS_PASS: ${FONTS_PASS:-}
+    container_name: streamtide-ui
+    ports:
+      - "8080:80"
+    environment:
+      STREAMTIDE_ENV: dev
+    depends_on:
+      - server
+
+volumes:
+  streamtide-db-data:

@@ -1,0 +1,6 @@
+# Ignore actual config files (contain secrets)
+server-config-*.edn
+!server-config-dev.edn.example
+
+ui-config-*.edn
+!ui-config-dev.edn.example

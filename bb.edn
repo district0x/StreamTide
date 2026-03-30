@@ -1,6 +1,26 @@
 {:paths []
  :deps {org.babashka/cli {:mvn/version "0.4.39"}}
- :tasks {compile-css {:doc "Compile SCSS -> CSS"
+ :tasks {testnet-dev {:doc "Start local Ganache testnet for development"
+                      :task (let [seed  "easy leave proof verb wait patient fringe laptop intact opera slab shine"
+                                  host "0.0.0.0"
+                                  port "8545"
+                                  block-time "0"
+                                  args (format "npx ganache --database.dbPath=./temp/ganache-db --logging.verbose --wallet.mnemonic \"%s\" --server.host %s --server.port %s --miner.blockGasLimit 20000000 --chain.allowUnlimitedContractSize true --miner.blockTime=%s --chain.vmErrorsOnRPCResponse --chain.chainId 1337 --chain.networkId 1337" seed host port block-time)]
+                                (println "Starting DEV testnet with args:" args)
+                                (println "")
+                                (println "To deploy contracts, run:")
+                                (println "  npx truffle migrate --network ganache --reset")
+                                (println "")
+                                (shell args))}
+         testnet-test {:doc "Start Ganache testnet for testing"
+                       :task (let [seed  "easy leave proof verb wait patient fringe laptop intact opera slab shine"
+                                   host "0.0.0.0"
+                                   port "8546"
+                                   block-time "0"
+                                   args (format "npx ganache --logging.verbose --wallet.mnemonic \"%s\" --server.host %s --server.port %s --miner.blockGasLimit 20000000 --chain.allowUnlimitedContractSize true --miner.blockTime=%s --chain.vmErrorsOnRPCResponse --chain.chainId 1337" seed host port block-time)]
+                                 (println "Starting TEST testnet with args:" args)
+                                 (shell args))}
+         compile-css {:doc "Compile SCSS -> CSS"
                       :task (do
                               (println "Compiling scss to css")
                               (shell {:dir "resources/scss"} "npx sass --no-source-map -s compressed main.scss:../public/css/main.css"))}

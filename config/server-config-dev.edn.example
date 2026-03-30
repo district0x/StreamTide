@@ -1,0 +1,40 @@
+;; StreamTide Development Server Configuration
+;; Copy this file and modify as needed for your local environment
+
+{:logging {:level "debug"
+           :console? true}
+
+ :graphql {:port 6300
+           :graphiql true}  ;; Enable GraphiQL in dev
+
+ :db {:db-client :postgresql
+      :host "localhost"
+      :port 5432
+      :database "streamtide"
+      :user "streamtide"
+      :password "streamtide"}
+
+ ;; For SQLite (alternative, simpler setup):
+ ;; :db {:db-client :sqlite
+ ;;      :path "streamtide.db"}
+
+ :web3 {:url "ws://127.0.0.1:8545"}
+
+ :syncer {:reload-interval 7200000}
+
+ ;; OAuth Verifiers (get keys from respective platforms)
+ :verifiers {:twitter {:consumer-key "YOUR_TWITTER_API_KEY"
+                       :consumer-secret "YOUR_TWITTER_API_SECRET"}
+             :discord {:client-id "YOUR_DISCORD_CLIENT_ID"
+                       :client-secret "YOUR_DISCORD_CLIENT_SECRET"}}
+
+ ;; Notification Services (optional for local dev)
+ :notifiers {:email {:sendgrid-api-key "YOUR_SENDGRID_API_KEY"}
+             :discord {:webhook-url "YOUR_DISCORD_WEBHOOK_URL"}
+             :web-push {:vapid-public-key "YOUR_VAPID_PUBLIC_KEY"
+                        :vapid-private-key "YOUR_VAPID_PRIVATE_KEY"}}
+
+ :farcaster-frame {:port 3000
+                   :path "/"
+                   :static-public "resources/public"
+                   :title "StreamTide Dev"}}

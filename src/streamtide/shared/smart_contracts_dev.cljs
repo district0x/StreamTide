@@ -1,9 +1,5 @@
 (ns streamtide.shared.smart-contracts-dev)
   (def smart-contracts
-    {:migrations {:name "Migrations" :address "0x29e669154Cb6E916492333c66888614D3871C9f1"}
-     :streamtide {:name "MVPCLR" :address "0x53c6eCda67E32Ec662C6935E18Fc01Fd6c546828"}
-     :streamtide-fwd {:name "MutableForwarder" :address "0x00befa8671b2B7ED8fF5CdA9d608C56855DB11AA" :forwards-to :streamtide}
-     :donation-runner {:name "DonationRunner" :address "0x44f12D7fAB4A44585d198CB5DE98b141e115bC06"}})
+    {:migrations {:name "Migrations" :address "0x5002802428E5f3276551EC52B906bE7f21a4345E"} :streamtide {:name "MVPCLR" :address "0x555384605D2B6c71bE931B6e649baE1c4981AAad"} :streamtide-fwd {:name "MutableForwarder" :address "0xbdd338A8C6b2b3A7F1439f67fdfDbfa914170A74" :forwards-to :streamtide}})
   (def multichain-smart-contracts
-    {:5777 {:matching-pool {:name "MatchingPool" :address "0xd1feC130e29B1c1509FBB236c61d1E306bA9dCaE"}
-            :matching-pool-fwd {:name "MutableForwarder" :address "0x6AA23F1F36D45222E33294a5c935e52b1897ee2C" :forwards-to :matching-pool}}})
+    {})

@@ -90,3 +90,99 @@ At Stream Tide, we embrace flexibility and adaptability as essential values that
 ---
 
 > "It's like if Gitcoin Grants and Patreon had a baby and named it Satoshi." - **[Brady McKenna](https://github.com/Bradymck)**
+
+---
+
+## Development Setup
+
+### Prerequisites
+
+- Node.js >= 18
+- Java JDK >= 18 (for Clojure/ClojureScript)
+- [Babashka](https://github.com/babashka/babashka) (`bb`)
+- Docker & Docker Compose (for turnkey setup)
+
+### Option 1: Docker Compose (Recommended)
+
+The fastest way to get StreamTide running locally:
+
+```bash
+# Start all services (PostgreSQL, Ganache, Server, UI)
+docker compose up
+
+# First time only - deploy contracts
+docker compose exec server npx truffle migrate --network ganache --reset
+```
+
+Access:
+- **UI**: http://localhost:8080
+- **API/GraphQL**: http://localhost:6300/graphql
+- **Ganache RPC**: http://localhost:8545
+
+### Option 2: Manual Setup
+
+For development with hot-reloading:
+
+```bash
+# 1. Install dependencies
+yarn install
+
+# 2. Start PostgreSQL (or use SQLite)
+# PostgreSQL via Docker:
+docker run -d --name streamtide-db \
+  -e POSTGRES_USER=streamtide \
+  -e POSTGRES_PASSWORD=streamtide \
+  -e POSTGRES_DB=streamtide \
+  -p 5432:5432 postgres:15-alpine
+
+# 3. Start local testnet
+bb testnet-dev
+
+# 4. Deploy contracts (in another terminal)
+npx truffle migrate --network ganache --reset
+
+# 5. Compile CSS
+bb compile-css
+
+# 6. Start dev servers (in separate terminals)
+bb watch-ui        # ClojureScript UI compilation
+bb watch-server    # ClojureScript server compilation
+bb run-server      # Start the API server
+```
+
+Access:
+- **UI (dev)**: http://localhost:4598
+- **API/GraphQL**: http://localhost:6300/graphql
+
+### Available Tasks
+
+| Command | Description |
+|---------|-------------|
+| `bb testnet-dev` | Start local Ganache blockchain |
+| `bb testnet-test` | Start Ganache for tests (port 8546) |
+| `bb watch-ui` | Watch & compile UI code |
+| `bb watch-server` | Watch & compile server code |
+| `bb watch-ui-server` | Watch both UI and server |
+| `bb run-server` | Start the API server |
+| `bb compile-css` | Compile SCSS to CSS |
+| `bb watch-css` | Watch & compile SCSS |
+| `bb compile-contracts` | Compile smart contracts |
+| `bb run-server-tests` | Run server tests |
+
+### Configuration
+
+Copy the example config and customize:
+
+```bash
+cp config/server-config-dev.edn.example config/server-config-dev.edn
+```
+
+### Test Accounts
+
+The local Ganache testnet uses a fixed mnemonic for reproducible accounts:
+
+```
+easy leave proof verb wait patient fringe laptop intact opera slab shine
+```
+
+First account: `0x...` (check Ganache output for addresses)

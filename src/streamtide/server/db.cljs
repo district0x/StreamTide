@@ -1,15 +1,40 @@
 (ns streamtide.server.db
-  "Module for defining database structure and managing and abstracting queries to the database"
+  "Database schema and query abstraction layer for StreamTide.
+
+   Architecture Notes:
+   ==================
+   This module uses PostgreSQL via district.server.async-db with connection pooling.
+
+   IMPORTANT - Async Patterns:
+   ---------------------------
+   We use TWO different async patterns for a specific reason:
+
+   1. Native JS Promises (db-run!-internal, create-tables!)
+      - Used ONLY during mount startup for table creation
+      - Why? core.async go blocks don't execute during mount's synchronous
+        initialization because Node's event loop is blocked
+      - These functions return Promises and use .then()/.catch()
+
+   2. core.async (db-get, db-all, db-run!)
+      - Used for ALL runtime database operations
+      - These are the public API - use these in resolvers/handlers
+      - They wait for db-state to be :db/ready before executing
+
+   Column Naming:
+   --------------
+   Namespaced keywords like :user/address become user_SLASH_address in PostgreSQL.
+   This follows the d0x infrastructure pattern using ClojureScript's munge function."
   (:require [cljs-web3-next.helpers :refer [zero-address]]
             [clojure.string :as str]
             [clojure.string :as string]
             [district.server.config :refer [config]]
             [cljs.core.async :refer [go <! go-loop] :as async]
             [district.shared.async-helpers :refer [<? safe-go]]
-            [district.server.db-async :as db]
+            [district.server.async-db :as db]
             [district.server.db.column-types :refer [address default-nil default-zero default-false not-nil primary-key]]
             [honeysql-postgres.helpers :as psqlh]
             [honeysql.core :as sql]
+            [honeysql.format :as sql-format]
             [honeysql.helpers :as sqlh]
             [mount.core :as mount :refer [defstate]]
             [streamtide.shared.utils :as shared-utils]
@@ -20,9 +45,13 @@
 (declare start)
 (declare stop)
 
+;; Reference db/db to establish mount dependency - ensures connection pool is ready before we create tables
 (defstate ^{:on-reload :noop} streamtide-db
-          :start (start (merge (:streamtide/db @config)
-                               (:streamtide/db (mount/args))))
+          :start (do
+                   ;; Dereference db/db to ensure it's started first (mount dependency)
+                   @db/db
+                   (start (merge (:streamtide/db @config)
+                                 (:streamtide/db (mount/args)))))
           :stop (stop))
 
 ; columns holding big numbers
@@ -47,18 +76,73 @@
       (mapv #(f %) results)
       (f results))))
 
+;; Wait function - check periodically until db-state is :db/ready or :db/error
+(defn wait-until-ready [max-wait-time]
+  (go-loop [time-left max-wait-time]
+           (let [ready? (= :db/ready @db-state)
+                 error? (= :db/error @db-state)]
+             (if (or ready? error? (<= time-left 0))
+               @db-state
+               (do
+                 (<! (async/timeout 1000))
+                 (recur (- time-left 1000)))))))
+
+(defn ensure-db-ready
+  "Ensures database is ready before executing. Returns a channel that will error if DB is not ready."
+  []
+  (safe-go
+    (let [state (<? (wait-until-ready 30000))]
+      (when-not (= state :db/ready)
+        (throw (js/Error. (str "Database not ready, state: " state)))))))
+
+;; Name transform function for PostgreSQL - converts ClojureScript keywords to valid PG column names
+(defn sql-name-transform-fn
+  "Transforms ClojureScript names (like :user/address) to PostgreSQL-safe column names (like user_SLASH_address)"
+  [n]
+  (-> n
+      munge
+      (str/replace "_STAR_" "*")
+      (str/replace "_PERCENT_" "%")))
+
+;; Internal db functions that don't wait for ready state (used during table creation)
+;; Uses raw Promise-based execution instead of core.async for startup compatibility
+(defn db-run!-internal
+  [statement]
+  (let [formatted (binding [sql-format/*name-transform-fn* sql-name-transform-fn]
+                    (sql/format statement :parameterizer :postgresql :allow-namespaced-names? true))
+        query-str (first formatted)
+        values (rest formatted)]
+    (-> (db/get-connection)
+        (.then
+         (fn [conn]
+           (-> (.query conn query-str (clj->js (vec values)))
+               (.finally
+                (fn []
+                  (db/release-connection conn))))))
+        (.catch
+         (fn [err]
+           (log/error "db-run!-internal failed:" {:error (str err) :sql query-str})
+           (throw err))))))
+
+;; Public db functions that wait for ready state
 (def db-get (fn [query]
-              (go
-                (-> (db/get query {:format-opts (merge {:allow-namespaced-names? true} (when (= @db-client :postgresql) {:parameterizer :postgresql} ))})
-                    <!
-                    fix-exp-numbers))))
-(def db-all (fn [query]
-              (go
-                (-> (db/all query {:format-opts (merge {:allow-namespaced-names? true} (when (= @db-client :postgresql) {:parameterizer :postgresql} )) })
-                    <!
+              (safe-go
+                (<? (ensure-db-ready))
+                (-> (db/get-auto query {:format-opts {:allow-namespaced-names? true :parameterizer :postgresql}})
+                    <?
                     fix-exp-numbers))))
 
-(def db-run! #(db/run! %1 {:format-opts (merge {:allow-namespaced-names? true} (when (= @db-client :postgresql) {:parameterizer :postgresql} ))}))
+(def db-all (fn [query]
+              (safe-go
+                (<? (ensure-db-ready))
+                (-> (db/all-auto query {:format-opts {:allow-namespaced-names? true :parameterizer :postgresql}})
+                    <?
+                    fix-exp-numbers))))
+
+(def db-run! (fn [query]
+               (safe-go
+                 (<? (ensure-db-ready))
+                 (<? (db/run!-auto query {:format-opts {:allow-namespaced-names? true :parameterizer :postgresql}})))))
 
 (def db-types {:sqlite {:amount [:unsigned :integer]
                         :bool [:tinyint]
@@ -71,7 +155,7 @@
                             :money [:numeric (sql/raw "(12,2)")]}})
 
 (defn mod-types [columns]
-  (let [db-client (or (-> @config :db :db-client) :sqlite)]
+  (let [db-client :postgresql]  ;; Always use postgresql for d0x infrastructure
     (map (fn [column]
            (reduce (fn [acc property]
                      (if-let [mod (-> db-types db-client (get property))]
@@ -279,12 +363,12 @@
   page-start-idx: a int
   Returns a map with [:items :total-count :end-cursor :has-next-page]"
   [query page-size page-start-idx]
-  (go
+  (safe-go
     (let [paged-query (cond-> query
                               page-size (assoc :limit page-size)
                               page-start-idx (assoc :offset page-start-idx))
-          total-count (count (<! (db-all query)))
-          result (<! (db-all paged-query))
+          total-count (count (<? (db-all query)))
+          result (<? (db-all paged-query))
           last-idx (cond-> (count result)
                            page-start-idx (+ page-start-idx))]
       (log/debug "Paged query result" {:result result})
@@ -922,85 +1006,68 @@
 
 
 (defn create-tables! []
-  (safe-go
+  "Creates all database tables in dependency order. Uses Promises for startup compatibility (core.async not available during mount startup)"
+  (log/info "Creating database tables (Promise-based)...")
+  ;; First: Tables with no foreign key dependencies
+  (-> (db-run!-internal (-> (psqlh/create-table :coin :if-not-exists)
+                            (psqlh/with-columns (mod-types coin-columns))))
+      (.catch (fn [e] (log/error "Failed to create coin table" {:error (str e)}) (throw e)))
+      (.then #(db-run!-internal (-> (psqlh/create-table :round :if-not-exists)
+                                    (psqlh/with-columns (mod-types round-columns)))))
+      ;; Second: Tables that depend on coin
+      (.then #(db-run!-internal (-> (psqlh/create-table :st-user :if-not-exists)
+                                    (psqlh/with-columns (mod-types user-columns)))))
+      ;; Third: Tables that depend on st-user
+      (.then #(db-run!-internal (-> (psqlh/create-table :social-link :if-not-exists)
+                                    (psqlh/with-columns (mod-types social-link-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :perks :if-not-exists)
+                                    (psqlh/with-columns (mod-types perks-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :notification-category :if-not-exists)
+                                    (psqlh/with-columns (mod-types notifications-category-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :notification-type :if-not-exists)
+                                    (psqlh/with-columns (mod-types notifications-type-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :notification-type-many :if-not-exists)
+                                    (psqlh/with-columns (mod-types notifications-type-many-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :st-grant :if-not-exists)
+                                    (psqlh/with-columns (mod-types grant-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :content :if-not-exists)
+                                    (psqlh/with-columns (mod-types content-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :user-roles :if-not-exists)
+                                    (psqlh/with-columns (mod-types user-roles-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :user-timestamp :if-not-exists)
+                                    (psqlh/with-columns (mod-types user-timestamp-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :user-content-permissions :if-not-exists)
+                                    (psqlh/with-columns (mod-types user-content-permission-columns)))))
+      ;; Fourth: Tables that depend on st-user, coin, and round
+      (.then #(db-run!-internal (-> (psqlh/create-table :donation :if-not-exists)
+                                    (psqlh/with-columns (mod-types donation-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :matching :if-not-exists)
+                                    (psqlh/with-columns (mod-types matching-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :matching-pool :if-not-exists)
+                                    (psqlh/with-columns (mod-types matching-pool-columns)))))
+      ;; Fifth: Independent tables
+      (.then #(db-run!-internal (-> (psqlh/create-table :announcement :if-not-exists)
+                                    (psqlh/with-columns (mod-types announcement-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :farcaster-campaign :if-not-exists)
+                                    (psqlh/with-columns (mod-types farcaster-campaign-columns)))))
+      (.then #(db-run!-internal (-> (psqlh/create-table :events :if-not-exists)
+                                    (psqlh/with-columns (mod-types events-columns)))))
+      (.then #(log/info "All tables created"))))
 
-    (<? (db-run! (-> (psqlh/create-table :st-user :if-not-exists)
-                 (psqlh/with-columns (mod-types user-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :social-link :if-not-exists)
-                 (psqlh/with-columns (mod-types social-link-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :perks :if-not-exists)
-                 (psqlh/with-columns (mod-types perks-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :notification-category :if-not-exists)
-                 (psqlh/with-columns (mod-types notifications-category-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :notification-type :if-not-exists)
-                 (psqlh/with-columns (mod-types notifications-type-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :notification-type-many :if-not-exists)
-                 (psqlh/with-columns (mod-types notifications-type-many-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :st-grant :if-not-exists)
-                 (psqlh/with-columns (mod-types grant-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :content :if-not-exists)
-                 (psqlh/with-columns (mod-types content-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :coin :if-not-exists)
-                     (psqlh/with-columns (mod-types coin-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :round :if-not-exists)
-                     (psqlh/with-columns (mod-types round-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :donation :if-not-exists)
-                 (psqlh/with-columns (mod-types donation-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :matching :if-not-exists)
-                 (psqlh/with-columns (mod-types matching-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :user-roles :if-not-exists)
-                 (psqlh/with-columns (mod-types user-roles-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :user-timestamp :if-not-exists)
-                 (psqlh/with-columns (mod-types user-timestamp-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :user-content-permissions :if-not-exists)
-                 (psqlh/with-columns (mod-types user-content-permission-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :announcement :if-not-exists)
-                 (psqlh/with-columns (mod-types announcement-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :matching-pool :if-not-exists)
-                 (psqlh/with-columns (mod-types matching-pool-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :farcaster-campaign :if-not-exists)
-                 (psqlh/with-columns (mod-types farcaster-campaign-columns)))))
-
-    (<? (db-run! (-> (psqlh/create-table :events :if-not-exists)
-                 (psqlh/with-columns (mod-types events-columns)))))
-    ))
-
-
-(defn wait-until-ready [max-wait-time]
-  (go-loop [time-left max-wait-time]
-           (let [ready? (= :db/ready @db-state)
-                 error? (= :db/error @db-state)]
-             (if (or ready? error? (<= time-left 0))
-               @db-state
-               (do
-                 (<! (async/timeout 1000))
-                 (recur (- time-left 1000)))))))
 
 (defn start [args]
+  (log/info "Starting streamtide-db component...")
   (reset! db-state :db/init)
-  (reset! db-client (-> @config :db :db-client))
-  (go
-    (try
-      (<? (create-tables!))
-      (reset! db-state :db/ready)
-      (catch :default _ (reset! db-state :db/error))))
+  (reset! db-client :postgresql)  ;; Always use postgresql for d0x infrastructure
+
+  ;; Create tables using Promise chain (core.async not available during mount startup)
+  (-> (create-tables!)
+      (.then (fn [_]
+               (log/info "Database tables created successfully, setting db-state to :db/ready")
+               (reset! db-state :db/ready)))
+      (.catch (fn [e]
+                (log/error "Failed to create tables" {:error (str e)})
+                (reset! db-state :db/error))))
 
   ::started)
 
