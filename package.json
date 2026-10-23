@@ -18,7 +18,7 @@
     "apollo-fetch": "0.7.0",
     "aws-amplify": "^6.3.6",
     "axios": "0.31.1",
-    "better-sqlite3": "7.6.2",
+    "better-sqlite3": "13.0.3",
     "bignumber.js": "9.1.1",
     "buffer": "6.0.3",
     "chalk": "2.4.2",
@@ -38,7 +38,6 @@
     "jsonwebtoken": "9.0.3",
     "jwt-decode": "3.1.2",
     "pg": "^8.11.5",
-    "pg-native": "^3.1.0",
     "pm2": "^5.4.3",
     "react": "18.2.0",
     "react-datepicker": "^7.3.0",
@@ -125,6 +124,6 @@
     "webpack-cli": "5.1.4"
   },
   "engines": {
-    "node": "^18.0.0"
+    "node": "^24.0.0"
   }
 }
