@@ -1,4 +1,4 @@
-FROM 487920318758.dkr.ecr.us-west-2.amazonaws.com/cljs-web3-ci:node-18.17.0
+FROM 487920318758.dkr.ecr.us-west-2.amazonaws.com/cljs-web3-ci:node-24.22.1
 USER root
 
 ARG BUILD_ENV=qa
